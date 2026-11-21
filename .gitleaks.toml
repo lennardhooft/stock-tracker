@@ -1,0 +1,26 @@
+title = "stock-tracker gitleaks config"
+
+[extend]
+useDefault = true
+
+# Extra rules for this project's secrets.
+[[rules]]
+id = "supabase-service-key-jwt"
+description = "Supabase JWT (service or anon key) pasted into a file"
+regex = '''eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}'''
+tags = ["supabase", "jwt"]
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase new-style secret key"
+regex = '''sb_secret_[a-zA-Z0-9_-]{20,}'''
+tags = ["supabase"]
+
+[[rules]]
+id = "telegram-bot-token"
+description = "Telegram bot token"
+regex = '''[0-9]{8,10}:AA[a-zA-Z0-9_-]{33}'''
+tags = ["telegram"]
+
+[allowlist]
+paths = ['''\.env\.example$''']

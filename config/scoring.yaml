@@ -1,0 +1,49 @@
+# Bottom Score configuration (CLAUDE.md section 6).
+# Every enabled signal adds `weight` points when it fires. Owner decision: equal weights.
+# Phase 1 implements T1, T2, T3 and S1. V1/V2 come in Phase 2 and are disabled until then.
+
+signals:
+  near_200w_ma:                  # T1: close <= 200-week SMA x (1 + tolerance)
+    enabled: true
+    weight: 1
+    weeks: 200
+    tolerance: 0.05
+  weekly_rsi:                    # T2: weekly RSI (Wilder) below threshold
+    enabled: true
+    weight: 1
+    period: 14
+    below: 30
+  drawdown:                      # T3: close at least min_pct below the 52-week high
+    enabled: true
+    weight: 1
+    min_pct: 30
+    lookback_days: 252
+  valuation_pct:                 # V1: Phase 2
+    enabled: false
+    weight: 1
+    years: 10
+    below_percentile: 20
+  insider_buying:                # V2: Phase 2
+    enabled: false
+    weight: 1
+    days: 90
+  market_fear:                   # S1: VIX >= vix_above OR Fear & Greed <= fear_greed_below
+    enabled: true
+    weight: 1
+    vix_above: 30
+    fear_greed_below: 25
+
+# Score labels (section 6.6). A score is matched against `min` from the top down.
+labels:
+  - { min: 6, key: extreme, text: "Extreme", colour: red }
+  - { min: 4, key: strong, text: "Strong bottom signals, research it", colour: orange }
+  - { min: 2, key: watch, text: "Watch", colour: yellow }
+  - { min: 0, key: normal, text: "Normal", colour: grey }
+
+alert_threshold: 4
+
+# Data sanity checks (section 13.14 E)
+data_checks:
+  max_daily_move: 0.40           # bigger moves are checked for splits, else marked suspect
+  stale_days: 3                  # unchanged close for this many trading days = stale
+  max_gap_business_days: 5       # missing-data warning if bigger gap inside the last year

@@ -1,0 +1,46 @@
+name: daily
+
+on:
+  schedule:
+    - cron: "45 21 * * 1-5"   # 21:45 UTC on weekdays, after the US close (with buffer)
+  workflow_dispatch: {}        # "Run workflow" button for manual runs
+
+concurrency:
+  group: data-writer           # never two jobs writing data at the same time
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Logs are PUBLIC. The job only prints counts/statuses; secrets are masked by GitHub.
+      - name: Run daily job
+        run: python -m src.run_daily
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Notify on failure (Telegram, optional)
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+            curl -s -o /dev/null -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+              --data-urlencode "text=⚠️ Bottom Tracker: daily job failed. Check the Health page."
+          fi

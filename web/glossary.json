@@ -1,0 +1,65 @@
+{
+  "bottom_score": {
+    "title": "Bottom Score",
+    "what": "The number of bottom signals that are currently true for this stock. In Phase 1 there are 4 signals (T1, T2, T3, S1), each worth 1 point.",
+    "why": "One signal alone is weak. When several independent signals agree (price far down, oversold, near a long-term average, market in panic) the stock is more likely to be near a bottom.",
+    "how": "0–1 Normal · 2–3 Watch · 4–5 Strong bottom signals, research it · 6 Extreme. 'n/a' means a signal had no data and is not counted.",
+    "limits": "It says nothing about the business. A failing company also scores high. Phase 2 adds a Quality Score to catch value traps."
+  },
+  "near_200w_ma": {
+    "title": "T1 · Near 200-week moving average",
+    "what": "The average weekly close of the last 200 weeks (about 4 years). The signal fires when the price is at most 5% above it.",
+    "why": "For strong long-term companies the 200-week average has often acted as a floor in big sell-offs.",
+    "how": "Price below or just above the line = historically cheap vs its long-term trend. Far above = extended.",
+    "limits": "Needs 4 years of history (otherwise n/a). In a long decline the average itself keeps falling."
+  },
+  "weekly_rsi": {
+    "title": "T2 · Weekly RSI oversold",
+    "what": "The Relative Strength Index (14 weeks, Wilder's smoothing) compares the size of up-weeks with down-weeks on a 0–100 scale. Fires below 30.",
+    "why": "Weekly RSI under 30 is rare for quality stocks and usually means heavy, maybe emotional, selling.",
+    "how": "Below 30 oversold · 30–70 normal · above 70 overbought.",
+    "limits": "A stock can stay oversold for months. It measures speed of the fall, not value."
+  },
+  "drawdown": {
+    "title": "T3 · Deep drawdown",
+    "what": "How far the price is below its highest close of the last 52 weeks. Fires at 30% or more below.",
+    "why": "Big long-term buying opportunities usually come after large drops.",
+    "how": "−10% is a normal correction, −20% a bear market for that stock, −30% or more a deep drawdown.",
+    "limits": "A big drop can be fully justified by bad news. Check why it fell."
+  },
+  "market_fear": {
+    "title": "S1 · Market fear",
+    "what": "Fires when the VIX is 30 or higher, or CNN's Fear & Greed index is 25 or lower. This is the same for every stock.",
+    "why": "Market-wide panic drags good companies down with the rest. Those are often the best long-term entry points.",
+    "how": "VIX ≥ 30 or Fear & Greed ≤ 25 = fear. VIX under 20 = calm.",
+    "limits": "Fear can last weeks or months. The CNN index is an unofficial source and may be missing (then only the VIX is used)."
+  },
+  "vix": {
+    "title": "VIX",
+    "what": "The market's expected volatility of the S&P 500 over the next 30 days, from option prices.",
+    "why": "It is the most common 'fear gauge' for US stocks.",
+    "how": "Under 15 calm · 20–30 nervous · above 30 fear · above 40 panic.",
+    "limits": "It measures expected swings, not direction."
+  },
+  "fear_greed": {
+    "title": "Fear & Greed index",
+    "what": "CNN's 0–100 index built from 7 market indicators (momentum, breadth, put/call, junk bonds, VIX and more).",
+    "why": "Extreme fear has often lined up with good long-term buying moments.",
+    "how": "0–25 extreme fear · 25–45 fear · 45–55 neutral · 55–75 greed · 75–100 extreme greed.",
+    "limits": "Unofficial data source that may break. US market only."
+  },
+  "pct_from_52w_high": {
+    "title": "% from 52-week high",
+    "what": "How far today's close is below the highest close of the last year.",
+    "why": "Quick view of how much the stock has already fallen.",
+    "how": "0% = at its high. −30% = 30% below its high.",
+    "limits": "Based on closing prices, not intraday highs."
+  },
+  "data_check": {
+    "title": "⚠️ Data checks",
+    "what": "Every night the prices are checked for errors: zero prices, moves over 40% without a split, prices that stopped updating, and gaps.",
+    "why": "Free data sources sometimes contain errors. A bad price should never trigger a score or alert.",
+    "how": "⚠️ next to a score = something looked wrong. A suspicious price is left out until the next run confirms it.",
+    "limits": "Checks catch obvious errors only. See the Health page for each data source's status."
+  }
+}

@@ -1,0 +1,16 @@
+# EXAMPLE ONLY. The real watchlist lives in the Supabase `watchlist` table and is edited in the app.
+# Used by `python -m src.run_daily --local` for testing without Supabase.
+tickers:
+  - symbol: AAPL
+    name: Apple
+    market: US
+  - symbol: MSFT
+    name: Microsoft
+    market: US
+  - symbol: ASML.AS
+    name: ASML
+    market: EU
+  - symbol: IWDA.AS
+    name: iShares Core MSCI World
+    market: EU
+    notes: "Benchmark ETF"

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0e1116">
+  <title>Bottom Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="#" class="brand">Bottom Tracker</a>
+    <nav id="nav" hidden>
+      <a href="#">Watchlist</a>
+      <a href="#health">Health</a>
+      <a href="#help">Help</a>
+      <button id="logout" class="link">Log out</button>
+    </nav>
+  </header>
+
+  <main id="app">
+    <p class="muted center">Loading…</p>
+  </main>
+
+  <footer class="footer">
+    Not financial advice. Signals mark things worth researching, not buy calls.
+  </footer>
+
+  <!-- config.js is generated at deploy time (scripts/build_web.sh); only the PUBLIC anon key. -->
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

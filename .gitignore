@@ -1,0 +1,25 @@
+# --- Privacy safety net (CLAUDE.md 2.1) — never commit personal or generated data ---
+.env
+.env.*
+!.env.example
+*.local.*
+data/
+backups/
+seed/
+out/
+web/config.js
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# --- OS / editors ---
+.DS_Store
+.idea/
+.vscode/
+web/demo/
