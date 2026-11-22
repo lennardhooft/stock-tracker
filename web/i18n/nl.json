@@ -423,7 +423,10 @@
       "yahoo_nasdaq": "Nasdaq (Yahoo)",
       "yahoo_vix": "VIX (Yahoo)",
       "cnn_fear_greed": "Fear & Greed (CNN)"
-    }
+    },
+    "intraday": "Controles tijdens de dag (elke 15 min als de beurs open is)",
+    "intradayCounts": "{checked} van {tickers} aandelen gecontroleerd · {sent} meldingen verstuurd",
+    "intradayNone": "Er liep nog geen controle tijdens de dag. Ze lopen op weekdagen wanneer de Amerikaanse of Europese beurs open is."
   },
   "welcome": {
     "title": "Welkom",
@@ -488,7 +491,11 @@
       "rise": "Grote stijging",
       "support_test": "Test steun",
       "support_break": "Steun gebroken",
-      "data_problem": "Gegevenscontrole"
+      "data_problem": "Gegevenscontrole",
+      "volume_spike": "Volumepiek",
+      "news": "Nieuws",
+      "earnings_7d": "Resultaten over een week",
+      "earnings_1d": "Resultaten morgen"
     }
   },
   "fund": {

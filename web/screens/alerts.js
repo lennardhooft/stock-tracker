@@ -15,6 +15,10 @@ const KIND = {
   support_test: { icon: "check", tone: "--color-positive" },
   support_break: { icon: "warning", tone: "--color-negative" },
   data_problem: { icon: "warning", tone: "--color-warning" },
+  volume_spike: { icon: "info", tone: "--color-info" },
+  news: { icon: "info", tone: "--color-info" },
+  earnings_7d: { icon: "calendar", tone: "--color-info" },
+  earnings_1d: { icon: "calendar", tone: "--color-info" },
 };
 
 const TZ = "Europe/Brussels";

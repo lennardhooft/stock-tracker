@@ -28,15 +28,17 @@ function supabaseApi(cfg) {
     logout: () => sb.auth.signOut(),
 
     async loadAll() {
-      const [watchlist, scores, market, runs, history, alerts] = await Promise.all([
+      const [watchlist, scores, market, runs, history, alerts, intradayRuns] = await Promise.all([
         q(sb.from("watchlist").select("*").order("symbol")),
         q(sb.from("latest_scores").select("*")),
         q(sb.from("market_snapshot").select("*").eq("id", "latest")),
-        q(sb.from("job_runs").select("*").order("started_at", { ascending: false }).limit(20)),
+        // daily and intraday runs separately: ~40 intraday runs a day must not push the daily ones out
+        q(sb.from("job_runs").select("*").eq("job", "daily").order("started_at", { ascending: false }).limit(15)),
         q(sb.from("score_history").select("symbol,date,score").order("date", { ascending: false }).limit(2000)),
         q(sb.from("alerts_log").select("id,symbol,kind,title,body,url,delivered,sent_at").order("sent_at", { ascending: false }).limit(100)),
+        q(sb.from("job_runs").select("*").eq("job", "intraday").order("started_at", { ascending: false }).limit(1)),
       ]);
-      return { watchlist, scores, market: market[0] || null, runs, history, alerts };
+      return { watchlist, scores, market: market[0] || null, runs: [...runs, ...intradayRuns], history, alerts };
     },
     async detail(symbol) {
       return (await q(sb.from("ticker_detail").select("weekly,fundamentals").eq("symbol", symbol)))[0] || null;
@@ -142,6 +144,7 @@ function demoApi(fixture) {
         counts: { tickers: stocks.length, scored: scores.filter((s) => !s.error).length, errors: scores.filter((s) => s.error).length, suspect: stocks.filter((s) => s.suspect).length },
         sources: { yahoo_prices: { ok: runStatus === "ok", rows: 9000 }, yahoo_vix: { ok: true, rows: 1 }, cnn_fear_greed: { ok: fixture !== "partial", rows: fixture === "partial" ? 0 : 1 } } },
       { job: "daily", started_at: hoursAgo(27), finished_at: hoursAgo(27), status: "ok", counts: { tickers: stocks.length, scored: stocks.length }, sources: {} },
+      { job: "intraday", started_at: hoursAgo(0.2), finished_at: hoursAgo(0.2), status: "ok", counts: { tickers: stocks.length, checked: stocks.length, alerts_sent: 0 }, sources: {} },
     ];
     const alerts = fixture === "empty" || fixture === "new" ? [] : (f.alerts || []).map((a, i) => ({ id: i, ...a, sent_at: hoursAgo(a.hours_ago) }));
     return { watchlist, scores, market: { id: "latest", data: market, updated_at: updated }, runs, history, alerts };

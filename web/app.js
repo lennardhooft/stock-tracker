@@ -89,6 +89,7 @@ function setData(d, offlineAt = null) {
   ctx.rows = buildRows(d);
   ctx.market = d.market?.data || null;
   ctx.runs = (d.runs || []).filter((r) => r.job === "daily");
+  ctx.intradayRun = (d.runs || []).find((r) => r.job === "intraday") || null;
   ctx.latestUpdate = (d.scores || []).map((s) => s.updated_at).filter(Boolean).sort().pop() || d.market?.updated_at || null;
   ctx.freshness = freshness(ctx.latestUpdate, ctx.runs[0]);
 }

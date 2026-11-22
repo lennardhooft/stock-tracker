@@ -423,7 +423,10 @@
       "yahoo_nasdaq": "Nasdaq (Yahoo)",
       "yahoo_vix": "VIX (Yahoo)",
       "cnn_fear_greed": "Fear & Greed (CNN)"
-    }
+    },
+    "intraday": "Intraday checks (every 15 min while markets are open)",
+    "intradayCounts": "{checked} of {tickers} stocks checked · {sent} alerts sent",
+    "intradayNone": "No intraday check has run yet. They run on weekdays while the US or EU market is open."
   },
   "welcome": {
     "title": "Welcome",
@@ -488,7 +491,11 @@
       "rise": "Big rise",
       "support_test": "Testing support",
       "support_break": "Support broken",
-      "data_problem": "Data check"
+      "data_problem": "Data check",
+      "volume_spike": "Volume spike",
+      "news": "Breaking news",
+      "earnings_7d": "Earnings in a week",
+      "earnings_1d": "Earnings tomorrow"
     }
   },
   "fund": {

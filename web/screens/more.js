@@ -99,6 +99,12 @@ export function renderHealth(ctx, main) {
       <p class="small text-2 num" style="margin-top:var(--space-2)">${t("health.counts", { scored: last.counts?.scored ?? 0, tickers: last.counts?.tickers ?? 0, errors: last.counts?.errors ?? 0, suspect: last.counts?.suspect ?? 0 })}</p>
     </section>
     <section class="card">
+      <h2 class="card__title">${t("health.intraday")}</h2>
+      ${ctx.intradayRun ? html`<p><span class="badge badge--${ctx.intradayRun.status === "ok" ? "normal" : ctx.intradayRun.status === "partial" ? "watch" : "extreme"}">${t(`health.status.${ctx.intradayRun.status}`)}</span> <span class="text-2">${fmt.relativeTime(ctx.intradayRun.finished_at)}</span></p>
+        <p class="small text-2 num" style="margin-top:var(--space-2)">${t("health.intradayCounts", { checked: ctx.intradayRun.counts?.checked ?? 0, tickers: ctx.intradayRun.counts?.tickers ?? 0, sent: ctx.intradayRun.counts?.alerts_sent ?? 0 })}</p>`
+        : html`<p class="text-2">${t("health.intradayNone")}</p>`}
+    </section>
+    <section class="card">
       <h2 class="card__title">${t("health.sources")}</h2>
       <ul class="signals">${Object.entries(last.sources || {}).map(([k, v]) => html`<li class="signal" data-state="${v.ok ? "passed" : "na"}">
         <span class="signal__icon" style="color:var(--color-${v.ok ? "positive" : "negative"})">${icon(v.ok ? "check" : "error", { label: v.ok ? t("health.ok") : t("health.failed") })}</span>
