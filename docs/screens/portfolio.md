@@ -73,7 +73,10 @@ Cash per currency (EUR, USD), emergency fund (excluded from everything), planned
 2. **Preview**: one row per position — Bolero name, **ticker** (suggested; editable; alternatives in a list), quantity,
    average price + currency, asset type, include ☑. Cash row → cash in EUR. Rows that couldn't be matched are marked
    "check the ticker" and are not included until a ticker is filled in.
-   Matching: ISIN (if the ISIN column is switched on) + Bolero's market → Yahoo listing on that exchange; otherwise the name.
+   Matching: ISIN if present; otherwise Bolero's name in simpler forms (abbreviations spelled out, fewer words) on Bolero's
+   market; if the fund is only found on another exchange, its Yahoo name is searched again to find the right listing.
+   Every suggestion is checked for prices on Yahoo and shows Yahoo's name · exchange · currency, with a warning when
+   the names or currencies differ. A ticker typed by hand is checked for prices too (no prices → row left out).
    The lookup sends only ISIN / name / market to the `lookup-symbols` function (no amounts).
 3. **Import**: starting positions dated today (source = import), missing tickers added to the watchlist, cash set.
    If you imported before: "Replace my previous import" (default on) removes the earlier imported positions first,

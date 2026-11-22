@@ -694,7 +694,10 @@
           "symbol": "NRDX",
           "name": "Nordex Semiconductors",
           "exchange": "NMS",
-          "type": "EQUITY"
+          "type": "EQUITY",
+          "currency": "USD",
+          "priced": true,
+          "match": 1
         }
       ]
     },
@@ -705,13 +708,19 @@
           "symbol": "WORLD.AS",
           "name": "Global Index Tracker ETF",
           "exchange": "AMS",
-          "type": "ETF"
+          "type": "ETF",
+          "currency": "EUR",
+          "priced": true,
+          "match": 0.5
         },
         {
           "symbol": "WRLD.L",
           "name": "Global Index Tracker ETF",
           "exchange": "LSE",
-          "type": "ETF"
+          "type": "ETF",
+          "currency": "USD",
+          "priced": true,
+          "match": 0.5
         }
       ]
     },
@@ -722,7 +731,10 @@
           "symbol": "NEWCO",
           "name": "Newly Listed Co",
           "exchange": "NYQ",
-          "type": "EQUITY"
+          "type": "EQUITY",
+          "currency": "USD",
+          "priced": true,
+          "match": 0.5
         }
       ]
     }

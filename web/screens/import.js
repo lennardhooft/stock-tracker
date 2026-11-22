@@ -61,9 +61,19 @@ async function readFile(ctx, main, file) {
   let lookups = [];
   let lookupFailed = false;
   try {
-    lookups = await ctx.api.lookupSymbols(parsed.positions.map((p) => ({ isin: p.isin || undefined, name: p.name, market: p.market })));
+    lookups = await ctx.api.lookupSymbols(parsed.positions.map((p) => ({ isin: p.isin || undefined, name: p.name, market: p.market, currency: p.currency })));
   } catch { lookupFailed = true; }
   renderPreview(ctx, main, parsed, lookups, lookupFailed);
+}
+
+/** What we know about a ticker from the lookup: Yahoo's name, exchange, currency + warnings (html). */
+function tickerInfo(cand, p) {
+  if (!cand) return "";
+  const warn = [];
+  if (cand.match != null && cand.match < 0.6) warn.push(t("imp.nameDiffers"));
+  if (cand.currency && p.currency && cand.currency !== p.currency) warn.push(t("imp.otherCurrency", { cur: cand.currency, file: p.currency }));
+  return html`<span class="small text-2" style="display:block">${t("imp.yahooIs", { name: cand.name || cand.symbol, exchange: cand.exchange || "—", cur: cand.currency || "—" })}</span>
+    ${warn.length ? html`<span class="small" style="display:block;color:var(--color-warning)">${icon("warning")} ${warn.join(" ")}</span>` : ""}`;
 }
 
 function renderPreview(ctx, main, parsed, lookups, lookupFailed) {
@@ -77,16 +87,18 @@ function renderPreview(ctx, main, parsed, lookups, lookupFailed) {
     <ul class="list" id="imp-rows">${parsed.positions.map((p, i) => {
       const lk = lookups[i] || {};
       const ticker = lk.best || "";
+      const cand = (lk.candidates || []).find((c) => c.symbol === ticker);
       return html`<li class="card stack" style="gap:var(--space-2)" data-row="${i}">
         <label class="toggle" style="min-height:44px"><span><b>${p.name}</b><span class="small text-2" style="display:block">${fmt.num(p.qty, Number.isInteger(p.qty) ? 0 : 4)} × ${fmt.money(p.avgPrice, p.currency)} · ${p.market || "—"}${p.isin ? ` · ${p.isin}` : ""}</span></span>
           <input type="checkbox" data-include ${ticker ? "checked" : ""} aria-label="${t("imp.include", { name: p.name })}" style="width:24px;height:24px;flex:none"></label>
         <div class="cluster" style="gap:var(--space-2);align-items:flex-start">
           <label class="field" style="flex:1;min-width:140px"><span class="field__label">${t("imp.ticker")}</span>
             <input class="input" data-ticker list="cand-${i}" value="${ticker}" autocapitalize="characters" autocomplete="off" aria-describedby="hint-${i}">
-            <datalist id="cand-${i}">${(lk.candidates || []).map((c) => html`<option value="${c.symbol}">${c.name} · ${c.exchange}</option>`)}</datalist></label>
+            <datalist id="cand-${i}">${(lk.candidates || []).map((c) => html`<option value="${c.symbol}">${c.name} · ${c.exchange}${c.currency ? ` · ${c.currency}` : ""}</option>`)}</datalist></label>
           <label class="field" style="flex:1;min-width:140px"><span class="field__label">${t("trade.type")}</span>
             <select class="input" data-type>${TYPES.map((k) => html`<option value="${k}" ${k === p.suggested ? "selected" : ""}>${t(`pf.type.${k}`)}</option>`)}</select></label>
         </div>
+        <div id="info-${i}">${tickerInfo(cand, p)}</div>
         <span class="small" id="hint-${i}" style="color:var(--color-${ticker ? "text-2" : "warning"})">${ticker ? t("imp.suggested") : t("imp.checkTicker")}</span>
       </li>`;
     })}</ul>
@@ -97,16 +109,43 @@ function renderPreview(ctx, main, parsed, lookups, lookupFailed) {
     <p id="imp-msg" class="small" role="status" aria-live="polite" style="margin-top:var(--space-3)"></p>
     <button type="button" class="btn btn--primary btn--block" id="imp-go" style="margin-top:var(--space-2)">${t("imp.go")}</button>`);
 
-  // a filled-in ticker includes the row; an emptied one excludes it
+  // A filled-in ticker includes the row, an emptied one excludes it. A ticker that isn't one of the
+  // suggestions is checked for prices on Yahoo (without prices the app can't value it).
+  const timers = {};
+  const setHint = (li, text, tone) => {
+    const hint = $(`#hint-${li.dataset.row}`, li);
+    hint.textContent = text;
+    hint.style.color = `var(--color-${tone})`;
+  };
   $("#imp-rows", body).addEventListener("input", (e) => {
     const inp = e.target.closest("[data-ticker]");
     if (!inp) return;
     const li = inp.closest("[data-row]");
-    const ok = SYMBOL.test(inp.value.trim().toUpperCase());
-    $("[data-include]", li).checked = ok;
-    const hint = $(`#hint-${li.dataset.row}`, li);
-    hint.textContent = ok ? t("imp.suggested") : t("imp.checkTicker");
-    hint.style.color = `var(--color-${ok ? "text-2" : "warning"})`;
+    const i = Number(li.dataset.row);
+    const p = parsed.positions[i];
+    const sym = inp.value.trim().toUpperCase();
+    const ok = SYMBOL.test(sym);
+    const cand = (lookups[i]?.candidates || []).find((c) => c.symbol === sym);
+    $("[data-include]", li).checked = ok && cand?.priced !== false;
+    mount($(`#info-${i}`, li), html`${tickerInfo(cand, p)}`);
+    clearTimeout(timers[i]);
+    if (!ok) { setHint(li, t("imp.checkTicker"), "warning"); return; }
+    if (cand) { setHint(li, cand.priced === false ? t("imp.noPrices", { symbol: sym }) : t("imp.suggested"), cand.priced === false ? "warning" : "text-2"); return; }
+    setHint(li, t("imp.checking"), "text-2");
+    timers[i] = setTimeout(async () => {
+      let q = null;
+      try { q = (await ctx.api.quotes([sym]))[sym]; } catch { /* offline: leave it to the owner */ }
+      if (inp.value.trim().toUpperCase() !== sym) return; // typed on meanwhile
+      if (q?.price != null) {
+        setHint(li, t("imp.pricesFound", { symbol: sym, price: fmt.money(q.price, q.currency || p.currency) }), "text-2");
+        if (q.currency && p.currency && q.currency !== p.currency) {
+          mount($(`#info-${i}`, li), html`<span class="small" style="display:block;color:var(--color-warning)">${icon("warning")} ${t("imp.otherCurrency", { cur: q.currency, file: p.currency })}</span>`);
+        }
+      } else {
+        $("[data-include]", li).checked = false;
+        setHint(li, t("imp.noPrices", { symbol: sym }), "warning");
+      }
+    }, 600);
   });
 
   $("#imp-go", body).addEventListener("click", async (e) => {

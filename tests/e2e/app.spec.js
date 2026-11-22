@@ -728,7 +728,19 @@ test("bolero import: parse in the browser, match tickers, fix one by hand, impor
   await expect(rows.nth(1).locator("[data-type]")).toHaveValue("broad_etf");
   await expect(rows.nth(2).locator("[data-include]")).not.toBeChecked(); // no match → not included
   await expect(rows.nth(2)).toContainText("Check the ticker");
+  await expect(rows.nth(1)).toContainText("Yahoo: Global Index Tracker ETF · AMS · EUR");
+  await expect(rows.nth(1)).toContainText("The names differ");
+  // a ticker Yahoo has no prices for is flagged and left out
+  await rows.nth(2).locator("[data-ticker]").fill("NOSUCH.XX");
+  await expect(rows.nth(2)).toContainText("Yahoo has no prices for NOSUCH.XX");
+  await expect(rows.nth(2).locator("[data-include]")).not.toBeChecked();
+  // a ticker typed by hand (not a suggestion) is checked for prices on Yahoo
+  await rows.nth(2).locator("[data-ticker]").fill("ORCA");
+  await expect(rows.nth(2)).toContainText("ORCA: prices found");
+  await expect(rows.nth(2).locator("[data-include]")).toBeChecked();
+  // one of the row's own suggestions: shows Yahoo's name right away
   await rows.nth(2).locator("[data-ticker]").fill("NEWCO");
+  await expect(rows.nth(2)).toContainText("Yahoo: Newly Listed Co · NYQ · USD");
   await expect(rows.nth(2).locator("[data-include]")).toBeChecked();
   await expect(page.locator("#imp-cash")).toBeChecked();
   await quality(page, "import preview");
