@@ -1,0 +1,125 @@
+{
+  "app": {
+    "name": "Bottom Tracker"
+  },
+  "common": {
+    "na": "n.b.",
+    "never": "nooit",
+    "retry": "Opnieuw proberen",
+    "details": "Details",
+    "close": "Sluiten",
+    "cancel": "Annuleren",
+    "undo": "Ongedaan maken",
+    "save": "Opslaan",
+    "more": "Meer",
+    "info": "Wat betekent dit?",
+    "loading": "Laden…"
+  },
+  "change": {
+    "up": "gestegen",
+    "down": "gedaald",
+    "flat": "onveranderd"
+  },
+  "time": {
+    "justNow": "zonet",
+    "minAgo": "{n} min geleden",
+    "today": "vandaag {time}",
+    "yesterday": "gisteren {time}",
+    "delayed": "15 min vertraagd"
+  },
+  "nav": {
+    "today": "Vandaag",
+    "watchlist": "Volglijst",
+    "portfolio": "Portefeuille",
+    "calendar": "Kalender",
+    "more": "Meer",
+    "search": "Aandelen zoeken",
+    "settings": "Instellingen"
+  },
+  "freshness": {
+    "fresh": "Gegevens zijn actueel",
+    "stale": "Gegevens zijn ouder dan verwacht",
+    "failed": "De laatste update is mislukt",
+    "tapForHealth": "Tik voor de gegevensstatus"
+  },
+  "score": {
+    "bottom": "Bodemscore",
+    "top": "Topscore",
+    "outOf": "{score}/{max}",
+    "naCount": "{n} n.b.",
+    "label": {
+      "normal": "Normaal",
+      "watch": "Opvolgen",
+      "strong": "Sterk",
+      "extreme": "Extreem"
+    },
+    "labelLong": {
+      "normal": "Normaal",
+      "watch": "Opvolgen",
+      "strong": "Sterke bodemsignalen, onderzoek het",
+      "extreme": "Extreem"
+    },
+    "topLabel": {
+      "normal": "Normaal",
+      "hot": "Wordt heet",
+      "trim": "Overweeg af te bouwen"
+    },
+    "suspect": "Sommige gegevens lijken fout en worden weggelaten",
+    "tapForBreakdown": "Toon welke signalen afgingen",
+    "pending": "In afwachting",
+    "error": "Geen score"
+  },
+  "verdict": {
+    "sale": "Kwaliteit in de solden",
+    "check": "Controleer de fundamenten",
+    "trap": "Mogelijke waardeval",
+    "none": "Niet aan een bodem"
+  },
+  "signal": {
+    "passed": "Signaal afgegaan",
+    "failed": "Signaal niet afgegaan",
+    "na": "Geen gegevens",
+    "threshold": "drempel {value}"
+  },
+  "stock": {
+    "fromHigh": "{value} t.o.v. 52w-top",
+    "pending": "Krijgt een score na de update van vanavond",
+    "error": "Kon geen score berekenen"
+  },
+  "banner": {
+    "staleTitle": "Scores zijn van {time}.",
+    "staleBody": "De update van vandaag is nog niet gelopen.",
+    "suspectTitle": "Sommige koersen lijken fout.",
+    "suspectBody": "Ze tellen niet mee tot de volgende update ze bevestigt.",
+    "offlineTitle": "Offline.",
+    "offlineBody": "Gegevens van {time}."
+  },
+  "state": {
+    "emptyWatchlistTitle": "Je volglijst is leeg",
+    "emptyWatchlistBody": "Voeg je eerste aandeel toe. Na de update van vanavond krijgt het een bodemscore.",
+    "emptyWatchlistAction": "Aandeel toevoegen",
+    "calmTitle": "Niets vraagt vandaag je aandacht",
+    "calmBody": "Je volglijst is rustig.",
+    "errorTitle": "Je gegevens konden niet geladen worden",
+    "errorBody": "Je gegevens zijn veilig. Meestal is dit een verbindingsprobleem.",
+    "partial": "Sommige details ontbreken"
+  },
+  "toast": {
+    "removed": "{name} verwijderd",
+    "saved": "Opgeslagen"
+  },
+  "dialog": {
+    "deleteTitle": "{name} verwijderen?",
+    "deleteBody": "Dit verwijdert {name} en je notities definitief. Dit kan niet ongedaan gemaakt worden.",
+    "deleteAction": "Definitief verwijderen"
+  },
+  "range": {
+    "now": "nu",
+    "min": "laag",
+    "max": "hoog"
+  },
+  "styleguide": {
+    "title": "Stijlgids",
+    "intro": "Elke component in elke toestand. Schermen gebruiken alleen wat hier staat."
+  }
+}

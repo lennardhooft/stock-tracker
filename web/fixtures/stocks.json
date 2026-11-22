@@ -1,0 +1,23 @@
+{
+  "_note": "FAKE data for the style guide and UI tests. Fictional companies, invented numbers.",
+  "stocks": [
+    { "symbol": "NRDX", "name": "Nordex Semiconductors", "price": 118.4, "currency": "USD", "change_pct": -6.2, "pct_from_52w_high": -38.5, "score": 4, "max_score": 4, "n_na": 0, "label": "strong", "suspect": false, "sparkline": [190, 186, 181, 175, 178, 170, 162, 158, 150, 146, 139, 131, 126, 122, 118] },
+    { "symbol": "BLMT.BR", "name": "Belmont Chemicals", "price": 42.15, "currency": "EUR", "change_pct": -1.4, "pct_from_52w_high": -27.3, "score": 2, "max_score": 4, "n_na": 1, "label": "watch", "suspect": false, "sparkline": [57, 56, 55, 54, 55, 52, 50, 49, 47, 46, 44, 43, 42] },
+    { "symbol": "ORCA", "name": "Orca Cloud Systems", "price": 342.56, "currency": "USD", "change_pct": 0.84, "pct_from_52w_high": -3.9, "score": 1, "max_score": 4, "n_na": 0, "label": "normal", "suspect": false, "sparkline": [290, 296, 301, 299, 310, 318, 322, 320, 330, 335, 341, 343] },
+    { "symbol": "VLTA.AS", "name": "Valtara International Holding & Infrastructure Group", "price": 1288.2, "currency": "EUR", "change_pct": 0.0, "pct_from_52w_high": -51.2, "score": 6, "max_score": 6, "n_na": 0, "label": "extreme", "suspect": true, "sparkline": [2600, 2500, 2300, 2100, 2050, 1900, 1700, 1600, 1450, 1350, 1300, 1288] },
+    { "symbol": "KESL.DE", "name": "Kessler Maschinenbau", "score": null, "max_score": null },
+    { "symbol": "ZZQX", "name": "Unknown ticker test", "error": "no price data" }
+  ],
+  "signals": [
+    { "code": "T1", "name": "Near its 4-year average (200-week MA)", "passed": true, "detail": "Price € 118,40 is 2,1 % above the 200-week average € 116,00 (limit +5 %)" },
+    { "code": "T2", "name": "Weekly RSI oversold", "passed": true, "detail": "RSI 27,4 is below 30" },
+    { "code": "T3", "name": "Far below its 52-week high", "passed": false, "detail": "−24,8 % from the high (needs −30 %)" },
+    { "code": "S1", "name": "Market fear", "passed": null, "detail": "n/a: VIX and Fear & Greed both unavailable today" }
+  ],
+  "market": {
+    "sp500": { "value": 6910.39, "change_pct": -3.7 },
+    "msci_world": { "value": 126.73, "change_pct": -0.29 },
+    "vix": { "value": 35.9, "change_pct": 26.2 },
+    "fear_greed": { "value": 10, "rating": "extreme fear" }
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "app": {
+    "name": "Bottom Tracker"
+  },
+  "common": {
+    "na": "n/a",
+    "never": "never",
+    "retry": "Try again",
+    "details": "Details",
+    "close": "Close",
+    "cancel": "Cancel",
+    "undo": "Undo",
+    "save": "Save",
+    "more": "More",
+    "info": "What does this mean?",
+    "loading": "Loading…"
+  },
+  "change": {
+    "up": "up",
+    "down": "down",
+    "flat": "unchanged"
+  },
+  "time": {
+    "justNow": "just now",
+    "minAgo": "{n} min ago",
+    "today": "today {time}",
+    "yesterday": "yesterday {time}",
+    "delayed": "delayed 15 min"
+  },
+  "nav": {
+    "today": "Today",
+    "watchlist": "Watchlist",
+    "portfolio": "Portfolio",
+    "calendar": "Calendar",
+    "more": "More",
+    "search": "Search stocks",
+    "settings": "Settings"
+  },
+  "freshness": {
+    "fresh": "Data is up to date",
+    "stale": "Data is older than expected",
+    "failed": "The last update failed",
+    "tapForHealth": "Tap for data health"
+  },
+  "score": {
+    "bottom": "Bottom Score",
+    "top": "Top Score",
+    "outOf": "{score}/{max}",
+    "naCount": "{n} n/a",
+    "label": {
+      "normal": "Normal",
+      "watch": "Watch",
+      "strong": "Strong",
+      "extreme": "Extreme"
+    },
+    "labelLong": {
+      "normal": "Normal",
+      "watch": "Watch",
+      "strong": "Strong bottom signals, research it",
+      "extreme": "Extreme"
+    },
+    "topLabel": {
+      "normal": "Normal",
+      "hot": "Getting hot",
+      "trim": "Consider trimming"
+    },
+    "suspect": "Some data looks wrong and is left out",
+    "tapForBreakdown": "Show which signals fired",
+    "pending": "Pending",
+    "error": "No score"
+  },
+  "verdict": {
+    "sale": "Quality on sale",
+    "check": "Check fundamentals",
+    "trap": "Possible value trap",
+    "none": "Not at a bottom"
+  },
+  "signal": {
+    "passed": "Signal fired",
+    "failed": "Signal not fired",
+    "na": "No data",
+    "threshold": "threshold {value}"
+  },
+  "stock": {
+    "fromHigh": "{value} from 52w high",
+    "pending": "Scored after tonight's update",
+    "error": "Could not be scored"
+  },
+  "banner": {
+    "staleTitle": "Scores are from {time}.",
+    "staleBody": "Today's update hasn't run yet.",
+    "suspectTitle": "Some prices look wrong.",
+    "suspectBody": "They're left out of the scores until the next update confirms them.",
+    "offlineTitle": "Offline.",
+    "offlineBody": "Showing data from {time}."
+  },
+  "state": {
+    "emptyWatchlistTitle": "Your watchlist is empty",
+    "emptyWatchlistBody": "Add your first stock and it gets a Bottom Score after tonight's update.",
+    "emptyWatchlistAction": "Add stock",
+    "calmTitle": "Nothing needs your attention today",
+    "calmBody": "Your watchlist is calm.",
+    "errorTitle": "Couldn't load your data",
+    "errorBody": "Your data is safe. This is usually a connection problem.",
+    "partial": "Some details are missing"
+  },
+  "toast": {
+    "removed": "Removed {name}",
+    "saved": "Saved"
+  },
+  "dialog": {
+    "deleteTitle": "Delete {name}?",
+    "deleteBody": "This permanently deletes {name} and its notes. This can't be undone.",
+    "deleteAction": "Delete permanently"
+  },
+  "range": {
+    "now": "now",
+    "min": "low",
+    "max": "high"
+  },
+  "styleguide": {
+    "title": "Style guide",
+    "intro": "Every component in every state. Screens may only use what is shown here."
+  }
+}

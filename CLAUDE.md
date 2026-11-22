@@ -3,6 +3,7 @@
 > Project plan and working instructions for Claude Code.
 > Status: **PLAN COMPLETE (frozen). All questions answered. Next step: Phase 0 setup, then Phase 1.**
 > All owner questions are answered (see section 16). Remaining choices are made by the owner in the app's Settings.
+> **Owner priority (update): UI/UX is the top priority.** Read section 8 before building anything. Every feature starts from its screen design and is only done when it passes the UX checklist (8.12).
 
 ---
 
@@ -21,11 +22,12 @@ It runs in the background in the cloud, so the owner's computer does not need to
 - a high-frequency or day-trading tool.
 
 ### Core principles
+0. **UI/UX first.** The app is only useful if it's clear, calm and fast on a phone. Design the screen before the data pipeline, and treat UX problems as bugs (section 8).
 1. **Simple first.** Get a working v1 with a minimal stack, then add features.
 2. **Free first.** Use free tiers and free hosting. Paid services are optional upgrades only.
 3. **Transparent scoring.** Every score shows *which* signals fired and why. No black box.
 4. **Resilient.** If one data source fails, the rest still works and the failure is logged.
-5. **Mobile-first UI.** The owner checks this mainly on a phone.
+5. **Mobile-first UI.** The owner checks this mainly on a phone, so every screen is designed for 375 px first.
 
 ---
 
@@ -50,6 +52,8 @@ It runs in the background in the cloud, so the owner's computer does not need to
 | Guardrails | ✅ All on, max 4 trades/month |
 | Backups | ✅ Encrypted, to a separate private GitHub repo |
 | AI features | ✅ Built **last** (Phase 5) |
+| UI/UX | ✅ **Top priority.** Design system first, screen specs before code, screenshot checks at 375/768/1280 px, UX checklist per screen (section 8) |
+| UI language & number format | English UI with `nl-BE` number formatting by default; Dutch translation prepared (`web/i18n/`), switchable in Settings |
 | Starting scope | ✅ **Phase 1 only** to start. Then use it before moving on. |
 | Hosting tier | Phase 1 = free (GitHub). Phase 3 = optional VPS (~€4/mo) |
 | Repo visibility | ✅ **PUBLIC repo with code only** (free unlimited Actions minutes). Nothing personal ever goes into the repo. All personal and generated data is in Supabase behind login (see 2.1 Privacy rules). Frontend hosted on Cloudflare Pages, data loaded only after login. |
@@ -97,7 +101,7 @@ The repo is **public** (free unlimited GitHub Actions minutes, easy sharing of c
                      │
             ┌────────▼─────────────────────────────┐
             │ FRONTEND (static, Cloudflare Pages)  │
-            │ index.html + JS, reads JSON          │
+            │ design system + screens (Supabase)   │
             │ TradingView widgets for live charts  │
             └──────────────────────────────────────┘
 ```
@@ -115,11 +119,12 @@ The repo is **public** (free unlimited GitHub Actions minutes, easy sharing of c
 | Scheduler (Phase 1–2) | GitHub Actions cron | Free, no server |
 | Scheduler (Phase 3) | `systemd` service + timer on a VPS | Always-on, real-time |
 | Storage (all phases) | **Supabase free tier** (Postgres + login + row-level security). Jobs write results there with a service key from GitHub Secrets. **No data committed to the repo.** | Public repo, private data |
-| Frontend | Plain HTML + vanilla JS + small CSS (no build step) | Simple, fast, hostable anywhere |
+| Frontend | Plain HTML + vanilla JS (ES modules) + a token-based design system in CSS (no build step) | Simple, fast, consistent UI |
+| UI quality tooling | **Playwright** (screenshots at 375/768/1280 px + e2e tasks), **axe-core** (accessibility), **Lighthouse CI** (performance) | Lets Claude Code see and check its own UI |
 | Charts | TradingView embed widgets (live) + Lightweight Charts lib (custom overlays) | Free, professional |
-| Hosting | **Cloudflare Pages** (or Vercel), since the repo is private | Free |
+| Hosting | **Cloudflare Pages** (or Vercel) | Free |
 | Alerts | Telegram Bot API (recommended) or ntfy.sh | Free push to phone |
-| Tests | `pytest` | Indicator correctness |
+| Tests | `pytest` (logic) + Playwright (UI) | Indicator correctness + UX regressions |
 | Lint/format | `ruff` | One tool |
 
 ---
@@ -264,31 +269,170 @@ Detect past swing lows (bottoms) and swing highs (ceilings) automatically and dr
 
 ---
 
-## 8. Frontend (the app)
+## 8. Frontend & UI/UX (TOP PRIORITY)
+
+> **The UI/UX is the product.** The data and scores only matter if the owner can understand them on a phone in a few seconds. Earlier plans focused on data and logic, and UX was the weak point. From now on, **every feature is designed screen-first**: decide what the owner sees and does, then build the data behind it. A feature is not done until its screens meet the UX checklist in 8.12.
 
 Single static site, mobile-first, dark mode by default. **Login required** (Supabase auth + MFA, optionally Cloudflare Access), see 2.1 and 13.13.2. The site code is public; the data only loads after login.
 
-### 8.1 Pages / views
-1. **Dashboard (home)**
-   - Market strip at top: S&P 500 % today, Nasdaq, VIX, Fear & Greed, last update time.
-   - Watchlist table/cards sorted by Bottom Score (highest first):
-     ticker · name · price · % today · % from 52w high · Bottom Score badge · mini sparkline.
-   - Filter: "Score ≥ X", search box.
-2. **Ticker detail** (`#TICKER`)
-   - **Live TradingView Advanced Chart widget** (weekly by default, user can switch).
-   - Signal checklist: each signal with ✅/❌/n/a, raw value and threshold.
-   - Score history chart (score over time, from stored daily snapshots).
-   - Custom chart (Lightweight Charts) with weekly price + 200-week MA + markers on the dates when the score was ≥ 4. This is useful for backtesting by eye.
-   - Key stats: P/E now vs 5y/10y range (a small range bar), market cap, dividend yield.
-   - Latest 10 news headlines (from Finnhub), with source and time.
-   - Insider transactions (last 6 months).
-   - Next earnings date.
-   - Owner's notes + personal buy level (from the Supabase `watchlist` table).
-3. **Alerts log:** list of all alerts sent, newest first.
-4. **Settings/help:** explains each signal in plain language, plus the disclaimer.
+### 8.0 UX north star
+1. **The 5-second rule.** Opening the app answers "is anything worth my attention today?" within 5 seconds, without scrolling or tapping.
+2. **Answer first, details on demand.** Every screen leads with a plain-language conclusion ("2 stocks at a possible bottom", "Portfolio +0.8% today"). Numbers, signals and charts sit one tap below. This is progressive disclosure: summary → explanation → raw data.
+3. **Explain, don't just show.** No number appears without context: what it is, whether it's good or bad, and compared to what (its own history, the threshold, the benchmark). Colour alone never carries meaning, so always pair it with a word or icon.
+4. **Calm, not a trading terminal.** This is a long-term investing tool. No flashing tickers, no red-everywhere, no urgency. Motion and colour are used sparingly so that the few real signals stand out.
+5. **One primary action per screen.** Each screen has one obvious next step (e.g. "Research NVDA", "Can I buy this?"). Secondary actions are visibly secondary.
+6. **Thumb-first.** Designed for one-handed phone use: primary navigation and actions sit in the bottom half of the screen, and tap targets are ≥ 44×44 px.
+7. **Trust through transparency.** Every score can be tapped to show exactly which signals fired, their values and thresholds, and how fresh the data is.
+8. **Never a dead end.** Every empty, loading and error state explains what's happening and what the owner can do next.
 
-### 8.2 Frontend rules
-- No framework and no build step for v1: `index.html`, `app.js`, `style.css`.
+### 8.1 Design system (build this FIRST, before any screen)
+Create `web/design/tokens.css` (CSS custom properties) and `web/design/components.css`, plus a living style-guide page `web/styleguide.html` that shows every component in every state. All screens use only these tokens and components. **No one-off colours, sizes or spacing in screen code.**
+
+**Tokens**
+- **Colour (dark theme first, light theme second):**
+  - Neutrals: background, surface, raised surface, border, text primary / secondary / muted.
+  - One accent colour for primary actions and focus.
+  - Semantic colours, each paired with an icon and a text label (never colour alone): `positive`, `negative`, `warning`, `info`.
+  - Score scale: grey (normal) → yellow (watch) → orange (strong) → red (extreme) for the Bottom Score, plus a separate, clearly distinct hue family for the Top Score so the two are never confused.
+  - Verdict colours: 🟢 Quality on sale, 🟡 Check fundamentals, 🔴 Possible value trap, ⚪ Not at a bottom.
+  - Chart palette: 6–8 colour-blind-safe categorical colours, validated for contrast on both themes.
+  - All text ≥ WCAG AA contrast (4.5:1 body, 3:1 large text and UI elements).
+- **Typography:** one font family (system UI stack or one web font), **tabular figures for all numbers** (`font-variant-numeric: tabular-nums`), a fixed type scale (e.g. 12 / 14 / 16 / 20 / 24 / 32 px), and minimum 16 px for body text on mobile.
+- **Spacing:** 4 px base scale (4, 8, 12, 16, 24, 32, 48). **Radius:** small / medium / large. **Elevation:** 2–3 shadow levels at most.
+- **Motion:** durations (100 / 200 / 300 ms) and one standard easing. Respect `prefers-reduced-motion`.
+
+**Core components** (each with default, hover, pressed, focus, disabled, loading and error states where relevant)
+- App shell: top bar (title, data-freshness dot, settings), bottom tab bar (mobile) / side rail (desktop).
+- Buttons (primary, secondary, ghost, destructive), icon buttons, segmented control, toggle, slider, text/number inputs with inline validation, select.
+- **Stock card / row:** ticker + name, price + day change, a small sparkline, the score badge(s) and verdict badge. Must work at 375 px with long names (truncate with ellipsis, full name on the detail page).
+- **Score badge:** number + label + colour + icon, e.g. "4/6 Strong". Tappable → score breakdown sheet.
+- **Signal row:** ✅/❌/n/a icon, signal name, current value vs threshold, ⓘ for the glossary.
+- **Stat tile / KPI:** label, big number, change vs previous, tiny trend line, optional context line ("cheaper than 85% of the last 10 years").
+- **Range bar:** shows where a value sits in its own history (e.g. P/E now vs 10y min–max) with the current point marked.
+- **Bottom sheet** (mobile) / **side panel** (desktop) for details, filters and the glossary.
+- Toasts for confirmations, inline banners for warnings (stale data, suspect data), modal dialogs only for destructive or irreversible actions.
+- Empty state, skeleton loader, error state components (see 8.6).
+- Charts: a shared wrapper around Lightweight Charts / Chart.js that applies the tokens, the tooltip style and the touch gestures consistently (13.17).
+
+### 8.2 Navigation & information architecture
+- **Mobile:** a bottom tab bar with at most **5 tabs**: **Today** (dashboard) · **Watchlist** · **Portfolio** · **Calendar** · **More** (alerts log, gap finder, settings, health, glossary). Tabs that belong to a later phase are hidden until that phase is built. Don't show greyed-out "coming soon" tabs.
+- **Desktop/tablet (≥ 900 px):** the same sections in a left side rail, and the detail views open in a two-column layout (list left, detail right).
+- **Deep links** for every view (`#/ticker/NVDA`, `#/portfolio`, `#/canibuy/ASML`) so Telegram alerts open the exact screen.
+- **Back behaviour** works with the browser/phone back gesture, and scroll position is kept when returning to a list.
+- **Global search** (top bar): type a ticker or name to jump to it, or add it to the watchlist.
+- Maximum depth of 3 levels: tab → detail → sheet. Nothing deeper.
+
+### 8.3 Screen-by-screen UX specs
+For every screen Claude Code builds, write a short spec in `docs/screens/<screen>.md` **before coding**, covering its purpose, the main question it answers, its primary action, content hierarchy (what's at the top), states (8.6) and the acceptance criteria. Then build it and check it against the spec with screenshots (8.11).
+
+1. **Today (home)**
+   - **Top:** a one-line summary in plain language, e.g. "2 stocks show bottom signals · market mood: Fear · data updated 22:47".
+   - **"Needs your attention" cards** (max 3–5), sorted by importance: new strong bottom signals, holdings with trim signals, broken thesis rules, earnings in the next 7 days, data problems. Each card says what happened, why it matters, and has one action button.
+   - When there's nothing: a positive empty state ("Nothing needs your attention today. Your watchlist is calm.") and the next upcoming event.
+   - **Market strip:** S&P 500, MSCI World, VIX, Fear & Greed, as compact tiles with a word label ("Fear") as well as the number.
+   - **Portfolio snapshot** (Phase 3+): value, today's change, risk budget used. Tap → Portfolio.
+2. **Watchlist**
+   - List of stock cards sorted by Bottom Score by default, with sort options (score, day change, distance from high, name) in a segmented control and filters (tags, verdict, score ≥ X) in a bottom sheet.
+   - Swipe or long-press on a row for quick actions (open, set buy level, remove). There must always also be a visible button alternative, because gestures aren't discoverable.
+   - Clear "+ Add stock" primary action with search-as-you-type and validation (unknown ticker → helpful message with suggestions).
+3. **Ticker detail** (`#/ticker/NVDA`)
+   - **Header:** name, ticker, price, day change, and the verdict badge with a one-sentence explanation ("Quality on sale: 4 of 6 bottom signals and a quality score of 82").
+   - **Tabs inside the page:** Overview · Chart · Fundamentals · News & events · My notes.
+   - **Overview:** Bottom Score and Top Score cards (with a small score-history chart), each expandable to the signal rows; key stats as stat tiles with range bars; nearest support/resistance in words ("support at $105–110, 6% below").
+   - **Fundamentals:** quality score, moat, valuation vs history, insider transactions (last 6 months).
+   - **News & events:** latest 10 headlines with source and time, next earnings date with countdown, dividends.
+   - **My notes:** journal, buy level, thesis rules.
+   - **Chart:** the 13.17 chart with sensible defaults (weekly, 5Y, support zones and 200-week MA on) and a compact toggle legend. Live TradingView widget as a secondary tab.
+   - **Primary action:** "Can I buy this?" (Phase 3+). Before Phase 3: "Set buy alert".
+4. **Portfolio** (Phase 3) — summary at the top (value, change, P/L, cash), then the risk budget gauge, holdings list, allocation charts. Warnings shown as inline banners with a clear fix ("NVDA is above its 8% cap. Don't add more.").
+5. **"Can I buy this?"** (Phase 3) — a guided flow, not a form dump: (1) pick a stock and amount, (2) see the checklist and sizing result with the limiting rule highlighted, (3) see the staged plan, (4) "Log this trade" after placing it at the broker. Show the result as a big, clear answer first ("Up to €1,250. You have €350 room left."), with the maths behind a "How is this calculated?" expander.
+6. **Calendar** — events grouped by week with the nearest at the top, filter chips (earnings, dividends, macro), and "Subscribe in my phone calendar".
+7. **Settings** — grouped sections (Account & security, Alerts, Risk, Display, Data & backups), each setting with a one-line explanation of its effect and the default value shown. Risk settings show a live preview of what the change means ("With 2% max loss, NVDA's max becomes €1,670").
+8. **First-run onboarding** — a short 3–4 step flow after the first login: (1) what the app does in one sentence, (2) add your first stocks (with suggestions), (3) connect Telegram, (4) optional: import from Bolero. Skippable, and it can be reopened from Settings.
+
+### 8.4 Data presentation rules
+- **Numbers:** formatted with the owner's locale (default `nl-BE`: `€ 1.234,56`, `12,5 %`), a configurable option for English formatting, consistent decimals (prices 2, percentages 1, large values abbreviated: `€ 1,2 mln` / `$3.4B`), and always with a unit or currency.
+- **Changes:** always show the sign and the direction icon (▲ +2,3 % / ▼ −1,8 %), not colour alone.
+- **Time:** relative for recent data ("12 min ago", "yesterday 22:47"), absolute on hover/tap, and always in Europe/Brussels time. Show "delayed 15 min" where applicable.
+- **Data freshness:** a small dot in the top bar (green = fresh, yellow = older than expected, red = failed), tappable for the health page.
+- **Plain-language labels first, jargon second:** "Price far below its 4-year average (200-week MA)" rather than "Close < SMA200W". The glossary ⓘ explains the term.
+- **Context for every metric:** compare it to its own history, to the threshold, or to the benchmark, e.g. "P/E 18 — cheaper than 85% of the last 10 years".
+- **Uncertainty is visible:** "n/a" with a reason ("no insider data for EU stocks"), and suspect data marked ⚠️ with an explanation.
+- **Language:** UI text lives in one file (`web/i18n/en.json`, with `nl.json` prepared) so the owner can switch to Dutch later. No hard-coded strings in components. **[Owner may choose the default language in Settings.]**
+
+### 8.5 Interaction & motion
+- Every tap gives feedback within 100 ms (pressed state, spinner on the button, or optimistic update).
+- Pull-to-refresh on lists (mobile), and a visible refresh button as an alternative.
+- Transitions are short (≤ 300 ms) and purposeful: sheets slide up, details slide in, nothing bounces. Respect `prefers-reduced-motion`.
+- Destructive actions (remove a stock, delete a trade) use undo via a toast ("Removed NVDA · Undo") instead of a confirm dialog where possible. Truly irreversible actions use a confirm dialog that names exactly what will happen.
+- Forms validate inline as you type, keep entered values on error, and use the right mobile keyboard (`inputmode="decimal"` for amounts).
+- Keyboard shortcuts on desktop (`/` search, `g t` Today, `g w` Watchlist, `?` help).
+
+### 8.6 States: every screen, every component
+Claude Code must design and build **all** of these for each screen, not only the happy path:
+| State | What the owner sees |
+|---|---|
+| **Loading** | Skeleton placeholders in the shape of the real content (no blank screen, no spinner-only page). |
+| **Empty** | A friendly explanation + the one action that fills it ("Your watchlist is empty. Add your first stock."). |
+| **Partial data** | The content that is available, with "n/a + reason" for the missing parts. |
+| **Stale data** | A yellow banner: "Scores are from yesterday 22:47. Today's update hasn't run yet." |
+| **Error** | What went wrong in plain words, whether data is still safe, and a "Try again" button. Technical details hidden behind "Details". |
+| **Offline** | Last loaded data stays visible with an "Offline: showing data from 14:32" banner. |
+| **First use** | Onboarding hints (8.3.8), dismissible. |
+
+### 8.7 Accessibility (WCAG 2.1 AA)
+- Contrast as in 8.1. Visible focus rings on everything interactive. Full keyboard navigation on desktop.
+- Semantic HTML (buttons are `<button>`, lists are lists), proper headings, labels on every input, `aria-live` for updating values and toasts.
+- Charts have a text summary ("Price is 12% above its 200-week average, up from 3% a month ago") and a data-table alternative.
+- Respect the phone's text-size setting (use `rem`), and the layout must not break at 200% text size.
+- Never rely on colour, hover or gestures alone.
+
+### 8.8 Performance budget (part of UX)
+- First meaningful screen in **< 2 s on a mid-range phone over 4G**. Interaction response < 100 ms.
+- Load the summary first, then details and charts lazily. Cache the last data locally for instant reopening.
+- Keep JS small: no framework in v1, and CDN libraries only where needed (Lightweight Charts, Chart.js, Supabase JS, SheetJS on the import screen only).
+
+### 8.9 Responsive layout
+- Breakpoints: **375 px** (base, phone), **768 px** (tablet), **1200 px+** (desktop).
+- Phone: single column, bottom tab bar, bottom sheets.
+- Tablet/desktop: side rail, list + detail side by side, wider charts. Content max-width ~1200 px so lines stay readable.
+- Safe areas (`env(safe-area-inset-*)`) for iPhone notches and the home indicator. PWA install with a proper icon and splash colour.
+
+### 8.10 UX writing
+- Short, plain, friendly sentences. Speak to the owner as "you".
+- Lead with the conclusion, then the reason: "Possible bottom: price is 35% below its high and RSI is oversold."
+- Buttons say what they do ("Add stock", "Set buy alert"), not "OK" / "Submit".
+- No hype, no advice language: "worth researching", "suggested max based on your settings", never "buy now".
+- Error messages say what happened and what to do next. Never blame the user.
+
+### 8.11 UX quality process: how Claude Code checks its own work
+For every screen or UI change:
+1. **Spec first:** write/update `docs/screens/<screen>.md` (8.3).
+2. **Build with tokens and components only** (8.1). If a new component is needed, add it to the style guide first.
+3. **Screenshot check:** run the app locally and take screenshots with **Playwright** at **375 px, 768 px and 1280 px**, in dark and light theme, for every state in 8.6 (use fixture data for empty/error/stale/partial). Look at the screenshots and fix anything that is misaligned, cut off, crowded, low-contrast or unclear before calling it done. Save them in `docs/screenshots/` (gitignored if they contain real data; use fixture data only).
+4. **Automated checks:** `axe-core` accessibility scan (0 serious/critical issues), Lighthouse mobile (Performance ≥ 90, Accessibility ≥ 95, Best practices ≥ 95).
+5. **Task walkthrough:** check the screen against the owner's real tasks, for example:
+   - "Is anything worth my attention today?" → answered on Today in ≤ 5 s.
+   - "Why does NVDA have a score of 4?" → ≤ 2 taps from Today.
+   - "Can I buy €2,000 of ASML?" → answer in ≤ 3 taps.
+   - "Add a stock to my watchlist" → ≤ 4 taps, no typing errors possible.
+6. **Show the owner:** after each phase, share the screenshots and ask for feedback before moving on. Owner feedback beats this document.
+
+### 8.12 UX acceptance checklist ("definition of done" for every screen)
+- [ ] Answers its main question at the top, in plain language.
+- [ ] One clear primary action.
+- [ ] Uses only design tokens and style-guide components.
+- [ ] All states from 8.6 are built and screenshotted.
+- [ ] Works and looks good at 375 / 768 / 1280 px, dark and light.
+- [ ] Every number has a unit, a sign where relevant, and context.
+- [ ] Every metric has a glossary ⓘ.
+- [ ] Tap targets ≥ 44 px, primary actions reachable with the thumb.
+- [ ] axe-core: 0 serious issues. Lighthouse mobile thresholds met.
+- [ ] No hard-coded strings (all text in `web/i18n/`).
+- [ ] Task walkthrough (8.11.5) passes.
+
+### 8.13 Frontend technical rules
+- No framework and no build step for v1: `index.html`, `app.js`, plus the design-system CSS (8.1). Split JS into small modules per screen (`web/screens/*.js`) with native ES modules.
 - After login, loads the summary and per-ticker detail from **Supabase** (tables/views `latest_scores`, `ticker_detail`) using the Supabase JS client. Row-level security means only the owner's account can read them.
 - Show a clear "data is X hours old" warning if the latest scores in Supabase are older than 26 hours on a weekday.
 - Must look good at 375px width.
@@ -341,32 +485,43 @@ stock-tracker/
 │   ├── valuation.py           # DCF + reverse DCF
 │   ├── backtest.py            # look-alikes, paper trading, signal report
 │   ├── importers/             # degiro.py, bolero.py, ibkr.py, generic_csv.py
+│   ├── score.py               # builds Bottom Score from indicators + config
+│   ├── intraday.py            # intraday checks
+│   ├── alerts.py              # Telegram / ntfy sending + de-dup state
+│   ├── market_hours.py        # open/closed/holiday logic
+│   ├── storage.py             # read/write Supabase
+│   ├── run_daily.py           # entrypoint: daily job
+│   ├── run_intraday.py        # entrypoint: intraday job
 │   ├── etf_lookthrough.py
 │   └── risk/
 │       ├── volatility.py      # vol, ATR, max drawdown, correlation
 │       ├── sizing.py          # position sizing engine (13.13.4)
 │       ├── portfolio.py       # value, P/L, allocation, VaR
 │       └── stress.py          # 2008 / 2020 / 2022 scenarios
-│   ├── score.py               # builds Bottom Score from indicators + config
-│   ├── intraday.py            # intraday checks
-│   ├── alerts.py              # Telegram / ntfy sending + de-dup state
-│   ├── market_hours.py        # open/closed/holiday logic
-│   ├── storage.py             # read/write JSON (later SQLite)
-│   ├── run_daily.py           # entrypoint: daily job
-│   └── run_intraday.py        # entrypoint: intraday job
 ├── realtime/                  # Phase 3 only
 │   ├── ws_worker.py           # Finnhub WebSocket listener
 │   └── stock-tracker.service  # systemd unit file
 ├── data/                    # GITIGNORED, local dev only. Real data is in Supabase
 ├── web/
-│   ├── index.html
+│   ├── index.html             # app shell (top bar, tab bar, router)
+│   ├── app.js                 # router, data loading, state
+│   ├── styleguide.html        # living style guide: every component in every state (8.1)
+│   ├── design/
+│   │   ├── tokens.css         # colours, type, spacing, radius, motion (dark + light)
+│   │   └── components.css     # buttons, cards, badges, sheets, states…
+│   ├── components/            # small JS components (score badge, stock card, range bar, chart wrapper…)
+│   ├── screens/               # today.js, watchlist.js, ticker.js, portfolio.js, canibuy.js, calendar.js, settings.js, onboarding.js
+│   ├── i18n/                  # en.json, nl.json (all UI text)
 │   ├── glossary.json          # learning-mode texts
-│   ├── app.js
-│   └── style.css
+│   └── fixtures/              # FAKE data for every UI state (empty, stale, error, partial)
+├── docs/
+│   ├── screens/               # one UX spec per screen, written before coding (8.3)
+│   └── screenshots/           # Playwright screenshots (fixture data only)
 ├── tests/
 │   ├── test_indicators.py
 │   ├── test_score.py
-│   └── test_market_hours.py
+│   ├── test_market_hours.py
+│   └── e2e/                   # Playwright: screenshots per breakpoint/state, task walkthroughs, axe-core scan
 └── .github/workflows/
     ├── daily.yml
     ├── intraday.yml
@@ -406,7 +561,7 @@ alert_threshold: 4
   Steps: checkout → setup Python (with pip cache) → install → `python -m src.run_daily` → write results to Supabase. **Nothing is committed.** To keep the scheduled workflow alive on a repo without commits, use a keep-alive action or a monthly empty commit (no data).
 - `intraday.yml`: cron `*/15 13-21 * * 1-5`. The script exits immediately if the market is closed.
 - Secrets in **GitHub → Settings → Secrets**: `FINNHUB_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, (`FMP_API_KEY`).
-- Known limits: scheduled runs can be **delayed 5–30 min** under load. Scheduled workflows are **disabled after 60 days of no repo activity** (the daily commit keeps it alive). Private repos have limited free minutes, and 15-min intraday runs may use them up, so use a public repo or reduce frequency.
+- Known limits: scheduled runs can be **delayed 5–30 min** under load. Scheduled workflows are **disabled after 60 days of no repo activity**, so use a keep-alive action. The repo is public, so Actions minutes are not a concern.
 - Use `concurrency:` groups so two runs never write data at the same time.
 
 ### Phase 3: Always-on VPS (optional, ~€4/mo, e.g. Hetzner CX22, or Oracle Cloud free tier)
@@ -415,7 +570,7 @@ alert_threshold: 4
 - Runs as a **systemd service** with `Restart=always`, logs to `journalctl`.
 - Reconnect logic with exponential backoff. Heartbeat: if no message for X min during market hours, reconnect and send a "worker unhealthy" alert.
 - Daily job can move from GitHub Actions to a systemd timer here too (optional).
-- Pushes updated JSON to the repo (or serves it directly behind a small API, later).
+- Writes results to Supabase (never to the repo).
 
 ### Monitoring / health
 - Daily "I'm alive" summary message (optional): top 3 scores, any errors.
@@ -433,14 +588,20 @@ alert_threshold: 4
 - [ ] Create Supabase project + schema, add your watchlist in the app (or a one-time seed script run locally with a gitignored file).
 
 ### Phase 1: MVP daily score (first build)
+- [ ] **Design system first (8.1):** tokens (dark + light), core components, `styleguide.html` with every state. Share screenshots with the owner for approval before building screens.
+- [ ] **Screen specs (8.3)** for Today, Watchlist, Ticker detail, Settings (basic) and onboarding, written in `docs/screens/` and shown to the owner.
+- [ ] App shell: bottom tab bar / side rail, routing with deep links, data-freshness dot, global search.
 - [ ] `fetch.py` with yfinance daily/weekly + VIX.
 - [ ] `indicators.py`: SMA, RSI (Wilder), drawdown, percentile, plus tests.
 - [ ] `score.py` with T1, T2, T3, S1 (valuation + insiders come next).
 - [ ] `run_daily.py` writes the scores + per-ticker detail to Supabase (`latest_scores`, `ticker_detail`).
-- [ ] Minimal `index.html` dashboard + TradingView chart on detail view.
+- [ ] Screens: **Today**, **Watchlist** (add/remove/sort/filter), **Ticker detail** (Overview + Chart tabs with the score breakdown), basic **Settings**, short **onboarding**. All states from 8.6 with fixture data.
+- [ ] UX QA (8.11): Playwright screenshots at 375/768/1280 px in both themes, axe-core, Lighthouse mobile, task walkthroughs. Fix issues before calling Phase 1 done.
 - [ ] `daily.yml` workflow + Cloudflare Pages deploy. Lock the site with **Cloudflare Access** (free, email login) so only the owner can open it.
 - [ ] Data sanity checks + health page (13.14 E).
-- **Done when:** the phone shows the watchlist with scores, updated automatically every weekday night.
+- **Done when:** the phone shows the watchlist with scores, updated automatically every weekday night, **every Phase 1 screen passes the UX checklist (8.12)**, and the owner has approved the screenshots.
+
+> **For every phase from here on:** each new feature starts with a screen spec (8.3), uses only design-system components (8.1), and passes the UX checklist (8.12) with screenshots before it counts as done. Prefer improving an existing screen over adding a new one.
 
 ### Phase 2: Fundamentals, alerts, intraday
 - [ ] Valuation-vs-history (V1) and insider buying (V2).
@@ -515,6 +676,14 @@ alert_threshold: 4
 - Commit messages: short, imperative (`Add weekly RSI signal`).
 - When unsure about a financial definition, **ask the owner** rather than guess.
 - Every new metric gets a `web/glossary.json` entry (learning mode) in the same commit.
+- **UX rules (top priority, see section 8):**
+  - Read section 8 before any frontend work. Write or update the screen spec in `docs/screens/` first.
+  - Use only design tokens and style-guide components. A new component goes into `styleguide.html` before it's used on a screen.
+  - Build every state (loading, empty, partial, stale, error, offline), not just the happy path.
+  - **Look at your own output:** after every UI change, take Playwright screenshots at 375/768/1280 px (dark + light) and review them yourself. Fix what looks off before reporting done. Don't claim a screen works without having seen it.
+  - All UI text in `web/i18n/`, all numbers through one shared formatter (8.4).
+  - When a UX choice isn't covered here, pick the simplest, calmest option for a phone user and note it in the screen spec. Ask the owner when it changes how a main screen works.
+  - Treat UX issues (confusing labels, cramped layout, missing context, slow screens) as bugs with the same priority as wrong numbers.
 - **Scope rule:** the plan is frozen. Build phases in order, and don't start a later phase's features until the owner says the earlier phase works well in daily use.
 
 ### Useful commands
@@ -525,6 +694,8 @@ python -m src.run_intraday --force  # run intraday even if market closed (testin
 pytest -q
 ruff check . && ruff format .
 python -m http.server -d web 8000   # preview frontend locally
+npx playwright test tests/e2e      # screenshots + UX task walkthroughs + axe-core
+npx lighthouse http://localhost:8000 --view   # mobile performance + accessibility check (mobile is the default)
 ```
 
 ---

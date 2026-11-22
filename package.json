@@ -1,0 +1,15 @@
+{
+  "name": "stock-tracker-ui-tests",
+  "private": true,
+  "type": "module",
+  "description": "UI quality tooling only (CLAUDE.md 8.11). The app itself has no build step.",
+  "scripts": {
+    "serve": "python3 -m http.server -d web 8000",
+    "test:ui": "playwright test",
+    "screenshots": "playwright test tests/e2e/styleguide.spec.js"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.56.1"
+  }
+}

@@ -1,0 +1,216 @@
+/* ==========================================================================
+   Design tokens (CLAUDE.md 8.1)
+   Every colour, size, space, radius, shadow and duration used by the app lives
+   here. Screens and components may ONLY use these custom properties.
+   Dark theme is the default; light theme via <html data-theme="light">.
+   ========================================================================== */
+
+:root {
+  /* ---------- Typography ---------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* type scale 12 / 14 / 16 / 20 / 24 / 32 px (in rem so the phone's text size is respected) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.45;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ---------- Spacing (4 px base) ---------- */
+  --space-1: 0.25rem;  /* 4 */
+  --space-2: 0.5rem;   /* 8 */
+  --space-3: 0.75rem;  /* 12 */
+  --space-4: 1rem;     /* 16 */
+  --space-6: 1.5rem;   /* 24 */
+  --space-8: 2rem;     /* 32 */
+  --space-12: 3rem;    /* 48 */
+
+  /* ---------- Radius ---------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* ---------- Sizes ---------- */
+  --tap-min: 44px;           /* minimum tap target (8.0.6) */
+  --topbar-h: 56px;
+  --tabbar-h: 64px;
+  --rail-w: 220px;
+  --content-max: 1200px;
+  --gutter: var(--space-4);
+
+  /* ---------- Motion ---------- */
+  --dur-fast: 100ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ---------- Z layers ---------- */
+  --z-bar: 20;
+  --z-sheet: 40;
+  --z-toast: 60;
+}
+
+/* ==========================================================================
+   Dark theme (default)
+   ========================================================================== */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* neutrals */
+  --color-bg: #0f1115;
+  --color-surface: #171a21;
+  --color-raised: #1f232c;
+  --color-overlay: rgb(5 7 10 / 0.6);
+  --color-border: #2c313c;
+  --color-border-strong: #3d4452;
+  --color-text: #e8eaee;
+  --color-text-2: #b6bcc8;
+  --color-muted: #8f96a3;
+
+  /* accent (primary actions, focus) */
+  --color-accent: #7aaefc;
+  --color-accent-hover: #93bdfd;
+  --color-on-accent: #0b1220;
+  --color-focus: #9cc3ff;
+
+  /* semantic — always paired with an icon + word */
+  --color-positive: #4cc08a;
+  --color-negative: #f2807a;
+  --color-warning: #e6b04a;
+  --color-info: #7aaefc;
+  --color-positive-bg: rgb(76 192 138 / 0.14);
+  --color-negative-bg: rgb(242 128 122 / 0.14);
+  --color-warning-bg: rgb(230 176 74 / 0.14);
+  --color-info-bg: rgb(122 174 252 / 0.14);
+
+  /* Bottom Score scale: grey → yellow → orange → red */
+  --score-normal: #a3aab6;
+  --score-watch: #ecc94b;
+  --score-strong: #f59a55;
+  --score-extreme: #f57a74;
+  --score-normal-bg: rgb(163 170 182 / 0.14);
+  --score-watch-bg: rgb(236 201 75 / 0.15);
+  --score-strong-bg: rgb(245 154 85 / 0.16);
+  --score-extreme-bg: rgb(245 122 116 / 0.17);
+
+  /* Top Score scale: a separate violet/magenta family so it is never confused */
+  --top-normal: #a3aab6;
+  --top-hot: #b9a2f5;
+  --top-trim: #e48ee6;
+  --top-normal-bg: rgb(163 170 182 / 0.14);
+  --top-hot-bg: rgb(185 162 245 / 0.16);
+  --top-trim-bg: rgb(228 142 230 / 0.16);
+
+  /* Verdict */
+  --verdict-sale: var(--color-positive);
+  --verdict-check: var(--color-warning);
+  --verdict-trap: var(--color-negative);
+  --verdict-none: var(--color-muted);
+
+  /* Chart palette — Okabe-Ito based, colour-blind safe, tuned for dark */
+  --chart-1: #56b4e9;
+  --chart-2: #e69f00;
+  --chart-3: #2bb38a;
+  --chart-4: #f0e442;
+  --chart-5: #d48ab8;
+  --chart-6: #e8743b;
+  --chart-7: #7ea6e0;
+  --chart-8: #b0b0b0;
+  --chart-grid: #232833;
+  --chart-axis: #8f96a3;
+
+  /* skeleton shimmer */
+  --skeleton-base: #1f232c;
+  --skeleton-shine: #282d38;
+
+  /* elevation */
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 4px 14px rgb(0 0 0 / 0.45);
+  --shadow-3: 0 12px 32px rgb(0 0 0 / 0.55);
+}
+
+/* ==========================================================================
+   Light theme
+   ========================================================================== */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-raised: #ffffff;
+  --color-overlay: rgb(15 18 24 / 0.4);
+  --color-border: #dfe3e9;
+  --color-border-strong: #c3c9d2;
+  --color-text: #15181d;
+  --color-text-2: #3d4450;
+  --color-muted: #5c6470;
+
+  --color-accent: #2357c6;
+  --color-accent-hover: #1c49a8;
+  --color-on-accent: #ffffff;
+  --color-focus: #2357c6;
+
+  --color-positive: #177245;
+  --color-negative: #bf2f28;
+  --color-warning: #8a5d00;
+  --color-info: #2357c6;
+  --color-positive-bg: rgb(23 114 69 / 0.1);
+  --color-negative-bg: rgb(191 47 40 / 0.09);
+  --color-warning-bg: rgb(176 120 0 / 0.12);
+  --color-info-bg: rgb(35 87 198 / 0.09);
+
+  --score-normal: #555d69;
+  --score-watch: #7d6200;
+  --score-strong: #a84b12;
+  --score-extreme: #b52a24;
+  --score-normal-bg: rgb(85 93 105 / 0.1);
+  --score-watch-bg: rgb(214 170 0 / 0.16);
+  --score-strong-bg: rgb(230 120 40 / 0.14);
+  --score-extreme-bg: rgb(210 50 45 / 0.11);
+
+  --top-normal: #555d69;
+  --top-hot: #5f3fc0;
+  --top-trim: #942a8f;
+  --top-normal-bg: rgb(85 93 105 / 0.1);
+  --top-hot-bg: rgb(95 63 192 / 0.1);
+  --top-trim-bg: rgb(148 42 143 / 0.1);
+
+  --chart-1: #0072b2;
+  --chart-2: #b97f00;
+  --chart-3: #00805e;
+  --chart-4: #9c9300;
+  --chart-5: #b04f8a;
+  --chart-6: #c4531c;
+  --chart-7: #4d6fa8;
+  --chart-8: #6e6e6e;
+  --chart-grid: #e8ebef;
+  --chart-axis: #5c6470;
+
+  --skeleton-base: #eceef2;
+  --skeleton-shine: #f6f7f9;
+
+  --shadow-1: 0 1px 2px rgb(16 24 40 / 0.08);
+  --shadow-2: 0 4px 14px rgb(16 24 40 / 0.1);
+  --shadow-3: 0 12px 32px rgb(16 24 40 / 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}

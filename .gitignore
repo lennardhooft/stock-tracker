@@ -23,3 +23,7 @@ venv/
 .idea/
 .vscode/
 web/demo/
+node_modules/
+test-results/
+playwright-report/
+docs/screenshots/*.png
