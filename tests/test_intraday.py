@@ -79,3 +79,8 @@ def test_day_stats_from_frames():
     assert s["price"] == 104.0 and s["prev_close"] == 98.0 and s["vol_today"] == 10.0
     assert s["avg_vol20"] == pytest.approx(30.0)  # mean of the 5 completed days
     assert it.day_stats(daily, intra.iloc[0:0], date(2026, 12, 1)) is None
+
+
+def test_volume_title_keeps_ticker_dots():
+    a = it.evaluate_intraday([row(symbol="IWDA.AS", currency="EUR", vol_today=45e6)], CFG, NOW)
+    assert a[0].title.startswith("📊 IWDA.AS volume 2,2× normal")

@@ -100,8 +100,9 @@ def run(store: Store, force: bool = False) -> int:
             local_today,
         )
         if s:
-            s["elapsed"] = market_hours.elapsed_fraction(mkt, now) if not force else 0.5
-            s["minutes_open"] = market_hours.minutes_open(mkt, now) if not force else 120
+            # --force replays the last full session, so compare against a full day's volume
+            s["elapsed"] = 1.0 if force else market_hours.elapsed_fraction(mkt, now)
+            s["minutes_open"] = 390 if force else market_hours.minutes_open(mkt, now)
             s["news"] = news_for(sym, local_today.isoformat())
             stats[sym] = s
 
@@ -127,11 +128,15 @@ def run(store: Store, force: bool = False) -> int:
     can_send = alerts.telegram_configured()
     log_rows, state_rows, sent, failed = [], [], 0, 0
     for a in todo:
-        ok = can_send and alerts.send_telegram(alerts.format_message(a))
+        text = alerts.format_message(a)
+        if force:  # a test run must never look like a real alert
+            text = "🧪 TEST (not a real alert) · " + text
+            a.title = "🧪 TEST · " + a.title
+        ok = can_send and alerts.send_telegram(text)
         sent += int(ok)
         failed += int(not ok)
         log_rows.append(alerts.to_log_row(a, ok, now.isoformat()))
-        if ok:
+        if ok and not force:  # test runs never block real alerts later the same day
             state_rows.append(
                 {"user_id": a.user_id, "symbol": a.symbol, "kind": a.kind, "day": day}
             )

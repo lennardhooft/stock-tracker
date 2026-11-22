@@ -11,7 +11,7 @@ from typing import Any
 
 import pandas as pd
 
-from src.alerts import Alert, link, money, pct, score_line
+from src.alerts import Alert, link, money, num, pct, score_line
 
 
 def day_stats(
@@ -110,7 +110,7 @@ def evaluate_intraday(
                         r["user_id"],
                         sym,
                         "volume_spike",
-                        f"📊 {sym} volume {ratio:.1f}× normal so far".replace(".", ","),
+                        f"📊 {sym} volume {num(ratio, 1)}× normal so far",
                         f"Price {money(price, cur)} · {now_txt}\n{score_line(r)}",
                         url,
                         extreme,
