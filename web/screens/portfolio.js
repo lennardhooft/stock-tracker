@@ -6,6 +6,7 @@ import * as fmt from "../lib/format.js";
 import { settingsFor, RISK_DEFAULTS } from "../lib/risk-defaults.js";
 import { valuePortfolio, warnings, typeCap, BUCKET } from "../lib/portfolio.js";
 import { sizeFor, stagedPlan, check } from "../lib/sizing.js";
+import { correlatedGroups, maxCorrelation, stressTest, concentration, marketOpenNow, withLive, STRESS_KEYS } from "../lib/riskview.js";
 import { icon } from "../components/icons.js";
 import { verdictBadge } from "../components/badges.js";
 import { allocBar, budgetBar, holdingCard, statTile } from "../components/cards.js";
@@ -33,7 +34,7 @@ export function riskSettings(ctx) {
 }
 
 const fx = (ctx) => ctx.market?.fx?.rates || {};
-const portfolioOf = (ctx) => valuePortfolio(ctx.pf?.transactions || [], ctx.rows, ctx.pf?.settings || {}, fx(ctx));
+const portfolioOf = (ctx) => valuePortfolio(ctx.pf?.transactions || [], withLive(ctx.rows, ctx.live), ctx.pf?.settings || {}, fx(ctx));
 
 /** Gate: two-step login on + portfolio data loaded. Returns html for the blocking state, or "". */
 function gate(ctx) {
@@ -79,6 +80,7 @@ export function renderPortfolio(ctx, main) {
     <div class="summary-block" style="margin-bottom:var(--space-3)">
       <p class="summary">${t("pf.summary", { value: eur(pf.total) })} <span class="chg" data-dir="${pf.dayChange >= 0 ? "up" : "down"}">${pf.dayChange >= 0 ? "▲" : "▼"} ${signedPct(pf.dayChangePct)} ${t("pf.today")}</span></p>
       <p class="summary__meta">${t("pf.plLine", { pl: signedEur(pf.pl), pct: signedPct(pf.plPct) })} · ${t("pf.cashLine", { cash: eur(pf.cash), pct: fmt.pct(pf.total ? (pf.cash / pf.total) * 100 : 0, 0) })}</p>
+      <p class="xs muted" id="live-state" aria-live="polite">${ctx.liveAt ? t("pf.live", { time: fmt.relativeTime(ctx.liveAt) }) : t("pf.closing")}</p>
     </div>
     <div class="stack" style="gap:var(--space-2);margin-bottom:var(--space-3)">${warn}</div>
     <a class="btn btn--primary btn--block" href="#/canibuy" style="margin-bottom:var(--space-2)">${icon("wallet")}${t("cib.title")}</a>
@@ -97,7 +99,10 @@ export function renderPortfolio(ctx, main) {
       <a class="btn btn--ghost" href="#/more/risk" style="margin-top:var(--space-1)">${t("pf.changeRules")}${icon("chevron")}</a>
     </section>
 
-    <h2 class="section-title">${t("pf.holdings", { n: pf.holdings.length })}</h2>
+    ${riskCard(ctx, pf)}
+
+    <div class="cluster" style="justify-content:space-between;align-items:baseline"><h2 class="section-title">${t("pf.holdings", { n: pf.holdings.length })}</h2>
+      <a class="btn btn--ghost" href="#/import">${t("imp.link")}${icon("chevron")}</a></div>
     <ul class="list">${pf.holdings.map((h) => {
       const cap = typeCap(h.type, h.row?.quality?.score, s);
       return html`<li>${holdingCard(h, {
@@ -120,7 +125,55 @@ export function renderPortfolio(ctx, main) {
     if (a === "add-trade") openTradeSheet(ctx);
     if (a === "cash") openCashSheet(ctx);
   });
+  startLive(ctx, main, pf);
   return { title: t("nav.portfolio") };
+}
+
+/* ------------------------------------------------------------------ live prices (3B) */
+let liveTimer = null;
+function startLive(ctx, main, pf) {
+  clearTimeout(liveTimer);
+  if (!ctx.api.quotes || !pf.holdings.length) return;
+  const due = !ctx.liveAt || Date.now() - new Date(ctx.liveAt).getTime() > 55e3;
+  const tick = async () => {
+    if (!main.isConnected) return; // left the page: stop polling
+    if (marketOpenNow() || ctx.api.demo) {
+      try {
+        const q = await ctx.api.quotes(pf.holdings.map((h) => h.symbol));
+        if (Object.keys(q).length && main.isConnected) { ctx.live = { ...(ctx.live || {}), ...q }; ctx.liveAt = new Date().toISOString(); ctx.render(); return; }
+      } catch { /* keep the closing prices; try again next minute */ }
+    }
+    liveTimer = setTimeout(tick, 60e3);
+  };
+  liveTimer = setTimeout(tick, due ? 300 : 60e3);
+}
+
+/* ------------------------------------------------------------------ risk card (3B, 13.11) */
+function riskCard(ctx, pf) {
+  if (!pf.holdings.length) return "";
+  const syms = pf.holdings.map((h) => h.symbol);
+  const { groups } = correlatedGroups(syms, ctx.riskSnapshot);
+  const st = stressTest(pf);
+  const conc = concentration(pf);
+  const crisis = (k) => {
+    const x = st[k];
+    const note = [x.proxies.length ? t("risk3.proxyNote", { list: x.proxies.join(", ") }) : "", x.missing.length ? t("risk3.missingNote", { list: x.missing.join(", ") }) : ""].filter(Boolean).join(" ");
+    return html`<li class="signal" data-state="na">
+      <span class="signal__icon" style="color:var(--color-negative)">${icon("trendDown")}</span>
+      <span class="signal__name num">${t(`risk3.crisis.${k}`)}: ${x.loss <= 0 ? "−" : "+"}${eur(Math.abs(x.loss))} (${signedPct(x.pct)})</span>
+      <span class="signal__detail">${t(`risk3.window.${k}`)}${note ? ` · ${note}` : ""}</span></li>`;
+  };
+  return html`<section class="card" style="margin-bottom:var(--space-4)" id="risk-card" aria-labelledby="risk3-h">
+    <div class="cluster" style="justify-content:space-between"><h2 class="card__title" id="risk3-h" style="margin:0">${t("risk3.title")}</h2>${ctx.glossaryButton("stress_test", t("risk3.title"))}</div>
+    <h3 class="small text-2" style="margin:var(--space-3) 0 var(--space-1)">${t("risk3.togetherTitle")}</h3>
+    ${groups.length ? groups.map((g) => banner({ tone: g.length >= 3 ? "warning" : "info", title: t(g.length >= 3 ? "risk3.togetherWarn" : "risk3.togetherPair", { list: g.join(", ") }), body: t("risk3.togetherBody") }))
+      : html`<p class="small">${ctx.riskSnapshot ? t("risk3.togetherNone") : t("risk3.togetherPending")}</p>`}
+    <h3 class="small text-2" style="margin:var(--space-3) 0 var(--space-1)">${t("risk3.stressTitle")}</h3>
+    <ul class="signals">${STRESS_KEYS.map(crisis)}</ul>
+    <p class="xs muted">${t("risk3.stressNote")}</p>
+    <h3 class="small text-2" style="margin:var(--space-3) 0 var(--space-1)">${t("risk3.concTitle")}</h3>
+    <p class="small num">${t("risk3.conc", { symbol: conc.largest?.symbol || "", pct: fmt.pct(conc.largest?.weight || 0, 1), top3: fmt.pct(conc.top3, 0) })}</p>
+  </section>`;
 }
 
 async function refreshPortfolio(ctx, { watchlistChanged = false } = {}) {
@@ -286,6 +339,8 @@ export function renderCanIBuy(ctx, main, symbol) {
   const days = row.next_earnings?.date ? Math.round((new Date(`${row.next_earnings.date}T12:00:00Z`) - Date.now()) / 864e5) : null;
   const cand = { symbol: row.symbol, type, vol: row.risk?.vol, max_dd: row.risk?.max_dd, quality: row.quality?.score ?? null,
     verdict: row.verdict, sector: row.risk?.sector, region: row.risk?.region, earnings_in_days: days };
+  const corr = maxCorrelation(row.symbol, pf.holdings.map((h) => h.symbol), ctx.riskSnapshot);
+  cand.correlated = corr != null && corr > 0.8;
   const res = sizeFor(pf, cand, s);
   const c = res.calc;
   const ruleName = (r) => t(`cib.rule.${r.key}`, { ...r.vars, pct: fmt.pct(r.vars.pct, r.vars.pct < 10 ? 1 : 0), type: r.vars.type ? t(`pf.type.${r.vars.type}`) : "" });
@@ -323,7 +378,7 @@ export function renderCanIBuy(ctx, main, symbol) {
       <p class="small num" style="margin-top:var(--space-2)">${t("cib.how1", { total: eur(res.total), pct: fmt.pct(s.risk_per_position, 1), loss: eur(c.maxLoss) })}</p>
       <p class="small num">${t("cib.how2", { k: fmt.num(c.k, 1), vol: fmt.pct(c.vol * 100, 0), bad: fmt.pct(c.bad * 100, 0) })}</p>
       <p class="small num">${t("cib.how3", { loss: eur(c.maxLoss), bad: fmt.pct(c.bad * 100, 0), base: eur(c.base) })}</p>
-      ${c.qMult !== 1 || c.vMult !== 1 ? html`<p class="small num">${t("cib.how4", { q: fmt.num(c.qMult, 2), v: fmt.num(c.vMult, 2), amount: eur(c.riskAmount) })}</p>` : ""}
+      ${c.qMult !== 1 || c.vMult !== 1 || c.cMult !== 1 ? html`<p class="small num">${t("cib.how4", { q: fmt.num(c.qMult, 2), v: fmt.num(c.vMult, 2), amount: eur(c.riskAmount) })}${c.cMult !== 1 ? ` ${t("cib.how5", { c: fmt.num(c.cMult, 2), corr: fmt.num(corr, 2) })}` : ""}</p>` : ""}
       <p class="small text-2">${t("cib.howLast")}</p>
     </details>
 

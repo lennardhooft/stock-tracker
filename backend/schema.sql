@@ -336,3 +336,19 @@ begin
 end $$;
 -- the settings log is append-only for the owner
 revoke update, delete on public.risk_settings_log from authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Phase 3B: correlation matrix of the owner's watchlist (written by the daily job)
+-- ---------------------------------------------------------------------------
+create table if not exists public.risk_snapshot (
+  user_id     uuid primary key references auth.users (id) on delete cascade,
+  data        jsonb not null,   -- {symbols: [...], corr: [[...]], days}
+  updated_at  timestamptz not null default now()
+);
+alter table public.risk_snapshot enable row level security;
+drop policy if exists risk_snapshot_owner_read on public.risk_snapshot;
+create policy risk_snapshot_owner_read on public.risk_snapshot
+  for select to authenticated using (user_id = (select auth.uid()));
+grant select on public.risk_snapshot to authenticated;
+grant all on public.risk_snapshot to service_role;
+revoke all on public.risk_snapshot from anon;

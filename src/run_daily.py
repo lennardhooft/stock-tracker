@@ -21,7 +21,7 @@ import yaml
 from src import alerts, data_checks, events, fetch, fundamentals, levels, log, quality, top_score
 from src import indicators as ind
 from src import score as sc
-from src.risk import volatility
+from src.risk import stress, volatility
 from src.storage import LocalStore, Store, SupabaseStore
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,6 +75,7 @@ def process_symbol(
     cfg: dict[str, Any],
     previously_suspect: set[str],
     vix_hist: pd.Series | None = None,
+    proxies: dict[str, dict[str, float | None]] | None = None,
 ) -> dict[str, Any]:
     """Everything the UI needs for one ticker. Never raises; returns an `error` on failure."""
     raw = fetch.get_daily_history(symbol)
@@ -108,12 +109,17 @@ def process_symbol(
     total = sc.build_score(signals, cfg)
 
     last, prev = float(close.iloc[-1]), float(close.iloc[-2])
+    _close_for_corr = close
     # Phase 2E: Quality Score + verdict (13.1) and Top Score (13.14 A)
     qual = quality.collect(symbol, last * divisor, cfg.get("quality"))
     top = top_score.compute_top(
         close, market, cfg, levels=zones, fundamentals=fund, market_cap=qual.get("market_cap")
     )
     profile = qual.pop("profile", None)
+    risk = volatility.risk_profile(ohlc, profile)
+    risk["stress"] = stress.stress_moves(
+        stress.fetch_weekly_since_2007(symbol), proxies or {}, risk["suggested_type"]
+    )
     fund["quality"] = qual
     # Phase 2G: earnings reactions, next earnings (Yahoo fallback), next dividend (13.1, 13.3)
     ev = events.collect(symbol, close, date.today(), currency, fundamentals.is_us(symbol))
@@ -150,7 +156,7 @@ def process_symbol(
         "n_na": total["n_na"],
         "label": total["label"]["key"],
         "signals": signals,
-        "risk": volatility.risk_profile(ohlc, profile),  # Phase 3A: for the sizing engine
+        "risk": risk,  # Phase 3A/3B: sizing engine + stress test
         "quality": quality.summary(qual),
         "top": top,
         "verdict": quality.verdict(total["score"], qual, float(cfg.get("alert_threshold", 4))),
@@ -173,6 +179,7 @@ def process_symbol(
         "next_earnings": fund.get("earnings"),
         "next_dividend": fund.get("dividend"),
         "rows": len(raw),
+        "_close": _close_for_corr,  # in memory only (correlation), never written
     }
 
 
@@ -289,12 +296,19 @@ def run(store: Store) -> int:
         "ok": vix_hist is not None,
         "rows": 0 if vix_hist is None else len(vix_hist),
     }
+    proxies = stress.proxy_moves()  # S&P 500 / AGG crisis moves for assets without that history
+    sources["yahoo_stress_proxies"] = {
+        "ok": all(v.get("gfc") is not None for v in proxies.values()),
+        "rows": len(proxies),
+    }
     previous = store.load_previous_suspects()
     prev_scores = store.load_previous_scores()  # before today's scores overwrite them
 
     results: dict[str, dict[str, Any]] = {}
     for i, symbol in enumerate(symbols, 1):
-        results[symbol] = process_symbol(symbol, market, cfg, previous.get(symbol, set()), vix_hist)
+        results[symbol] = process_symbol(
+            symbol, market, cfg, previous.get(symbol, set()), vix_hist, proxies
+        )
         log.private(f"{symbol}: {results[symbol].get('score', results[symbol].get('error'))}")
         if i % 10 == 0:
             log.info(f"processed {i}/{len(symbols)}")
@@ -370,8 +384,19 @@ def run(store: Store) -> int:
             }
         )
 
+    # Phase 3B: correlation between each owner's watchlist tickers (1 year of daily returns)
+    corr_rows = []
+    for uid in sorted({w["user_id"] for w in watchlist}):
+        closes = {
+            w["symbol"].upper(): results[w["symbol"].upper()]["_close"]
+            for w in watchlist
+            if w["user_id"] == uid and "_close" in results[w["symbol"].upper()]
+        }
+        corr_rows.append({"user_id": uid, "data": stress.correlation(closes), "updated_at": now})
+
     writes_ok = all(
         [
+            store.upsert("risk_snapshot", corr_rows, "user_id"),
             store.upsert(
                 "market_snapshot",
                 [

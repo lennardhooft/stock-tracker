@@ -405,7 +405,8 @@
     "topShort": "Top {n}",
     "notYet": "nog niet",
     "afterBottom": "Na dit bodemsignaal ({date}): 3 maanden {m3} · 6 maanden {m6} · 12 maanden {m12}.",
-    "afterTop": "Na dit oververhittingssignaal ({date}): 3 maanden {m3} · 6 maanden {m6} · 12 maanden {m12}."
+    "afterTop": "Na dit oververhittingssignaal ({date}): 3 maanden {m3} · 6 maanden {m6} · 12 maanden {m12}.",
+    "avgCost": "je gem."
   },
   "more": {
     "settings": "Instellingen",
@@ -925,7 +926,9 @@
     "monthly": "Maandelijkse inleg (EUR, optioneel)",
     "monthlyHint": "Later gebruikt voor gespreide aankoopvoorstellen.",
     "cashInvalid": "Gebruik positieve getallen, bv. 1.250,50.",
-    "spread": "Gespreid (brede ETF's)"
+    "spread": "Gespreid (brede ETF's)",
+    "live": "live koersen · bijgewerkt {time}",
+    "closing": "slotkoersen van de laatste update"
   },
   "trade": {
     "kind": "Soort",
@@ -1010,7 +1013,8 @@
     "disclaimer": "Voorgesteld maximum volgens je eigen instellingen. Geen financieel advies.",
     "noRoomBig": "Geen ruimte om bij te kopen",
     "aboveCap": "Je bezit {owned}: al boven het maximum van {cap} volgens deze regel. Koop er best niet meer bij.",
-    "ruleFull": "Deze regel heeft nu geen ruimte meer voor extra geld."
+    "ruleFull": "Deze regel heeft nu geen ruimte meer voor extra geld.",
+    "how5": "× {c} omdat het meebeweegt met wat je bezit (correlatie {corr})."
   },
   "risk": {
     "title": "Risicoregels",
@@ -1076,5 +1080,61 @@
     "invalid": "{field}: gebruik een getal tussen {min} en {max}.",
     "splitInvalid": "Kern minstens + satelliet hoogstens kan niet meer dan 100 % zijn.",
     "logNote": "Elke wijziging wordt met de datum bewaard, zodat de jaaroverzicht toont wanneer je regels wijzigden."
+  },
+  "imp": {
+    "title": "Importeren uit Bolero",
+    "link": "Importeren uit Bolero",
+    "lead": "Haal je Bolero-posities binnen zonder te typen. Elke positie wordt een beginpositie met je gemiddelde aankoopprijs.",
+    "howTitle": "Hoe exporteer ik uit Bolero?",
+    "how1": "In Bolero: Portefeuille → Posities.",
+    "how2": "Zet de kolom ISIN aan (kolominstellingen): zo vindt de app betrouwbaar de juiste beurs.",
+    "how3": "Tik op het Excel-icoon en kies dat bestand hier.",
+    "choose": "Kies het Excel-bestand",
+    "privacy": "Het bestand wordt op dit toestel gelezen en nooit opgeladen of bewaard. Enkel ISIN, naam en markt worden gebruikt om de tickers te vinden; enkel ticker, aantal, gemiddelde aankoopprijs, munt en soort worden bewaard.",
+    "previewTitle": "Controleer {n} posities",
+    "noIsinTitle": "Geen ISIN-kolom in dit bestand",
+    "noIsinBody": "Tickers worden geraden uit Bolero's korte namen, controleer ze dus elk. Exporteer opnieuw met de ISIN-kolom voor betere resultaten.",
+    "lookupFailed": "De tickers konden niet opgezocht worden. Typ ze zelf in.",
+    "include": "{name} importeren",
+    "ticker": "Ticker (Yahoo)",
+    "suggested": "Voorstel: controleer of het de juiste beurs is.",
+    "checkTicker": "Controleer de ticker: niets gevonden. Typ hem om deze rij mee te nemen.",
+    "cash": "Zet je cash in EUR op {amount}",
+    "cashHint": "Uit de rij Cash in het bestand.",
+    "replace": "Mijn vorige import vervangen",
+    "replaceHint": "Verwijdert eerst de posities van je vorige import, zodat niets dubbel telt. Zelf toegevoegde transacties blijven.",
+    "go": "Importeren",
+    "done": "{n} posities geïmporteerd",
+    "badTicker": "{name}: typ een geldige ticker of vink de rij uit.",
+    "noPrice": "{name}: geen gemiddelde aankoopprijs in het bestand.",
+    "nothing": "Niets geselecteerd om te importeren.",
+    "notBolero": "Dit is geen Bolero-positieoverzicht. Exporteer het via Portefeuille → Posities.",
+    "emptyFile": "Dit bestand bevat geen posities.",
+    "readFailed": "Dit bestand kon niet gelezen worden."
+  },
+  "risk3": {
+    "title": "Risicocheck",
+    "togetherTitle": "Bewegen samen",
+    "togetherWarn": "{list} bewegen samen (correlatie boven 0,8): een slechte dag raakt ze allemaal.",
+    "togetherPair": "{list} bewegen samen (correlatie boven 0,8).",
+    "togetherBody": "Op basis van 1 jaar dagrendementen. Kan ik dit kopen? verlaagt het bedrag voor aandelen die meebewegen met wat je bezit.",
+    "togetherNone": "Geen van je posities beweegt sterk samen. Goede spreiding.",
+    "togetherPending": "Berekend in de update van vannacht.",
+    "stressTitle": "Als de geschiedenis zich herhaalt (huidige posities)",
+    "crisis": {
+      "gfc": "Crisis van 2008",
+      "covid": "Coronacrash",
+      "y2022": "Beurscrash 2022"
+    },
+    "window": {
+      "gfc": "okt 2007 → mrt 2009",
+      "covid": "19 feb → 23 mrt 2020",
+      "y2022": "jan → okt 2022"
+    },
+    "proxyNote": "{list}: geen historiek zo ver terug, de S&P 500 (of een obligatie-ETF) wordt gebruikt.",
+    "missingNote": "{list}: nog niet meegeteld (update van vannacht).",
+    "stressNote": "De echte beweging van elke positie in die periode, cash telt als 0 %. Geen voorspelling: de volgende crisis ziet er anders uit.",
+    "concTitle": "Concentratie",
+    "conc": "Grootste positie: {symbol} {pct} · je 3 grootste samen: {top3}."
   }
 }

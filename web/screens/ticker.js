@@ -15,6 +15,7 @@ import { priceChart, tradingView, forwardReturn } from "../components/chart.js";
 import { signalList, statusBanners } from "./common.js";
 import { openBuyLevelSheet, removeStock, openAddSheet } from "./watchlist.js";
 import { TAG_SUGGESTIONS, MAX_TAGS, normalizeTag } from "../lib/tags.js";
+import { positions } from "../lib/portfolio.js";
 
 let activeTab = "overview";
 let lastSymbol = "";
@@ -431,13 +432,18 @@ function chartTab(ctx, panel, row) {
         $(`[data-panel-wrap="${k}"]`, panel).hidden = !on;
         if (on) els[k] = $(`#panel-${k}`, panel);
       }
+      // own trades + average cost (only after the two-step login, CLAUDE.md 13.17)
+      const mine = (ctx.pf?.transactions || []).filter((x) => x.symbol.toUpperCase() === row.symbol);
+      const held = mine.length ? positions(mine)[0] : null;
       chartHandle = await priceChart(box, d.weekly, {
         show, panelEls: els,
+        trades: mine.filter((x) => x.kind !== "start").map((x) => ({ date: x.date, kind: x.kind })),
+        avgCost: held?.qty > 0 && held.currency === row.currency ? held.avgCost : null,
         lines: {
           high52: row.high_52w, low52: row.low_52w,
           cheap: vOk ? row.price * (v.p20 / v.now) : null, expensive: vOk ? row.price * (v.p80 / v.now) : null,
         },
-        labels: { high52: t("chart.high52"), low52: t("chart.low52"), cheap: t("chart.cheapLine", { metric }), expensive: t("chart.expensiveLine", { metric }) },
+        labels: { avgCost: t("chart.avgCost"), high52: t("chart.high52"), low52: t("chart.low52"), cheap: t("chart.cheapLine", { metric }), expensive: t("chart.expensiveLine", { metric }) },
         onHover: (i) => { info.textContent = infoText(i); },
         onMarker: (i, kind) => { note.textContent = afterText(i, kind); },
       });

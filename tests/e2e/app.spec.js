@@ -27,7 +27,7 @@ async function quality(page, label) {
   const rawKeys = await page.evaluate(() => {
     const txt = document.body.innerText;
     return (txt.match(/\b[a-z]+\.[a-zA-Z]+(\.[a-zA-Z0-9]+)*\b/g) || [])
-      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal|pf|cib|risk|trade|mfa)\./.test(k));
+      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal|pf|cib|risk|trade|mfa|imp|risk3)\./.test(k));
   });
   expect(rawKeys, `${label}: untranslated i18n keys`).toEqual([]);
 
@@ -35,6 +35,9 @@ async function quality(page, label) {
     [...document.querySelectorAll("button, [role=switch], a.btn, a.tabbar__item, a.rail__item, a.menu__item, a.stock, input, select, textarea")]
       .filter((el) => el.offsetParent !== null && !el.closest(".tradingview-widget-container"))
       .map((el) => {
+        // a checkbox inside a <label>: the whole label is the tap target (WCAG 2.5.8)
+        const lab = el.matches("input[type=checkbox], input[type=radio]") ? el.closest("label") : null;
+        if (lab) return { tag: el.outerHTML.slice(0, 70), w: lab.offsetWidth, h: lab.offsetHeight };
         const after = getComputedStyle(el, "::after");
         const ext = after.content !== "none" && after.position === "absolute" ? Math.max(0, -2 * parseFloat(after.top || "0")) : 0;
         return { tag: el.outerHTML.slice(0, 70), w: el.offsetWidth + ext, h: el.offsetHeight + ext };
@@ -71,6 +74,7 @@ const SCREENS = [
   ["portfolio", "#/portfolio"],
   ["canibuy", "#/canibuy/VLTA.AS"],
   ["risk", "#/more/risk"],
+  ["import", "#/import"],
   ["more", "#/more"],
   ["settings", "#/more/settings"],
   ["health", "#/more/health"],
@@ -684,4 +688,61 @@ test("portfolio in Dutch", async ({ page }) => {
   await open(page, "#/portfolio", { lang: "nl" });
   await expect(page.locator(".summary")).toContainText("Portefeuille");
   await quality(page, "portfolio nl");
+});
+
+/* ------------------------------------------------------------ Phase 3B: live prices, risk check, chart trades */
+test("portfolio: live prices, moves together, stress test, concentration", async ({ page }) => {
+  await open(page, "#/portfolio");
+  await expect(page.locator("#live-state")).toContainText("live prices");
+  const card = page.locator("#risk-card");
+  await expect(card).toContainText("ORCA, NRDX move together");
+  await expect(card.locator(".signal")).toHaveCount(3);
+  await expect(card).toContainText("2008 crisis: −€");
+  await expect(card).toContainText("Largest position: WORLD.AS");
+  await quality(page, "risk card");
+  await shot(page, "portfolio-risk-dark-375");
+});
+
+test("can I buy this: a stock that moves with your holdings gets × 0,7", async ({ page }) => {
+  await open(page, "#/canibuy/NEWCO"); // NEWCO correlates 0,83 with NRDX (fixture)
+  await page.getByText("How is this calculated?").click();
+  await expect(page.locator("details.explain")).toContainText("moves with what you own");
+});
+
+test("chart: your trades and average cost on the ticker chart", async ({ page }) => {
+  await open(page, "#/ticker/NRDX");
+  await page.getByRole("tab", { name: "Chart" }).click();
+  await expect(page.locator("#panel")).toHaveAttribute("data-chart", "ready");
+  await shot(page, "ticker-chart-trades-dark-375");
+});
+
+/* ------------------------------------------------------------ Bolero import (FAKE file) */
+test("bolero import: parse in the browser, match tickers, fix one by hand, import", async ({ page }) => {
+  await open(page, "#/import");
+  await expect(page.locator(".summary")).toContainText("Bring your Bolero positions in");
+  await page.setInputFiles("#imp-file", "tests/fixtures/bolero_positions_FAKE.xlsx");
+  await expect(page.locator("[data-row]")).toHaveCount(3, { timeout: 15000 });
+  const rows = page.locator("[data-row]");
+  await expect(rows.nth(0).locator("[data-ticker]")).toHaveValue("NRDX");
+  await expect(rows.nth(1).locator("[data-ticker]")).toHaveValue("WORLD.AS");
+  await expect(rows.nth(1).locator("[data-type]")).toHaveValue("broad_etf");
+  await expect(rows.nth(2).locator("[data-include]")).not.toBeChecked(); // no match → not included
+  await expect(rows.nth(2)).toContainText("Check the ticker");
+  await rows.nth(2).locator("[data-ticker]").fill("NEWCO");
+  await expect(rows.nth(2).locator("[data-include]")).toBeChecked();
+  await expect(page.locator("#imp-cash")).toBeChecked();
+  await quality(page, "import preview");
+  await shot(page, "import-preview-dark-375");
+  await page.getByRole("button", { name: "Import", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-screen", "portfolio");
+  await expect(page.locator(".toast").first()).toContainText("3 positions imported");
+  // EUR cash from the file (1.234,56) + the existing USD cash (400 USD ≈ € 345) is kept
+  await expect(page.locator(".summary__meta")).toContainText("cash € 1.579");
+});
+
+test("bolero import: a file that isn't a position overview is refused", async ({ page }) => {
+  await open(page, "#/import");
+  await page.setInputFiles("#imp-file", { name: "other.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from("not a spreadsheet") });
+  await expect(page.locator("#imp-body")).toContainText(/isn't a Bolero position overview|Couldn't read this file/);
 });

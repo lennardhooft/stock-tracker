@@ -52,3 +52,31 @@ Cash per currency (EUR, USD), emergency fund (excluded from everything), planned
 - [ ] "How much is my portfolio worth today?" answered at the top in ≤ 1 tap from anywhere.
 - [ ] Every warning names the rule and what to do.
 - [ ] Screenshots 375/768/1280, dark + light: empty, normal, warnings, MFA missing.
+
+## 3B additions (CLAUDE.md 13.11, 13.13.3, 13.17)
+- **Live prices**: while the Portfolio page is open and a market is open, prices refresh every 60 s through the
+  `quotes` Edge Function (login required; Yahoo; EU "delayed 15 min"). The summary says "live · 14:32" or
+  "closing prices". Values in the holdings list update in place (no jumping).
+- **Risk card** (below the risk budget):
+  - **Moves together** — "NVDA, ORCA and AMD move together (correlation above 0,8): a bad day hits all three."
+    From 1 year of daily returns (daily job). "Can I buy this?" applies the × 0,7 rule when a candidate is that correlated.
+  - **Stress test** — what your current holdings would have lost in 2008 (Oct 2007 → Mar 2009), the Covid crash
+    (19 Feb → 23 Mar 2020) and 2022 (3 Jan → 12 Oct): "2008: −€ 18.400 (−39 %)". Holdings without that history use a
+    proxy (S&P 500 for stocks and ETFs, an aggregate bond ETF for bonds) and say so. Cash counts as 0 %.
+  - **Concentration**: largest position, top 3 share, and the warnings that already exist (caps, sector, satellite).
+- **Chart**: your buys (●green) and sells (●red) as markers, and a dotted **average cost** line, on the ticker chart
+  when you own the stock (only after the two-step login).
+
+# Bolero import — `#/import` (Phase 3E, pulled forward; format in docs/importers/bolero.md)
+**Main question:** "Get my Bolero positions into the app without typing them."
+1. **Choose file** (the position overview .xlsx). It's read **in the browser**; the file is never uploaded or stored.
+2. **Preview**: one row per position — Bolero name, **ticker** (suggested; editable; alternatives in a list), quantity,
+   average price + currency, asset type, include ☑. Cash row → cash in EUR. Rows that couldn't be matched are marked
+   "check the ticker" and are not included until a ticker is filled in.
+   Matching: ISIN (if the ISIN column is switched on) + Bolero's market → Yahoo listing on that exchange; otherwise the name.
+   The lookup sends only ISIN / name / market to the `lookup-symbols` function (no amounts).
+3. **Import**: starting positions dated today (source = import), missing tickers added to the watchlist, cash set.
+   If you imported before: "Replace my previous import" (default on) removes the earlier imported positions first,
+   so nothing is counted twice. Manual trades are never touched.
+4. Done → Portfolio, toast "12 positions imported".
+States: wrong file ("This isn't a Bolero position overview"), empty file, lookup failed (still editable by hand).

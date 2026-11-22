@@ -188,11 +188,13 @@ web/                   static app (index.html, app.js, style.css, glossary.json)
 ## Supabase Edge Functions
 
 Deployed from the Supabase dashboard (Edge Functions → Deploy a new function → paste the file).
-Both have **Verify JWT turned off**; they do their own checks.
+All have **Verify JWT turned off**; they do their own checks.
 
 | Function | File | What it does | Secrets |
 |---|---|---|---|
 | `run-update` | `backend/functions/run-update/index.ts` | "Update now" button: checks the login, starts the daily workflow on GitHub | `GITHUB_TOKEN` (fine-grained, this repo, Actions: read and write) |
 | `calendar-ics` | `backend/functions/calendar-ics/index.ts` | Private calendar feed (`?token=…`) for the phone calendar: earnings, dividends, Fed/ECB dates | none (uses the injected anon key + `calendar_feed()` in `backend/schema.sql`) |
+| `quotes` | `backend/functions/quotes/index.ts` | Live prices for the Portfolio page (login required) | none |
+| `lookup-symbols` | `backend/functions/lookup-symbols/index.ts` | Bolero importer: ISIN / name / market → Yahoo ticker (login required) | none |
 
 Fed/ECB dates live in `config/macro_events.yaml`; update them once a year from the official calendars.

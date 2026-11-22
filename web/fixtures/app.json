@@ -108,7 +108,15 @@
         "sector": "Technology",
         "region": "North America",
         "suggested_type": "stock",
-        "atr": 4.2
+        "atr": 4.2,
+        "stress": {
+          "gfc": -0.5678,
+          "covid": -0.38,
+          "y2022": -0.51,
+          "proxy": [
+            "gfc"
+          ]
+        }
       }
     },
     {
@@ -176,7 +184,13 @@
         "sector": "Basic Materials",
         "region": "Europe",
         "suggested_type": "stock",
-        "atr": 1.1
+        "atr": 1.1,
+        "stress": {
+          "gfc": -0.61,
+          "covid": -0.35,
+          "y2022": -0.18,
+          "proxy": []
+        }
       }
     },
     {
@@ -237,7 +251,13 @@
         "sector": "Consumer Cyclical",
         "region": "North America",
         "suggested_type": "stock",
-        "atr": 0.5
+        "atr": 0.5,
+        "stress": {
+          "gfc": -0.72,
+          "covid": -0.55,
+          "y2022": -0.39,
+          "proxy": []
+        }
       }
     },
     {
@@ -305,7 +325,15 @@
         "sector": "Technology",
         "region": "North America",
         "suggested_type": "stock",
-        "atr": 8.1
+        "atr": 8.1,
+        "stress": {
+          "gfc": -0.5678,
+          "covid": -0.31,
+          "y2022": -0.44,
+          "proxy": [
+            "gfc"
+          ]
+        }
       }
     },
     {
@@ -348,7 +376,13 @@
         "sector": "Utilities",
         "region": "Europe",
         "suggested_type": "stock",
-        "atr": 30
+        "atr": 30,
+        "stress": {
+          "gfc": -0.4,
+          "covid": -0.2,
+          "y2022": -0.1,
+          "proxy": []
+        }
       }
     },
     {
@@ -384,7 +418,15 @@
         "sector": null,
         "region": null,
         "suggested_type": "broad_etf",
-        "atr": 1.2
+        "atr": 1.2,
+        "stress": {
+          "gfc": -0.5678,
+          "covid": -0.26,
+          "y2022": -0.13,
+          "proxy": [
+            "gfc"
+          ]
+        }
       }
     },
     {
@@ -565,6 +607,124 @@
       },
       "emergency_fund": 10000,
       "monthly_contribution": 500
+    }
+  },
+  "riskSnapshot": {
+    "symbols": [
+      "NRDX",
+      "ORCA",
+      "BLMT.BR",
+      "HALD",
+      "WORLD.AS",
+      "VLTA.AS",
+      "NEWCO"
+    ],
+    "corr": [
+      [
+        1,
+        0.86,
+        0.21,
+        0.3,
+        0.62,
+        0.15,
+        0.83
+      ],
+      [
+        0.86,
+        1,
+        0.18,
+        0.28,
+        0.66,
+        0.12,
+        0.71
+      ],
+      [
+        0.21,
+        0.18,
+        1,
+        0.25,
+        0.41,
+        0.33,
+        0.1
+      ],
+      [
+        0.3,
+        0.28,
+        0.25,
+        1,
+        0.38,
+        0.2,
+        0.2
+      ],
+      [
+        0.62,
+        0.66,
+        0.41,
+        0.38,
+        1,
+        0.45,
+        0.5
+      ],
+      [
+        0.15,
+        0.12,
+        0.33,
+        0.2,
+        0.45,
+        1,
+        0.1
+      ],
+      [
+        0.83,
+        0.71,
+        0.1,
+        0.2,
+        0.5,
+        0.1,
+        1
+      ]
+    ],
+    "days": 252
+  },
+  "lookup": {
+    "XX0000000001": {
+      "best": "NRDX",
+      "candidates": [
+        {
+          "symbol": "NRDX",
+          "name": "Nordex Semiconductors",
+          "exchange": "NMS",
+          "type": "EQUITY"
+        }
+      ]
+    },
+    "XX0000000002": {
+      "best": "WORLD.AS",
+      "candidates": [
+        {
+          "symbol": "WORLD.AS",
+          "name": "Global Index Tracker ETF",
+          "exchange": "AMS",
+          "type": "ETF"
+        },
+        {
+          "symbol": "WRLD.L",
+          "name": "Global Index Tracker ETF",
+          "exchange": "LSE",
+          "type": "ETF"
+        }
+      ]
+    },
+    "NEWCO HOLD.INC-A": {
+      "best": null,
+      "candidates": [
+        {
+          "symbol": "NEWCO",
+          "name": "Newly Listed Co",
+          "exchange": "NYQ",
+          "type": "EQUITY"
+        }
+      ]
     }
   }
 }

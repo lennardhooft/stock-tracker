@@ -405,7 +405,8 @@
     "topShort": "Top {n}",
     "notYet": "not yet",
     "afterBottom": "After this bottom signal ({date}): 3 months {m3} · 6 months {m6} · 12 months {m12}.",
-    "afterTop": "After this overheating signal ({date}): 3 months {m3} · 6 months {m6} · 12 months {m12}."
+    "afterTop": "After this overheating signal ({date}): 3 months {m3} · 6 months {m6} · 12 months {m12}.",
+    "avgCost": "your avg"
   },
   "more": {
     "settings": "Settings",
@@ -925,7 +926,9 @@
     "monthly": "Monthly contribution (EUR, optional)",
     "monthlyHint": "Used for staged buy suggestions later.",
     "cashInvalid": "Use positive numbers, e.g. 1.250,50.",
-    "spread": "Spread (broad ETFs)"
+    "spread": "Spread (broad ETFs)",
+    "live": "live prices · updated {time}",
+    "closing": "closing prices from the last update"
   },
   "trade": {
     "kind": "Kind",
@@ -1010,7 +1013,8 @@
     "disclaimer": "Suggested max based on your own settings. Not financial advice.",
     "noRoomBig": "No room to add",
     "aboveCap": "You own {owned}: already above this rule's max of {cap}. Consider not adding more.",
-    "ruleFull": "This rule has no room left for more money right now."
+    "ruleFull": "This rule has no room left for more money right now.",
+    "how5": "× {c} because it moves with what you own (correlation {corr})."
   },
   "risk": {
     "title": "Risk rules",
@@ -1076,5 +1080,61 @@
     "invalid": "{field}: use a number between {min} and {max}.",
     "splitInvalid": "Core at least + satellite at most can't be more than 100 %.",
     "logNote": "Every change is saved with the date, so the yearly review shows when your rules changed."
+  },
+  "imp": {
+    "title": "Import from Bolero",
+    "link": "Import from Bolero",
+    "lead": "Bring your Bolero positions in without typing them. Each position becomes a starting position with your average purchase price.",
+    "howTitle": "How do I export from Bolero?",
+    "how1": "In Bolero: Portefeuille → Posities.",
+    "how2": "Switch on the ISIN column (column settings): it makes matching to the right stock exchange reliable.",
+    "how3": "Tap the Excel icon and choose that file here.",
+    "choose": "Choose the Excel file",
+    "privacy": "The file is read on this device and never uploaded or kept. Only ISIN, name and market are used to find the tickers; only ticker, quantity, average price, currency and type are saved.",
+    "previewTitle": "Check {n} positions",
+    "noIsinTitle": "No ISIN column in this file",
+    "noIsinBody": "Tickers are guessed from Bolero's short names, so check each one. Export again with the ISIN column for better matches.",
+    "lookupFailed": "Couldn't look up the tickers. Type them in yourself.",
+    "include": "Import {name}",
+    "ticker": "Ticker (Yahoo)",
+    "suggested": "Suggested: check it's the right exchange.",
+    "checkTicker": "Check the ticker: no match found. Type it to include this row.",
+    "cash": "Set your EUR cash to {amount}",
+    "cashHint": "From the Cash row in the file.",
+    "replace": "Replace my previous import",
+    "replaceHint": "Removes the positions from your last import first, so nothing is counted twice. Trades you added yourself stay.",
+    "go": "Import",
+    "done": "{n} positions imported",
+    "badTicker": "{name}: type a valid ticker or untick the row.",
+    "noPrice": "{name}: no average purchase price in the file.",
+    "nothing": "Nothing selected to import.",
+    "notBolero": "This isn't a Bolero position overview. Export it from Portefeuille → Posities.",
+    "emptyFile": "This file has no positions.",
+    "readFailed": "Couldn't read this file."
+  },
+  "risk3": {
+    "title": "Risk check",
+    "togetherTitle": "Moves together",
+    "togetherWarn": "{list} move together (correlation above 0,8): a bad day hits all of them.",
+    "togetherPair": "{list} move together (correlation above 0,8).",
+    "togetherBody": "From 1 year of daily returns. Can I buy this? lowers the amount for stocks that move with what you own.",
+    "togetherNone": "None of your holdings move closely together. Good spread.",
+    "togetherPending": "Calculated in tonight's update.",
+    "stressTitle": "If history repeated (today's holdings)",
+    "crisis": {
+      "gfc": "2008 crisis",
+      "covid": "Covid crash",
+      "y2022": "2022 bear market"
+    },
+    "window": {
+      "gfc": "Oct 2007 → Mar 2009",
+      "covid": "19 Feb → 23 Mar 2020",
+      "y2022": "Jan → Oct 2022"
+    },
+    "proxyNote": "{list}: no history that far back, the S&P 500 (or a bond ETF) is used instead.",
+    "missingNote": "{list}: not included yet (tonight's update).",
+    "stressNote": "Each holding's real move in that period, cash counted as 0 %. Not a forecast: the next crisis will look different.",
+    "concTitle": "Concentration",
+    "conc": "Largest position: {symbol} {pct} · your 3 largest together: {top3}."
   }
 }

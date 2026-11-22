@@ -12,6 +12,7 @@ import { openSheet, toast } from "./components/overlays.js";
 import { skeletonCards, errorState } from "./components/states.js";
 import { renderLogin, renderMfaCode } from "./screens/login.js";
 import { renderPortfolio, renderCanIBuy, renderRiskSettings } from "./screens/portfolio.js";
+import { renderImport } from "./screens/import.js";
 import { renderToday } from "./screens/today.js";
 import { renderWatchlist, openAddSheet } from "./screens/watchlist.js";
 import { renderCalendar } from "./screens/calendar.js";
@@ -93,6 +94,7 @@ function setData(d, offlineAt = null) {
   ctx.rows = buildRows(d);
   ctx.market = d.market?.data || null;
   ctx.macro = d.macro?.data?.events || [];
+  ctx.riskSnapshot = d.riskSnapshot?.data || null;
   ctx.runs = (d.runs || []).filter((r) => r.job === "daily");
   ctx.intradayRun = (d.runs || []).find((r) => r.job === "intraday") || null;
   ctx.latestUpdate = (d.scores || []).map((s) => s.updated_at).filter(Boolean).sort().pop() || d.market?.updated_at || null;
@@ -219,6 +221,7 @@ async function route() {
     case "calendar": head = renderCalendar(ctx, view); renderNav("calendar"); break;
     case "portfolio": head = renderPortfolio(ctx, view); renderNav("portfolio"); break;
     case "canibuy": head = renderCanIBuy(ctx, view, r.arg.toUpperCase()); renderNav("portfolio"); break;
+    case "import": head = renderImport(ctx, view); renderNav("portfolio"); break;
     case "ticker": head = renderWatchlist(ctx, view, { selected: r.arg.toUpperCase() }); renderNav("watchlist"); break;
     case "more":
       renderNav("more");

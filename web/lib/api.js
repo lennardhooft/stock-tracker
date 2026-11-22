@@ -15,6 +15,12 @@ function supabaseApi(cfg) {
     if (error) throw error;
     return data;
   };
+  let riskSnap = null;
+  const invoke = async (name, body) => {
+    const { data, error } = await sb.functions.invoke(name, { method: "POST", body });
+    if (error) throw error;
+    return data;
+  };
   return {
     demo: false,
     async session() { return (await sb.auth.getSession()).data.session; },
@@ -74,6 +80,12 @@ function supabaseApi(cfg) {
       return { transactions: tx, settings: ps[0] || null, risk: rs[0] || null };
     },
     addTransaction: (row) => q(sb.from("transactions").insert(row).select().single()),
+    addTransactions: (rows) => q(sb.from("transactions").insert(rows).select()),
+    deleteImported: () => q(sb.from("transactions").delete().eq("source", "import")),
+    /** Live prices (quotes function): {SYM: {price, prev_close, currency, time}} */
+    quotes: async (symbols) => (await invoke("quotes", { symbols }))?.quotes || {},
+    /** Broker rows → Yahoo tickers (lookup-symbols function): [{best, candidates}] */
+    lookupSymbols: async (items) => (await invoke("lookup-symbols", { items }))?.results || [],
     deleteTransaction: (id) => q(sb.from("transactions").delete().eq("id", id)),
     savePortfolioSettings: (row) => q(sb.from("portfolio_settings").upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "user_id" })),
     async saveRisk(profile, settings) {
@@ -103,8 +115,10 @@ function supabaseApi(cfg) {
         q(sb.from("score_history").select("symbol,date,score").order("date", { ascending: false }).limit(2000)),
         q(sb.from("alerts_log").select("id,symbol,kind,title,body,url,delivered,sent_at").order("sent_at", { ascending: false }).limit(100)),
         q(sb.from("job_runs").select("*").eq("job", "intraday").order("started_at", { ascending: false }).limit(1)),
-      ]);
+        q(sb.from("risk_snapshot").select("data,updated_at")),
+      ]).then((r) => { riskSnap = r.pop()[0] || null; return r; });
       return {
+        riskSnapshot: riskSnap,
         watchlist, scores, market: market.find((m) => m.id === "latest") || null, macro: market.find((m) => m.id === "macro") || null,
         runs: [...runs, ...intradayRuns], history, alerts,
       };
@@ -257,7 +271,7 @@ function demoApi(fixture) {
     ];
     const alerts = fixture === "empty" || fixture === "new" ? [] : (f.alerts || []).map((a, i) => ({ id: i, ...a, sent_at: hoursAgo(a.hours_ago) }));
     const macro = { id: "macro", data: { events: (f.macro || []).map((m) => ({ ...m, date: inDays(m.in_days) })) } };
-    return { watchlist, scores, market: { id: "latest", data: market, updated_at: updated }, macro, runs, history, alerts };
+    return { watchlist, scores, market: { id: "latest", data: market, updated_at: updated }, macro, runs, history, alerts, riskSnapshot: f.riskSnapshot ? { data: f.riskSnapshot } : null };
   }
 
   const delay = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -290,6 +304,18 @@ function demoApi(fixture) {
       return structuredClone(demoPf);
     },
     async addTransaction(row) { const r = { id: `t${Date.now()}`, ...row }; demoPf.transactions.push(r); return r; },
+    async addTransactions(rows) { const out = rows.map((row, i) => ({ id: `t${Date.now()}${i}`, ...row })); demoPf.transactions.push(...out); return out; },
+    async deleteImported() { demoPf.transactions = demoPf.transactions.filter((x) => x.source !== "import"); },
+    async quotes(symbols) {
+      const out = {};
+      for (const s of symbols) { const r = state?.scores.find((x) => x.symbol === s); if (r?.price) out[s] = { price: +(r.price * 1.01).toFixed(2), prev_close: r.price, currency: r.currency, time: new Date().toISOString() }; }
+      return out;
+    },
+    async lookupSymbols(items) {
+      await delay(200);
+      const f = await (await fetch("fixtures/app.json", { cache: "no-cache" })).json();
+      return items.map((it) => f.lookup?.[it.isin] || f.lookup?.[it.name] || { best: null, candidates: [] });
+    },
     async deleteTransaction(id) { demoPf.transactions = demoPf.transactions.filter((x) => x.id !== id); },
     async savePortfolioSettings(row) { demoPf.settings = { ...(demoPf.settings || {}), ...row }; },
     async saveRisk(profile, settings) { demoPf.risk = { profile, settings }; },

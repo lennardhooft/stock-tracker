@@ -189,6 +189,10 @@ export async function priceChart(el, weekly, opts = {}) {
     time: weekOf(t, s.date), position: s.kind === "low" ? "belowBar" : "aboveBar", color: s.kind === "low" ? up : down,
     shape: s.kind === "low" ? "arrowUp" : "arrowDown", text: `${s.tf}`, size: s.tf === "Y" ? 1.4 : 1,
   }));
+  const tradeMarkers = (opts.trades || []).filter((x) => x.date >= t[0]).map((x) => ({
+    time: weekOf(t, x.date), position: x.kind === "sell" ? "aboveBar" : "belowBar",
+    color: x.kind === "sell" ? down : up, shape: "circle", text: x.kind === "sell" ? "S" : "B", size: 1,
+  }));
   const signalMarkers = [
     ...bottomStarts.map((i) => ({ time: t[i], position: "belowBar", color: token("--score-strong"), shape: "circle", text: "4+", size: 0.8 })),
     ...topStarts.map((i) => ({ time: t[i], position: "aboveBar", color: token("--top-trim"), shape: "arrowDown", text: "T", size: 0.8 })),
@@ -289,7 +293,8 @@ export async function priceChart(el, weekly, opts = {}) {
     }));
     if (show.range52) { line(lines.high52, token("--chart-axis"), labels.high52); line(lines.low52, token("--chart-axis"), labels.low52); }
     if (show.valuation) { line(lines.cheap, up, labels.cheap); line(lines.expensive, token("--top-trim"), labels.expensive); }
-    const markers = show.markers ? [...swingMarkers, ...signalMarkers].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)) : [];
+    if (opts.avgCost) line(opts.avgCost, token("--color-accent"), labels.avgCost || "avg");
+    const markers = show.markers ? [...swingMarkers, ...signalMarkers, ...tradeMarkers].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)) : [];
     price.setMarkers(markers);
   };
 

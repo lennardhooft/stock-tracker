@@ -236,5 +236,12 @@
     "why": "Most long-term return comes from the core. Keeping single stocks to a slice limits the damage when a pick goes wrong.",
     "how": "Balanced default: core at least 70 %, satellite at most 30 %, speculative at most 10 %, cash at least 5 %. The black mark on each bar is your limit.",
     "limits": "ETFs are put in a bucket by their type, not by what they hold (the look-through comes later)."
+  },
+  "stress_test": {
+    "title": "Risk check: moves together and stress test",
+    "what": "Moves together: how closely the daily returns of two holdings followed each other over the last year (correlation, −1 to +1). Stress test: what your current holdings would have done in three real crises.",
+    "why": "Owning many stocks doesn't spread risk if they all fall on the same days. The stress test turns 'risk' into euros you can picture.",
+    "how": "Above 0,8 means they move almost in step. The stress test uses each holding's real move in that period; without that history, the S&P 500 (stocks/ETFs) or a bond ETF stands in.",
+    "limits": "Correlations change, often rising in a crisis. History doesn't repeat exactly."
   }
 }
