@@ -100,19 +100,24 @@ class SupabaseStore:
     def upsert(self, table: str, rows: list[dict[str, Any]], on_conflict: str) -> bool:
         if not rows:
             return True
+        # PostgREST needs the same keys in every object of one request. Rows for a failed ticker
+        # carry fewer keys (so they keep yesterday's values), so send each key set separately.
+        ok = True
+        for batch in group_by_keys(rows):
 
-        def _call() -> bool:
-            r = requests.post(
-                f"{self.base}/{table}",
-                headers={**self.headers, "Prefer": "resolution=merge-duplicates,return=minimal"},
-                params={"on_conflict": on_conflict},
-                data=json.dumps(rows, default=str),
-                timeout=HTTP_TIMEOUT,
-            )
-            r.raise_for_status()
-            return True
+            def _call(batch: list[dict[str, Any]] = batch) -> bool:
+                r = requests.post(
+                    f"{self.base}/{table}",
+                    headers={**self.headers, "Prefer": MERGE},
+                    params={"on_conflict": on_conflict},
+                    data=json.dumps(batch, default=str),
+                    timeout=HTTP_TIMEOUT,
+                )
+                r.raise_for_status()
+                return True
 
-        return bool(with_retries(_call, f"supabase upsert {table}"))
+            ok = bool(with_retries(_call, f"supabase upsert {table}")) and ok
+        return ok
 
     def insert(self, table: str, rows: list[dict[str, Any]]) -> bool:
         if not rows:
@@ -129,6 +134,17 @@ class SupabaseStore:
             return True
 
         return bool(with_retries(_call, f"supabase insert {table}"))
+
+
+MERGE = "resolution=merge-duplicates,return=minimal"
+
+
+def group_by_keys(rows: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    """Split rows into batches that each have exactly the same keys (order of first appearance)."""
+    groups: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+    for row in rows:
+        groups.setdefault(tuple(sorted(row)), []).append(row)
+    return list(groups.values())
 
 
 class LocalStore:

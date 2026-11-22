@@ -42,7 +42,8 @@ def with_retries(fn: Callable[[], T], what: str, attempts: int = MAX_ATTEMPTS) -
     """
     for attempt in range(1, attempts + 1):
         try:
-            result = fn()
+            with log.quiet():  # libraries may print a ticker; the public log gets counts only
+                result = fn()
             if result is None:
                 raise ValueError("empty result")
             return result
