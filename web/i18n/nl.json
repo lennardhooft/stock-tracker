@@ -652,7 +652,9 @@
         "name": "Faillissementsrisico (Altman Z)",
         "safe": "Z-score {z}: veilige zone (boven 3).",
         "grey": "Z-score {z}: grijze zone (1,8–3).",
-        "distress": "Z-score {z}: gevarenzone (onder 1,8)."
+        "distress": "Z-score {z}: gevarenzone (onder 1,8).",
+        "high": "Z-score boven {z}: veilige zone (boven 3).",
+        "highMarket": "Z-score boven {z}, vooral omdat de beurs het bedrijf veel hoger waardeert dan zijn schulden. Dat zegt weinig over hoe het bedrijf zelf draait."
       },
       "debt": {
         "name": "Schuld",
@@ -690,7 +692,8 @@
       "financial": "n.v.t.: niet zinvol voor banken en verzekeraars.",
       "need_2_years": "n.v.t.: heeft 2 jaarverslagen nodig.",
       "need_3_years": "n.v.t.: heeft 3 jaarverslagen nodig.",
-      "missing_figures": "n.v.t.: cijfers ontbreken in de jaarverslagen."
+      "missing_figures": "n.v.t.: cijfers ontbreken in de jaarverslagen.",
+      "early_stage": "n.v.t.: nog nauwelijks omzet, dus deze score zegt niets (hij is gemaakt voor bedrijven met een draaiende activiteit)."
     },
     "weak": {
       "piotroski": "zwakke financiële gezondheid",

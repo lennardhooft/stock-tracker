@@ -652,7 +652,9 @@
         "name": "Bankruptcy risk (Altman Z)",
         "safe": "Z-score {z}: safe zone (above 3).",
         "grey": "Z-score {z}: grey zone (1,8–3).",
-        "distress": "Z-score {z}: distress zone (below 1,8)."
+        "distress": "Z-score {z}: distress zone (below 1,8).",
+        "high": "Z-score above {z}: safe zone (above 3).",
+        "highMarket": "Z-score above {z}, mostly because the stock market values the company far above its debts. That says little about how the business itself is doing."
       },
       "debt": {
         "name": "Debt",
@@ -690,7 +692,8 @@
       "financial": "n/a: not meaningful for banks and insurers.",
       "need_2_years": "n/a: needs 2 annual reports.",
       "need_3_years": "n/a: needs 3 annual reports.",
-      "missing_figures": "n/a: figures missing in the annual reports."
+      "missing_figures": "n/a: figures missing in the annual reports.",
+      "early_stage": "n/a: hardly any sales yet, so this score says nothing (it's built for companies with a running business)."
     },
     "weak": {
       "piotroski": "weak financial health",

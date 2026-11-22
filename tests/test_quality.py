@@ -311,3 +311,28 @@ def test_weekly_top_history_marks_hot_weeks():
     h = top.weekly_top_history(daily, {"top_signals": {}})
     assert h.iloc[:14].isna().all()  # RSI(14) needs 14 weeks first; U1 needs 200
     assert h.iloc[-1] == 1  # straight line up: RSI 100 fires (U2); 4x over 300 weeks < 1.8x SMA
+
+
+def test_altman_not_for_companies_without_real_sales():
+    # explorer: tiny sales, losses, almost no debts → raw Z would be in the hundreds
+    explorer = year(revenue=5.0, ebit=-40.0, total_liabilities=10.0, retained_earnings=-300.0)
+    assert q.altman(explorer, 2500.0, financial=False)["na"] == "early_stage"
+
+
+def test_altman_flags_a_market_driven_z():
+    # real business with very little debt: Z is huge because of market value / liabilities
+    p = q.altman(year(total_liabilities=50.0), 20000.0, financial=False)
+    assert p["value"]["z"] > 100 and p["value"]["market_driven"] is True
+    assert p["score"] == 1.0
+
+
+def test_market_cap_in_report_currency():
+    f = q.market_cap_in_report_currency
+    # pence → pounds, same report currency
+    assert f(250.0, 1_000.0, "GBp", "GBP", None, None) == pytest.approx(2_500.0)
+    # USD listing, report in EUR: 0.9 EUR per USD
+    assert f(10.0, 1_000.0, "USD", "EUR", 0.9, 99.0) == pytest.approx(9_000.0)
+    # conversion needed but no rate → n/a rather than a figure off by the exchange rate
+    assert f(10.0, 1_000.0, "USD", "JPY", None, 10_000.0) is None
+    # no shares: Yahoo's figure only when no conversion is needed
+    assert f(10.0, None, "USD", "USD", None, 12_345.0) == 12_345.0

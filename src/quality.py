@@ -143,7 +143,9 @@ def piotroski(years: list[Year]) -> dict:
 def altman(year: Year, market_cap: float | None, financial: bool) -> dict:
     """Altman Z = 1.2·WC/TA + 1.4·RE/TA + 3.3·EBIT/TA + 0.6·MV/TL + 1.0·Sales/TA.
 
-    < 1.8 distress (0), > 3 safe (1), linear in between. Not meaningful for financials.
+    < 1.8 distress (0), > 3 safe (1), linear in between. Not meaningful for financials, nor for
+    companies without real sales yet (exploration miners, early biotech): their tiny debts make the
+    market-value term explode (Z in the hundreds) while saying nothing about bankruptcy risk.
     """
     if financial:
         return _part("altman", None, na="financial")
@@ -154,15 +156,55 @@ def altman(year: Year, market_cap: float | None, financial: bool) -> dict:
     need = (ta, tl, wc, year.get("retained_earnings"), year.get("ebit"), year.get("revenue"))
     if not _ok(*need, market_cap) or ta <= 0 or tl <= 0:
         return _part("altman", None, na="missing_figures")
+    if year["revenue"] / ta < 0.1 and year["ebit"] <= 0:
+        return _part("altman", None, na="early_stage")
+    market_term = 0.6 * market_cap / tl
     z = (
         1.2 * wc / ta
         + 1.4 * year["retained_earnings"] / ta
         + 3.3 * year["ebit"] / ta
-        + 0.6 * market_cap / tl
+        + market_term
         + 1.0 * year["revenue"] / ta
     )
     zone = "safe" if z > 3 else "grey" if z >= 1.8 else "distress"
-    return _part("altman", lin(z, 1.8, 3.0), {"z": round(z, 2), "zone": zone})
+    value = {"z": round(z, 2), "zone": zone}
+    if z > 10 and market_term > 0.75 * z:
+        value["market_driven"] = True  # mostly "the market values it far above its debts"
+    return _part("altman", lin(z, 1.8, 3.0), value)
+
+
+# Yahoo quotes these in the minor unit (pence, cents, agorot)
+MINOR_UNITS = {
+    "GBp": ("GBP", 100.0),
+    "GBX": ("GBP", 100.0),
+    "ZAc": ("ZAR", 100.0),
+    "ILA": ("ILS", 100.0),
+}
+
+
+def market_cap_in_report_currency(
+    price: float | None,
+    shares: float | None,
+    quote_currency: str | None,
+    report_currency: str | None,
+    fx: float | None,
+    fallback: float | None,
+) -> float | None:
+    """Market value in the currency of the annual report (Altman Z divides it by report figures).
+
+    price is in the quote currency (pence for GBp); fx = report units per 1 quote (major) unit.
+    Without shares or a needed exchange rate, Yahoo's marketCap is used only when no conversion
+    is needed; otherwise None (better n/a than a Z-score off by 100x).
+    """
+    cur = quote_currency or report_currency
+    if cur in MINOR_UNITS:
+        cur, div = MINOR_UNITS[cur]
+        price = price / div if _ok(price) else price
+    same = not report_currency or cur == report_currency
+    rate = 1.0 if same else fx
+    if _ok(price, shares) and price > 0 and shares > 0 and _ok(rate):
+        return price * shares * rate
+    return fallback if same and _ok(fallback) else None
 
 
 def debt(year: Year, financial: bool) -> dict:
@@ -536,9 +578,17 @@ def collect(symbol: str, price: float | None, cfg: dict | None = None) -> dict:
                 "parts": [],
                 "profile": profile,
             }
-        mcap = info.get("marketCap")
-        if not _ok(mcap) and _ok(price) and _ok(years[0].get("shares_out")):
-            mcap = price * years[0]["shares_out"]
+        quote_cur, report_cur = info.get("currency"), info.get("financialCurrency")
+        major = MINOR_UNITS.get(quote_cur, (quote_cur, 1.0))[0]
+        fx = None
+        if report_cur and major and major != report_cur:
+            from src.fetch import get_index_quote
+
+            fxq = get_index_quote(f"{major}{report_cur}=X")
+            fx = fxq["value"] if fxq else None
+        mcap = market_cap_in_report_currency(
+            price, years[0].get("shares_out"), quote_cur, report_cur, fx, info.get("marketCap")
+        )
         out = build_quality(
             years,
             market_cap=mcap,

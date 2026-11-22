@@ -174,7 +174,9 @@ export function describeQualityPart(p) {
   if (p.score == null) return { name, detail: t(`quality.partNa.${p.na}`) || t("common.na") };
   switch (p.key) {
     case "piotroski": return { name, detail: t("quality.part.piotroski.detail", { f: v.f, n: v.n }) };
-    case "altman": return { name, detail: t(`quality.part.altman.${v.zone}`, { z: fmt.num(v.z, 1) }) };
+    case "altman": return { name, detail: v.z > 10
+      ? t(v.market_driven ? "quality.part.altman.highMarket" : "quality.part.altman.high", { z: fmt.num(10, 0) })
+      : t(`quality.part.altman.${v.zone}`, { z: fmt.num(v.z, 1) }) };
     case "debt": {
       const cover = v.coverage != null ? t("quality.part.debt.cover", { c: fmt.num(v.coverage, 1) }) : "";
       if (v.net_cash) return { name, detail: t("quality.part.debt.netCash", { cover }) };
