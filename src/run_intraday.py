@@ -81,12 +81,19 @@ def run(store: Store, force: bool = False) -> int:
         return 0
 
     daily = download(symbols, period="2mo", interval="1d")
-    intra = download(symbols, period="1d", interval="5m")
+    # --force (testing): use the last trading session, so weekends and holidays work too
+    intra = download(symbols, period="5d" if force else "1d", interval="5m")
     many = len(symbols) > 1
     stats: dict[str, dict[str, Any]] = {}
     for sym in symbols:
         mkt = market_hours.market_for(sym)
         local_today = now.astimezone(ZoneInfo(market_hours.MARKETS[mkt].tz)).date()
+        frame = _frame(intra, sym, many) if intra is not None else None
+        if force and frame is not None:
+            last = pd.Timestamp(frame.index[-1])
+            local_today = (
+                last.tz_convert(market_hours.MARKETS[mkt].tz) if last.tzinfo else last
+            ).date()
         s = intraday.day_stats(
             _frame(daily, sym, many) if daily is not None else None,
             _frame(intra, sym, many) if intra is not None else None,
