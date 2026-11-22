@@ -806,7 +806,7 @@ test("returns: early days and pending states explain themselves", async ({ page 
   await open(page, "#/portfolio/returns", { fixture: "earlyperf" });
   await expect(page.locator("main")).toContainText("Early days");
   await open(page, "#/portfolio/returns", { fixture: "noperf" });
-  await expect(page.locator("main")).toContainText("Calculated tonight");
+  await expect(page.locator("main")).toContainText("Calculated after the next market close");
 });
 
 test("dividends: 12-month forecast, per holding, payout warning, received this year", async ({ page }) => {
