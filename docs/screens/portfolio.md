@@ -44,7 +44,7 @@ Cash per currency (EUR, USD), emergency fund (excluded from everything), planned
 | State | Shown |
 |---|---|
 | No two-step login | explanation + **Set up two-step login** |
-| Empty | "Add what you own to see your portfolio and risk." + **Add your first position** / **Set cash** |
+| Empty | "Add what you own to see your portfolio and risk." + primary **Import from Bolero** (fastest start) and secondary **Add your first position** |
 | Prices pending | new holding: "valued after tonight's update" (uses your buy price meanwhile) |
 | Stale / offline / error | banners as elsewhere |
 

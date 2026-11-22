@@ -746,3 +746,13 @@ test("bolero import: a file that isn't a position overview is refused", async ({
     buffer: Buffer.from("not a spreadsheet") });
   await expect(page.locator("#imp-body")).toContainText(/isn't a Bolero position overview|Couldn't read this file/);
 });
+
+test("empty portfolio: import from Bolero is the main action", async ({ page }) => {
+  await open(page, "#/portfolio", { fixture: "noportfolio" });
+  const imp = page.getByRole("link", { name: "Import from Bolero" });
+  await expect(imp).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add your first position" })).toBeVisible();
+  await imp.click();
+  await expect(page).toHaveURL(/#\/import$/);
+  await expect(page.getByRole("button", { name: "Choose the Excel file" })).toBeVisible();
+});

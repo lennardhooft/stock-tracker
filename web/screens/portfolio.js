@@ -59,7 +59,14 @@ export function renderPortfolio(ctx, main) {
   const s = riskSettings(ctx);
   const pf = portfolioOf(ctx);
   if (!pf.holdings.length && !pf.cash) {
-    mount(main, emptyState({ title: t("pf.emptyTitle"), body: t("pf.emptyBody"), action: t("pf.addFirst"), actionId: "add-trade" }));
+    mount(main, html`<div class="state">
+      ${icon("wallet", { cls: "state__icon" })}
+      <h2 class="state__title">${t("pf.emptyTitle")}</h2>
+      <p class="state__body">${t("pf.emptyBody")}</p>
+      <div class="stack" style="gap:var(--space-2);width:100%;max-width:320px">
+        <a class="btn btn--primary btn--block" href="#/import">${icon("plus")}${t("imp.link")}</a>
+        <button type="button" class="btn btn--secondary btn--block" data-action="add-trade">${t("pf.addFirst")}</button>
+      </div></div>`);
     $$('[data-action="add-trade"]', main).forEach((b) => b.addEventListener("click", () => openTradeSheet(ctx)));
     return { title: t("nav.portfolio") };
   }
