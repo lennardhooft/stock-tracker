@@ -185,6 +185,7 @@ def send_alerts(
                         "label",
                         "signals",
                         "suspect",
+                        "as_of",
                     )
                 },
                 "user_id": uid,
@@ -197,6 +198,8 @@ def send_alerts(
 
     now = datetime.now(timezone.utc)
     day = alerts.brussels_day(now)
+    for x in rows:
+        x["today"] = day
     found = []
     for uid, p in problems.items():
         user_rows = [x for x in rows if x["user_id"] == uid]

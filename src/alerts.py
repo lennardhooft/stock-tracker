@@ -77,8 +77,19 @@ def score_line(r: dict[str, Any]) -> str:
     return f"Bottom Score: {num(r['score'], 0)}/{num(r['max_score'], 0)} ({label})"
 
 
+def when(r: dict[str, Any]) -> str:
+    """'today' if the price bar is from today (Brussels), else the trading day: 'on Fri 20 Nov'.
+
+    On weekends, holidays and reruns the last close is not from today (7.2: say what happened)."""
+    as_of, today = r.get("as_of"), r.get("today")
+    if not as_of or not today or as_of == today:
+        return "today"
+    d = datetime.strptime(as_of, "%Y-%m-%d")
+    return f"on {d:%a} {d.day} {d:%b}"
+
+
 def price_line(r: dict[str, Any], price: float, cur: str | None, word: str = "Price") -> str:
-    return f"{word} {money(price, cur)} · {pct(r.get('change_pct') or 0, sign=True)} today"
+    return f"{word} {money(price, cur)} · {pct(r.get('change_pct') or 0, sign=True)} {when(r)}"
 
 
 def link(cfg: dict[str, Any], symbol: str | None = None) -> str:
@@ -189,7 +200,7 @@ def evaluate(
                         r["user_id"],
                         sym,
                         "drop",
-                        f"🔻 {sym} {pct(chg)} today ({money(price, cur)})",
+                        f"🔻 {sym} {pct(chg)} {when(r)} ({money(price, cur)})",
                         score_line(r),
                         url,
                         extreme,
@@ -201,7 +212,7 @@ def evaluate(
                         r["user_id"],
                         sym,
                         "rise",
-                        f"🔺 {sym} {pct(chg, sign=True)} today ({money(price, cur)})",
+                        f"🔺 {sym} {pct(chg, sign=True)} {when(r)} ({money(price, cur)})",
                         score_line(r),
                         url,
                         extreme,

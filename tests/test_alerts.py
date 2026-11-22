@@ -199,3 +199,10 @@ def test_send_alerts_failed_delivery_is_retried(monkeypatch):
     ) == (0, 1)
     assert store.tables["alert_state"] == []  # not marked as sent → next run tries again
     assert store.tables["alerts_log"][0]["delivered"] is False
+
+
+def test_drop_names_the_trading_day_when_not_today():
+    weekend = al.evaluate([row(change_pct=-9.3, as_of="2026-11-20", today="2026-11-22")], CFG, 4)
+    assert "NVDA \u22129,3\u202f% on Fri 20 Nov" in weekend[0].title
+    same_day = al.evaluate([row(change_pct=-9.3, as_of="2026-11-20", today="2026-11-20")], CFG, 4)
+    assert "% today" in same_day[0].title
