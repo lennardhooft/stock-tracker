@@ -13,7 +13,8 @@ export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ESC[c]);
 export const raw = (s) => new Safe(String(s));
 
 const part = (v) => {
-  if (v == null || v === false) return "";
+  if (v == null) return "";
+  if (typeof v === "boolean") return String(v); // aria-pressed="${on}" must render "true"/"false"
   if (v instanceof Safe) return v.s;
   if (Array.isArray(v)) return v.map(part).join("");
   return esc(v);

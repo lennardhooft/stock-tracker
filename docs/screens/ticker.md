@@ -17,10 +17,23 @@
 2. **Key stats tiles:** price vs 200-week MA (%), from 52w high, 52w low–high **range bar** with the current price marked, market.
 3. **Data checks:** only if something's wrong: warning banner with the plain-language issue.
 
-### Chart
-- Weekly price line with the **200-week MA** (Lightweight Charts), zoom presets 1Y · 3Y · **5Y** · 10Y, log scale on 5Y+.
-- Text summary under the chart for screen readers: "Price is 12 % above its 200-week average, up from 3 % a month ago."
+### Chart (Phase 2A update)
+- **Weekly candles** with the **200-week MA** (Lightweight Charts), zoom presets 1Y · 3Y · **5Y** · 10Y, log scale on 5Y+.
+- **Support / resistance zones** (CLAUDE.md 6.5) as shaded horizontal bands: green = support (below price), red = resistance (above). Line thickness by strength.
+  Which zones show depends on the zoom: 10Y shows Y+M levels, 3–5Y M+W, 1Y W+D. At most 3 zones below and 3 above the price.
+- **Markers:** ▲ on major previous bottoms, ▼ on major ceilings (monthly/yearly), each with date + price on tap/hover.
+  A small ● marks the first week of every period when the Bottom Score was ≥ 4.
+- **Compact legend with toggles:** Zones · 200-week average · Score ≥ 4. Choices remembered on the device.
+- **Score history** panel under the chart: weekly Bottom Score as coloured bars (grey → yellow → orange → red), same zoom.
+  History before the app existed is reconstructed from prices (T1–T3) and the VIX (S1 without Fear & Greed), and labelled as such.
+- Text summary under the chart for screen readers: "Price is 12 % above its 200-week average… Nearest support $105–110 (6 % below)."
 - Secondary tab **Live**: TradingView widget (weekly).
+
+### Overview: "Nearest levels" card (Phase 2A)
+- In words first: "Support at $105–110, 6 % below · 3 previous bottoms (2022, 2023, 2024) · seen on yearly, monthly and weekly charts".
+- Same for the nearest resistance above. Flipped levels say so: "old ceiling, now support".
+- ⓘ glossary entry for support/resistance.
+- n/a state: "Not enough price history to find previous bottoms." 
 
 ### My notes
 Buy level (decimal keyboard), notes (multi-line), Save. **Remove from watchlist** at the bottom (destructive style, Undo toast).

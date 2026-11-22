@@ -197,6 +197,12 @@
       "short": "the whole market is fearful",
       "na": "n/a: VIX and Fear & Greed were both unavailable.",
       "detail": "{values} (fires at VIX ≥ 30 or Fear & Greed ≤ 25)."
+    },
+    "T4": {
+      "name": "Near a major previous bottom",
+      "short": "the price is near a major previous bottom",
+      "na": "n/a: no previous bottoms found yet.",
+      "detail": "Support {range} is {dist} away, {n} touches (fires within {limit})."
     }
   },
   "explain": {
@@ -331,7 +337,13 @@
     "summary": "Price is {pct} {dir} its 200-week average (a month ago: {before}).",
     "summaryNoMa": "Latest weekly close {price}. Not enough history for the 200-week average.",
     "above": "above",
-    "below": "below"
+    "below": "below",
+    "scoreHistory": "Bottom Score per week",
+    "scoreHistoryNote": "Before the app existed, rebuilt from prices and the VIX (without Fear & Greed).",
+    "legend": "Show on chart",
+    "zones": "Levels",
+    "markers": "Markers",
+    "ma200short": "200-week avg"
   },
   "more": {
     "settings": "Settings",
@@ -413,5 +425,29 @@
     "selectFirst": "Select stocks to add",
     "addedOne": "Added 1 stock",
     "addedMany": "Added {n} stocks"
+  },
+  "levels": {
+    "title": "Nearest support & resistance",
+    "none": "Not enough price history to find previous bottoms.",
+    "failed": "Levels couldn't be loaded. Try again later.",
+    "support": "Support",
+    "resistance": "Resistance",
+    "supportLine": "Support at {range}, {dist} below",
+    "resistanceLine": "Resistance at {range}, {dist} above",
+    "inside": {
+      "support": "Price is testing support at {range}",
+      "resistance": "Price is testing resistance at {range}"
+    },
+    "bottoms": "{n} previous bottom(s) ({years})",
+    "ceilings": "{n} previous ceiling(s) ({years})",
+    "seenOn": "seen on the {tfs} chart",
+    "tf": {
+      "yearly": "yearly",
+      "monthly": "monthly",
+      "weekly": "weekly",
+      "daily": "daily"
+    },
+    "flippedSupport": "old ceiling, now support",
+    "flippedResistance": "old bottom, now resistance"
   }
 }

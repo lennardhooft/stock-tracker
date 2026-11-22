@@ -72,7 +72,7 @@ def _normalize_index(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_daily_history(symbol: str, period: str = "10y") -> pd.DataFrame | None:
-    """Daily bars with columns Close, Volume, Splits.
+    """Daily bars with columns Open, High, Low, Close, Volume, Splits.
 
     Close is split-adjusted but not dividend-adjusted (auto_adjust=False), which is what a chart
     shows and what moving averages should use. Returns None on failure or empty data.
@@ -85,9 +85,13 @@ def get_daily_history(symbol: str, period: str = "10y") -> pd.DataFrame | None:
         )
         if raw is None or raw.empty or "Close" not in raw:
             return None
+        close = raw["Close"].astype(float)
         df = pd.DataFrame(
             {
-                "Close": raw["Close"].astype(float),
+                "Open": raw.get("Open", close).astype(float),
+                "High": raw.get("High", close).astype(float),
+                "Low": raw.get("Low", close).astype(float),
+                "Close": close,
                 "Volume": raw.get("Volume", pd.Series(0, index=raw.index)).astype(float),
                 "Splits": raw.get("Stock Splits", pd.Series(0, index=raw.index)).astype(float),
             }

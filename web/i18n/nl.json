@@ -197,6 +197,12 @@
       "short": "de hele markt is angstig",
       "na": "n.b.: VIX en Fear & Greed waren beide niet beschikbaar.",
       "detail": "{values} (gaat af bij VIX ≥ 30 of Fear & Greed ≤ 25)."
+    },
+    "T4": {
+      "name": "Dicht bij een grote vorige bodem",
+      "short": "de koers zit dicht bij een grote vorige bodem",
+      "na": "n.b.: nog geen vorige bodems gevonden.",
+      "detail": "Steun {range} ligt op {dist}, {n} keer geraakt (gaat af binnen {limit})."
     }
   },
   "explain": {
@@ -331,7 +337,13 @@
     "summary": "Koers ligt {pct} {dir} het 200-wekengemiddelde (een maand geleden: {before}).",
     "summaryNoMa": "Laatste weekslot {price}. Niet genoeg geschiedenis voor het 200-wekengemiddelde.",
     "above": "boven",
-    "below": "onder"
+    "below": "onder",
+    "scoreHistory": "Bodemscore per week",
+    "scoreHistoryNote": "Van vóór de app: herberekend uit koersen en de VIX (zonder Fear & Greed).",
+    "legend": "Tonen op grafiek",
+    "zones": "Niveaus",
+    "markers": "Markeringen",
+    "ma200short": "200-weken gem."
   },
   "more": {
     "settings": "Instellingen",
@@ -413,5 +425,29 @@
     "selectFirst": "Kies aandelen om toe te voegen",
     "addedOne": "1 aandeel toegevoegd",
     "addedMany": "{n} aandelen toegevoegd"
+  },
+  "levels": {
+    "title": "Dichtstbijzijnde steun & weerstand",
+    "none": "Niet genoeg koersgeschiedenis om vorige bodems te vinden.",
+    "failed": "De niveaus konden niet geladen worden. Probeer later opnieuw.",
+    "support": "Steun",
+    "resistance": "Weerstand",
+    "supportLine": "Steun op {range}, {dist} lager",
+    "resistanceLine": "Weerstand op {range}, {dist} hoger",
+    "inside": {
+      "support": "Koers test de steun op {range}",
+      "resistance": "Koers test de weerstand op {range}"
+    },
+    "bottoms": "{n} vorige bodem(s) ({years})",
+    "ceilings": "{n} vorige top(pen) ({years})",
+    "seenOn": "zichtbaar op de {tfs} grafiek",
+    "tf": {
+      "yearly": "jaar",
+      "monthly": "maand",
+      "weekly": "week",
+      "daily": "dag"
+    },
+    "flippedSupport": "oude top, nu steun",
+    "flippedResistance": "oude bodem, nu weerstand"
   }
 }

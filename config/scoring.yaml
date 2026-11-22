@@ -27,6 +27,11 @@ signals:
     enabled: false
     weight: 1
     days: 90
+  near_major_bottom:             # T4 (6.4/6.5): optional, off by default
+    enabled: false
+    weight: 1
+    within_pct: 5
+    min_touches: 2
   market_fear:                   # S1: VIX >= vix_above OR Fear & Greed <= fear_greed_below
     enabled: true
     weight: 1
@@ -47,3 +52,14 @@ data_checks:
   max_daily_move: 0.40           # bigger moves are checked for splits, else marked suspect
   stale_days: 3                  # unchanged close for this many trading days = stale
   max_gap_business_days: 5       # missing-data warning if bigger gap inside the last year
+
+# Support / resistance levels (CLAUDE.md 6.5). Owner decision: multi-timeframe "real" levels.
+levels:
+  timeframes:                    # swing window (bars each side), min move away from the level, weight
+    yearly:  { rule: "YE",    window: 2,  min_move: 0.30, weight: 4, label: "Y" }
+    monthly: { rule: "ME",    window: 3,  min_move: 0.20, weight: 3, label: "M" }
+    weekly:  { rule: "W-FRI", window: 8,  min_move: 0.12, weight: 2, label: "W" }
+    daily:   { rule: null,    window: 10, min_move: 0.06, weight: 1, label: "D" }
+  merge_pct: 3                   # swing points / zones within ±3 % merge
+  major_move: 0.25               # a level is "major" if the move away from it was ≥ 25 %
+  keep_per_side: 6               # zones stored above and below the price (the UI shows 3 per side)

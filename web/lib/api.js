@@ -154,8 +154,9 @@ function demoApi(fixture) {
       return structuredClone(state);
     },
     async detail(symbol) {
-      const s = state?.scores.find((x) => x.symbol === symbol);
-      return s?.price ? { weekly: weeklySeries(symbol, s.price, s.pct_from_52w_high) } : null;
+      if (fixture === "nochart") throw new Error("Failed to fetch");
+      const d = await (await fetch("fixtures/detail.json", { cache: "no-cache" })).json();
+      return d[symbol] ? { weekly: d[symbol] } : null;
     },
     async add(row) {
       const w = { ...row, id: `w${Date.now()}`, user_id: UID, created_at: new Date().toISOString() };

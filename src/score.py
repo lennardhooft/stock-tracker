@@ -25,6 +25,7 @@ SIGNAL_META = {
     "valuation_pct": ("V1", "Cheap vs own history"),
     "insider_buying": ("V2", "Insider buying"),
     "market_fear": ("S1", "Market fear"),
+    "near_major_bottom": ("T4", "Near a major previous bottom"),
 }
 
 
@@ -133,19 +134,55 @@ def signal_market_fear(market: dict, cfg: dict) -> dict:
     )
 
 
+def signal_near_major_bottom(price: float, levels: dict | None, cfg: dict) -> dict:
+    """T4 (6.5): price within `within_pct` of a monthly/yearly support zone with ≥ min_touches."""
+    within = float(cfg.get("within_pct", 5))
+    min_touches = int(cfg.get("min_touches", 2))
+    if not levels or not levels.get("zones"):
+        return _signal("near_major_bottom", None, None, within, "no previous bottoms found")
+    cands = [
+        z
+        for z in levels["zones"]
+        if z["role"] == "support" and set(z["tfs"]) & {"Y", "M"} and z["touches"] >= min_touches
+    ]
+    if not cands:
+        return _signal("near_major_bottom", False, None, within, "no major support with 2+ touches")
+    z = min(cands, key=lambda z: abs(z["distance_pct"]))
+    dist = abs(z["distance_pct"])
+    passed = dist <= within
+    return _signal(
+        "near_major_bottom",
+        passed,
+        {
+            "low": z["low"],
+            "high": z["high"],
+            "distance_pct": z["distance_pct"],
+            "touches": z["touches"],
+            "years": z["years"],
+        },
+        within,
+        f"support {z['low']:.2f}-{z['high']:.2f} is {dist:.1f}% away ({z['touches']} touches)",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Combine
 # ---------------------------------------------------------------------------
 
 
-def compute_signals(daily_close: pd.Series, market: dict, scoring_cfg: dict) -> list[dict]:
-    """All enabled Phase 1 signals for one ticker, in display order."""
+def compute_signals(
+    daily_close: pd.Series, market: dict, scoring_cfg: dict, levels: dict | None = None
+) -> list[dict]:
+    """All enabled signals for one ticker, in display order."""
     sig_cfg = scoring_cfg["signals"]
     weekly = ind.to_weekly(daily_close)
     builders = {
         "near_200w_ma": lambda c: signal_near_200w_ma(weekly, c),
         "weekly_rsi": lambda c: signal_weekly_rsi(weekly, c),
         "drawdown": lambda c: signal_drawdown(daily_close, c),
+        "near_major_bottom": lambda c: signal_near_major_bottom(
+            float(daily_close.iloc[-1]), levels, c
+        ),
         "market_fear": lambda c: signal_market_fear(market, c),
     }
     out = []
@@ -177,3 +214,53 @@ def build_score(signals: list[dict], scoring_cfg: dict) -> dict:
         "n_na": n_na,
         "label": score_label(score, scoring_cfg),
     }
+
+
+def weekly_score_history(
+    daily_close: pd.Series, vix_daily: pd.Series | None, scoring_cfg: dict
+) -> pd.Series:
+    """Reconstructed weekly Bottom Score (W-FRI) from prices (T1–T3) and the VIX (S1).
+
+    Fear & Greed has no free history, so S1 here uses the VIX only. Weeks where no signal
+    can be computed are NaN. Used for the score-history chart and "score ≥ 4" markers.
+    """
+    sig = scoring_cfg["signals"]
+    weekly = ind.to_weekly(daily_close)
+    parts: list[pd.Series] = []
+
+    c = sig.get("near_200w_ma", {})
+    if c.get("enabled"):
+        sma = ind.sma(weekly, int(c.get("weeks", 200)))
+        t1 = (weekly <= sma * (1 + float(c.get("tolerance", 0.05)))).astype(float) * float(
+            c.get("weight", 1)
+        )
+        parts.append(t1.where(sma.notna()))
+    c = sig.get("weekly_rsi", {})
+    if c.get("enabled"):
+        rsi = ind.rsi_wilder(weekly, int(c.get("period", 14)))
+        parts.append(
+            (rsi < float(c.get("below", 30))).astype(float).where(rsi.notna())
+            * float(c.get("weight", 1))
+        )
+    c = sig.get("drawdown", {})
+    if c.get("enabled"):
+        dd = (
+            ind.drawdown_pct(daily_close, int(c.get("lookback_days", 252))).resample("W-FRI").last()
+        )
+        dd = dd.reindex(weekly.index)
+        parts.append(
+            (dd <= -float(c.get("min_pct", 30))).astype(float).where(dd.notna())
+            * float(c.get("weight", 1))
+        )
+    c = sig.get("market_fear", {})
+    if c.get("enabled") and vix_daily is not None and not vix_daily.empty:
+        vix_w = vix_daily.resample("W-FRI").last().reindex(weekly.index)
+        parts.append(
+            (vix_w >= float(c.get("vix_above", 30))).astype(float).where(vix_w.notna())
+            * float(c.get("weight", 1))
+        )
+
+    if not parts:
+        return pd.Series(dtype=float)
+    frame = pd.concat(parts, axis=1)
+    return frame.sum(axis=1, min_count=1)

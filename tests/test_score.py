@@ -91,3 +91,41 @@ def test_compute_signals_full_pipeline_crash_scenario():
     assert [s["code"] for s in sigs] == ["T1", "T2", "T3", "S1"]
     assert all(s["passed"] is True for s in sigs)
     assert sc.build_score(sigs, CFG)["score"] == 4
+
+
+def test_weekly_score_history_crash_reaches_4():
+    values = [100.0] * (252 * 5) + list(np.linspace(100, 55, 120))
+    daily = _daily(values)
+    vix = pd.Series([35.0] * len(daily), index=daily.index)
+    hist = sc.weekly_score_history(daily, vix, CFG)
+    assert hist.iloc[-1] == 4
+    # flat period after 200 weeks: T1 (price at its average) + S1 (VIX 35) fire, T2/T3 don't
+    assert len(hist) > 250 and hist.iloc[250] == 2
+
+
+def test_weekly_score_history_no_vix_and_short_history():
+    daily = _daily([100.0] * 60)
+    hist = sc.weekly_score_history(daily, None, CFG)
+    # no 200 weeks, RSI flat = 50 → only T3 (0) and T2 (0) computable
+    assert hist.dropna().max() == 0
+
+
+def test_t4_near_major_bottom():
+    cfg = {"within_pct": 5, "min_touches": 2}
+    lv = {
+        "zones": [
+            {
+                "role": "support",
+                "tfs": ["M", "W"],
+                "touches": 3,
+                "low": 95,
+                "high": 97,
+                "distance_pct": -3.0,
+                "years": [2020, 2022],
+            }
+        ]
+    }
+    assert sc.signal_near_major_bottom(100, lv, cfg)["passed"] is True
+    lv["zones"][0]["distance_pct"] = -9.0
+    assert sc.signal_near_major_bottom(100, lv, cfg)["passed"] is False
+    assert sc.signal_near_major_bottom(100, None, cfg)["passed"] is None

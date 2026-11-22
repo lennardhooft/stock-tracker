@@ -43,6 +43,10 @@ async function quality(page, label) {
   );
   expect(small, `${label}: tap targets under 44px`).toEqual([]);
 
+  const emptyAria = await page.evaluate(() =>
+    [...document.querySelectorAll("[aria-pressed=''], [aria-checked=''], [aria-selected='']")].map((e) => e.outerHTML.slice(0, 60)));
+  expect(emptyAria, `${label}: empty aria state`).toEqual([]);
+
   const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .exclude(".tradingview-widget-container").analyze();
   const serious = axe.violations.filter((v) => ["serious", "critical"].includes(v.impact))
@@ -155,7 +159,7 @@ test("task: Today answers 'anything worth my attention?' above the fold on a sma
 test("task: why does NRDX have a score of 4 — ≤ 2 taps from Today", async ({ page }) => {
   await open(page, "#/");
   await page.getByRole("link", { name: "Research NRDX" }).click();                   // tap 1
-  await expect(page.locator(".signal")).toHaveCount(4);
+  await expect(page.locator("section.card").first().locator(".signal")).toHaveCount(4);
   await expect(page.locator(".signal__detail").first()).toContainText("200-week average");
 });
 
@@ -194,14 +198,43 @@ test("task: set a buy level with inline validation", async ({ page }) => {
   await expect(page.locator(".toast")).toContainText("Saved");
 });
 
-test("chart tab renders and has a text summary", async ({ page }) => {
+test("chart tab: candles, levels, score panel, text summary, remembered toggles", async ({ page }) => {
   await open(page, "#/ticker/NRDX");
   await page.getByRole("tab", { name: "Chart" }).click();
-  await expect(page.locator("#chart canvas").first()).toBeVisible({ timeout: 15000 });
+  await expect(page.locator("#panel")).toHaveAttribute("data-chart", "ready", { timeout: 15000 });
+  await expect(page.locator("#chart canvas").first()).toBeVisible();
+  await expect(page.locator("#score-panel canvas").first()).toBeVisible();
   await expect(page.locator("#chart-summary")).toContainText("200-week average");
+  await expect(page.locator("#chart-summary")).toContainText("Support at");
   await page.getByRole("button", { name: "10Y" }).click();
   await quality(page, "chart");
   await shot(page, "ticker-chart-dark-375");
+  // toggles are remembered on this device
+  await page.locator('[data-show="zones"]').click();
+  await expect(page.locator('[data-show="zones"]')).toHaveAttribute("aria-pressed", "false");
+  await page.reload();
+  await page.waitForFunction(() => document.documentElement.dataset.screen);
+  await page.getByRole("tab", { name: "Chart" }).click();
+  await expect(page.locator('[data-show="zones"]')).toHaveAttribute("aria-pressed", "false");
+});
+
+test("overview: nearest support & resistance in words", async ({ page }) => {
+  await open(page, "#/ticker/NRDX");
+  const card = page.locator("#levels-card");
+  await expect(card).not.toHaveAttribute("aria-busy", "true");
+  await expect(card).toContainText("Support at");
+  await expect(card).toContainText("Resistance at");
+  await expect(card).toContainText("chart");
+  await quality(page, "levels card");
+});
+
+test("chart: failed load shows a retry, not a blank box", async ({ page }) => {
+  await open(page, "#/ticker/NRDX", { fixture: "nochart" });
+  await expect(page.locator("#levels-card")).toContainText("couldn't be loaded");
+  await page.getByRole("tab", { name: "Chart" }).click();
+  await expect(page.locator("#panel")).toHaveAttribute("data-chart", "failed");
+  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  await quality(page, "chart failed");
 });
 
 test("deep link + back keeps the list scroll position", async ({ page }) => {

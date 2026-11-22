@@ -7,6 +7,7 @@ import * as fmt from "./format.js";
 export const ALERT_THRESHOLD = 4;
 
 export const GLOSSARY_KEY = {
+  T4: "support_resistance",
   T1: "near_200w_ma",
   T2: "weekly_rsi",
   T3: "drawdown",
@@ -35,6 +36,11 @@ export function describeSignal(sig, currency = "EUR") {
     case "T3":
       return { name, detail: t("sig.T3.detail", {
         pct: fmt.pct(v.pct), high: fmt.money(v.high, currency), limit: fmt.pct(sig.threshold, 0),
+      }) };
+    case "T4":
+      return { name, detail: t("sig.T4.detail", {
+        range: `${fmt.money(v.low, currency)}–${fmt.money(v.high, currency)}`, dist: fmt.pct(Math.abs(v.distance_pct)),
+        limit: fmt.pct(sig.threshold, 0), n: v.touches,
       }) };
     case "S1": {
       const parts = [];
@@ -98,4 +104,29 @@ export function freshness(latestUpdate, lastRun, now = new Date()) {
   if (!latestUpdate) return "stale";
   const grace = 2 * 3600e3; // scheduled runs can lag
   return new Date(latestUpdate) < new Date(lastExpectedRun(now) - grace) ? "stale" : "fresh";
+}
+
+/* ---------------- support / resistance in words (6.5) ---------------- */
+
+const TF_KEYS = { Y: "yearly", M: "monthly", W: "weekly", D: "daily" };
+
+function joinWords(items) {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} ${t("explain.and")} ${items[items.length - 1]}`;
+}
+
+/** {title, detail} sentences for one zone, e.g. "Support at $105–110, 6 % below". */
+export function describeZone(z, currency) {
+  const range = Math.abs(z.high / z.low - 1) < 0.005
+    ? fmt.money(z.low, currency)
+    : `${fmt.money(z.low, currency)}–${fmt.money(z.high, currency)}`;
+  const dist = fmt.pct(Math.abs(z.distance_pct));
+  const title = z.distance_pct === 0
+    ? t(`levels.inside.${z.role}`, { range })
+    : t(`levels.${z.role}Line`, { range, dist });
+  const kindKey = z.lows >= z.highs ? "bottoms" : "ceilings";
+  const parts = [t(`levels.${kindKey}`, { n: z.touches, years: z.years.slice(-4).join(", ") })];
+  parts.push(t("levels.seenOn", { tfs: joinWords(z.tfs.map((x) => t(`levels.tf.${TF_KEYS[x]}`))) }));
+  if (z.flipped) parts.push(t(z.role === "support" ? "levels.flippedSupport" : "levels.flippedResistance"));
+  return { title, detail: parts.join(" · ") };
 }

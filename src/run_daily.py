@@ -18,7 +18,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from src import data_checks, fetch, log
+from src import data_checks, fetch, levels, log
 from src import indicators as ind
 from src import score as sc
 from src.storage import LocalStore, Store, SupabaseStore
@@ -61,7 +61,11 @@ def build_market_snapshot() -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
 
 
 def process_symbol(
-    symbol: str, market: dict[str, Any], cfg: dict[str, Any], previously_suspect: set[str]
+    symbol: str,
+    market: dict[str, Any],
+    cfg: dict[str, Any],
+    previously_suspect: set[str],
+    vix_hist: pd.Series | None = None,
 ) -> dict[str, Any]:
     """Everything the UI needs for one ticker. Never raises; returns an `error` on failure."""
     raw = fetch.get_daily_history(symbol)
@@ -83,18 +87,25 @@ def process_symbol(
             "suspect": bool(checks.suspect_dates),
         }
 
-    close = clean["Close"] / divisor
-    signals = sc.compute_signals(close, market, cfg)
+    ohlc = clean[["Open", "High", "Low", "Close"]] / divisor
+    close = ohlc["Close"]
+    zones = (
+        levels.detect_levels(ohlc, cfg["levels"])
+        if "levels" in cfg
+        else {"zones": [], "swings": []}
+    )
+    signals = sc.compute_signals(close, market, cfg, zones)
     total = sc.build_score(signals, cfg)
 
     last, prev = float(close.iloc[-1]), float(close.iloc[-2])
     year = close.iloc[-252:]
     weekly = ind.to_weekly(close)
     sma200 = ind.sma(weekly, 200)
-    tail = weekly.iloc[-DETAIL_WEEKS:]
+    wk = levels.resample_ohlc(ohlc, "W-FRI").iloc[-DETAIL_WEEKS:]
+    hist = sc.weekly_score_history(close, vix_hist, cfg).reindex(wk.index)
 
-    def _clean_list(s: pd.Series) -> list[float | None]:
-        return [None if pd.isna(v) else round(float(v), 4) for v in s]
+    def _clean_list(s: pd.Series, nd: int = 4) -> list[float | None]:
+        return [None if pd.isna(v) else round(float(v), nd) for v in s]
 
     return {
         "as_of": close.index[-1].strftime("%Y-%m-%d"),
@@ -113,9 +124,14 @@ def process_symbol(
         "checks": checks.to_json(),
         "suspect": bool(checks.suspect_dates),
         "weekly": {
-            "t": [d.strftime("%Y-%m-%d") for d in tail.index],
-            "c": _clean_list(tail),
-            "sma200": _clean_list(sma200.iloc[-DETAIL_WEEKS:]),
+            "t": [d.strftime("%Y-%m-%d") for d in wk.index],
+            "o": _clean_list(wk["Open"]),
+            "h": _clean_list(wk["High"]),
+            "l": _clean_list(wk["Low"]),
+            "c": _clean_list(wk["Close"]),
+            "sma200": _clean_list(sma200.reindex(wk.index)),
+            "score": _clean_list(hist, 0),  # reconstructed weekly Bottom Score (S1 = VIX only)
+            "levels": zones,  # support / resistance zones + major swings (6.5)
         },
         "rows": len(raw),
     }
@@ -135,11 +151,17 @@ def run(store: Store) -> int:
     log.info(f"watchlist: {len(watchlist)} rows, {len(symbols)} unique tickers")
 
     market, sources = build_market_snapshot()
+    vix_df = fetch.get_daily_history("^VIX")
+    vix_hist = vix_df["Close"] if vix_df is not None else None
+    sources["yahoo_vix_history"] = {
+        "ok": vix_hist is not None,
+        "rows": 0 if vix_hist is None else len(vix_hist),
+    }
     previous = store.load_previous_suspects()
 
     results: dict[str, dict[str, Any]] = {}
     for i, symbol in enumerate(symbols, 1):
-        results[symbol] = process_symbol(symbol, market, cfg, previous.get(symbol, set()))
+        results[symbol] = process_symbol(symbol, market, cfg, previous.get(symbol, set()), vix_hist)
         log.private(f"{symbol}: {results[symbol].get('score', results[symbol].get('error'))}")
         if i % 10 == 0:
             log.info(f"processed {i}/{len(symbols)}")

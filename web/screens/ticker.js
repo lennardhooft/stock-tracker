@@ -1,10 +1,10 @@
 /* Ticker detail — docs/screens/ticker.md
  * Answers "Why does this stock have this score?" at the top, details in tabs. */
-import { html, mount, $, $$ } from "../lib/dom.js";
+import { html, raw, mount, $, $$ } from "../lib/dom.js";
 import { t } from "../lib/i18n.js";
 import * as fmt from "../lib/format.js";
-import { resolvedTheme } from "../lib/settings.js";
-import { explainScore } from "../lib/signals.js";
+import { resolvedTheme, prefsGet, prefsSet } from "../lib/settings.js";
+import { explainScore, describeZone } from "../lib/signals.js";
 import { icon } from "../components/icons.js";
 import { scoreBadge, changeTag } from "../components/badges.js";
 import { statTile, rangeBar } from "../components/cards.js";
@@ -68,11 +68,16 @@ export function renderTicker(ctx, el, symbol, { embedded = false } = {}) {
     </div>
     <div id="panel" role="tabpanel" aria-labelledby="tab-${activeTab}"></div>`);
 
-  const panel = $("#panel", el);
   const show = (k) => {
     activeTab = k;
     $$("[data-tab]", el).forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === k)));
+    chartHandle?.destroy();
+    chartHandle = null;
+    // a fresh panel per tab, so tab listeners never pile up
+    const old = $("#panel", el);
+    const panel = old.cloneNode(false);
     panel.setAttribute("aria-labelledby", `tab-${k}`);
+    old.replaceWith(panel);
     ({ overview: overviewTab, chart: chartTab, notes: notesTab })[k](ctx, panel, row);
   };
   el.addEventListener("click", (e) => {
@@ -84,14 +89,19 @@ export function renderTicker(ctx, el, symbol, { embedded = false } = {}) {
   return { title: row.symbol, back: "#/watchlist" };
 }
 
+/* ------------------------------------------------------------------ Overview */
 function overviewTab(ctx, panel, row) {
   const t1 = (row.signals || []).find((s) => s.code === "T1");
   const vsMa = t1?.value?.pct_vs_sma;
-  const issues = (row.checks?.issues || []).filter((i) => i.level !== "info");
+  const issues = (row.checks?.issues || []).filter((i) => i.level !== "info" && t(`checks.${i.code}`));
   mount(panel, html`
     <section class="card" style="margin-bottom:var(--space-4)">
       <h3 class="card__title">${t("ticker.signalsTitle")}</h3>
       ${signalList(ctx, row)}
+    </section>
+    <section class="card" style="margin-bottom:var(--space-4)" id="levels-card" aria-busy="true">
+      <div class="cluster" style="justify-content:space-between;margin-bottom:var(--space-2)"><h3 class="card__title" style="margin:0">${t("levels.title")}</h3>${ctx.glossaryButton("support_resistance", t("levels.title"))}</div>
+      <div id="levels-body"><span class="skeleton skeleton--text" style="width:70%"></span><br><span class="skeleton skeleton--text" style="width:50%"></span></div>
     </section>
     <div class="tiles" style="margin-bottom:var(--space-4)">
       ${statTile({ label: t("ticker.vsMa"), value: vsMa != null ? `${vsMa >= 0 ? "+" : "−"}${fmt.pct(Math.abs(vsMa))}` : t("common.na"),
@@ -104,14 +114,53 @@ function overviewTab(ctx, panel, row) {
     </div>
     ${issues.length ? banner({ tone: "warning", title: t("ticker.dataCheck"), body: issues.map((i) => t(`checks.${i.code}`)).join(" ") }) : ""}
   `);
+
+  // nearest levels need the detail data: load it after the rest is on screen
+  ctx.api.detail(row.symbol).then((d) => {
+    const body = $("#levels-body", panel);
+    if (!body) return;
+    $("#levels-card", panel).removeAttribute("aria-busy");
+    const zones = d?.weekly?.levels?.zones || [];
+    const picks = [nearest(zones, "support"), nearest(zones, "resistance")].filter(Boolean);
+    if (!picks.length) { mount(body, html`<p class="text-2">${t("levels.none")}</p>`); return; }
+    mount(body, html`<ul class="signals">${picks.map((z) => {
+      const dz = describeZone(z, row.currency);
+      const sup = z.role === "support";
+      return html`<li class="signal" data-state="${sup ? "passed" : "na"}">
+        <span class="signal__icon" style="color:var(--color-${sup ? "positive" : "negative"})">${icon(sup ? "trendDown" : "warning", { label: t(`levels.${z.role}`) })}</span>
+        <span class="signal__name">${dz.title}</span>
+        <span class="signal__detail">${dz.detail}</span></li>`;
+    })}</ul>`);
+  }).catch(() => {
+    const body = $("#levels-body", panel);
+    if (!body) return;
+    $("#levels-card", panel).removeAttribute("aria-busy");
+    mount(body, html`<p class="text-2">${t("levels.failed")}</p>`);
+  });
 }
 
+/** Nearest zone of a role, preferring long-term (Y/M) levels like the T4 signal does. */
+function nearest(zones, role) {
+  const side = zones.filter((z) => z.role === role);
+  const longTerm = side.filter((z) => z.tfs.includes("Y") || z.tfs.includes("M"));
+  const pool = longTerm.length ? longTerm : side;
+  return [...pool].sort((a, b) => Math.abs(a.distance_pct) - Math.abs(b.distance_pct))[0] || null;
+}
+
+/* ------------------------------------------------------------------ Chart */
 let chartHandle = null;
-async function chartTab(ctx, panel, row) {
-  chartHandle?.destroy();
-  chartHandle = null;
+
+const SWATCH = {
+  zones: '<i aria-hidden="true" style="display:inline-block;width:14px;height:10px;border-radius:2px;background:color-mix(in srgb,var(--color-positive) 35%,transparent);border-top:2px solid var(--color-positive)"></i>',
+  ma: '<i aria-hidden="true" style="display:inline-block;width:14px;height:0;border-top:2px dashed var(--chart-2)"></i>',
+  markers: '<span aria-hidden="true" style="color:var(--color-positive)">▲</span>',
+};
+
+function chartTab(ctx, panel, row) {
   let mode = "weekly";
   let years = 5;
+  const show = { ...prefsGet().chartShow };
+  const toggle = (key, label) => html`<button type="button" class="chip chip--choice" data-show="${key}" aria-pressed="${show[key]}">${raw(SWATCH[key])}${label}</button>`;
   mount(panel, html`
     <div class="toolbar">
       <div class="segmented" role="group" aria-label="${t("chart.source")}">
@@ -123,32 +172,49 @@ async function chartTab(ctx, panel, row) {
       </div>
     </div>
     <div class="chart-box" id="chart"><div class="skeleton" style="height:100%"></div></div>
-    <div class="chart-legend" id="legend"><span><i style="background:var(--chart-1)"></i>${t("chart.price")}</span><span><i style="background:var(--chart-2)"></i>${t("chart.ma200")}</span></div>
-    <p class="small text-2" id="chart-summary" style="margin-top:var(--space-2)"></p>`);
+    <div id="score-panel-wrap">
+      <p class="xs muted" style="margin:var(--space-2) 0 2px">${t("chart.scoreHistory")}</p>
+      <div class="chart-box" id="score-panel" style="height:84px"></div>
+      <p class="xs muted" style="margin-top:2px">${t("chart.scoreHistoryNote")}</p>
+    </div>
+    <div class="chips" id="legend" role="group" aria-label="${t("chart.legend")}" style="margin-top:var(--space-3)">
+      ${toggle("zones", t("chart.zones"))}${toggle("ma", t("chart.ma200short"))}${toggle("markers", t("chart.markers"))}
+    </div>
+    <p class="small text-2" id="chart-summary" style="margin-top:var(--space-3)"></p>`);
 
   const box = $("#chart", panel);
   const summary = $("#chart-summary", panel);
+  const wrap = $("#score-panel-wrap", panel);
   const drawWeekly = async () => {
     box.innerHTML = '<div class="skeleton" style="height:100%"></div>';
+    $("#score-panel", panel).innerHTML = "";
     try {
       const d = await ctx.api.detail(row.symbol);
       if (!d?.weekly?.c?.length) throw new Error("no data");
+      if (!panel.isConnected) return; // user switched tab meanwhile
       box.innerHTML = "";
-      chartHandle = await priceChart(box, d.weekly);
+      wrap.hidden = !d.weekly.score?.some((v) => v != null);
+      chartHandle = await priceChart(box, d.weekly, { show, scoreEl: wrap.hidden ? null : $("#score-panel", panel) });
       chartHandle.setRange(years);
-      summary.textContent = chartSummary(d.weekly, row.currency);
+      summary.textContent = chartSummary(d.weekly, row.currency, nearest(d.weekly.levels?.zones || [], "support"));
+      panel.dataset.chart = "ready";
     } catch {
-      mount(box, html`<div class="state" style="height:100%;border:0">${icon("error", { cls: "state__icon" })}<p class="state__body">${t("chart.failed")}</p></div>`);
+      wrap.hidden = true;
+      mount(box, html`<div class="state" style="height:100%;border:0">${icon("error", { cls: "state__icon" })}<p class="state__body">${t("chart.failed")}</p>
+        <button type="button" class="btn btn--secondary" data-retry-chart>${icon("refresh")}${t("common.retry")}</button></div>`);
+      panel.dataset.chart = "failed";
     }
   };
   panel.addEventListener("click", (e) => {
     const m = e.target.closest("[data-mode]");
     const y = e.target.closest("[data-years]");
+    const sh = e.target.closest("[data-show]");
+    if (e.target.closest("[data-retry-chart]")) drawWeekly();
     if (m && m.dataset.mode !== mode) {
       mode = m.dataset.mode;
       $$("[data-mode]", panel).forEach((b) => b.setAttribute("aria-pressed", String(b === m)));
-      $("#ranges", panel).hidden = mode === "live";
-      $("#legend", panel).hidden = mode === "live";
+      for (const id of ["#ranges", "#legend"]) $(id, panel).hidden = mode === "live";
+      wrap.hidden = mode === "live";
       summary.hidden = mode === "live";
       chartHandle?.destroy();
       chartHandle = null;
@@ -160,24 +226,33 @@ async function chartTab(ctx, panel, row) {
       $$("[data-years]", panel).forEach((b) => b.setAttribute("aria-pressed", String(b === y)));
       chartHandle?.setRange(years);
     }
+    if (sh) {
+      show[sh.dataset.show] = !show[sh.dataset.show];
+      sh.setAttribute("aria-pressed", String(show[sh.dataset.show]));
+      prefsSet({ chartShow: { ...show } });
+      chartHandle?.setShow(show);
+    }
   });
   drawWeekly();
 }
 
 /** Text alternative for the chart (8.7). */
-function chartSummary(w, currency) {
+function chartSummary(w, currency, support) {
   const n = w.c.length;
   const last = w.c[n - 1];
   const ma = w.sma200[n - 1];
   const ago = w.sma200[n - 5] != null ? (w.c[n - 5] / w.sma200[n - 5] - 1) * 100 : null;
-  if (ma == null) return t("chart.summaryNoMa", { price: fmt.money(last, currency) });
-  const now = (last / ma - 1) * 100;
-  return t("chart.summary", {
-    pct: fmt.pct(Math.abs(now)), dir: t(now >= 0 ? "chart.above" : "chart.below"),
-    before: ago != null ? fmt.pct(ago) : t("common.na"),
-  });
+  let text = ma == null
+    ? t("chart.summaryNoMa", { price: fmt.money(last, currency) })
+    : t("chart.summary", {
+      pct: fmt.pct(Math.abs((last / ma - 1) * 100)), dir: t(last >= ma ? "chart.above" : "chart.below"),
+      before: ago != null ? fmt.pct(ago) : t("common.na"),
+    });
+  if (support) text += ` ${describeZone(support, currency).title}.`;
+  return text;
 }
 
+/* ------------------------------------------------------------------ My notes */
 function notesTab(ctx, panel, row) {
   mount(panel, html`<form class="stack" novalidate>
     <label class="field"><span class="field__label">${t("ticker.notes")}</span>

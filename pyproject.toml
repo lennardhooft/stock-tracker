@@ -10,7 +10,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
-ignore = ["UP017", "UP047"]  # keep syntax that also runs on older local Pythons
+ignore = ["UP017", "UP047", "B905"]  # keep syntax that also runs on older local Pythons (zip strict= is 3.10+)
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -11,6 +11,7 @@ export const DEFAULTS = {
   minScore: 0,
   market: "all",        // all | US | EU
   onboarded: false,
+  chartShow: { zones: true, ma: true, markers: true },
 };
 
 let prefs = { ...DEFAULTS };

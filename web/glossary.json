@@ -82,5 +82,12 @@
     "why": "Shows the mood in growth and tech stocks, which often move more than the overall market.",
     "how": "The day change shows how it moved at the last close.",
     "limits": "Tech-heavy, so it can differ a lot from the broader market."
+  },
+  "support_resistance": {
+    "title": "Support & resistance",
+    "what": "Price levels where a stock turned around before. Support is an old bottom below today's price; resistance is an old ceiling above it. The app finds them automatically on yearly, monthly, weekly and daily charts.",
+    "why": "Buyers often step in again near an old bottom, so long-term investors use support zones to plan staged buys.",
+    "how": "Stronger = seen on longer timeframes (yearly, monthly) and touched more often. An old ceiling that price broke through often becomes support (and the other way round).",
+    "limits": "Levels are history, not a promise. A support can break, especially after bad news. Daily levels matter far less than monthly or yearly ones."
   }
 }
