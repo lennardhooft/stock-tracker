@@ -1,0 +1,19 @@
+{
+  "_note": "FAKE data for the demo app and UI tests. Fictional companies, invented numbers.",
+  "market": {
+    "sp500": { "value": 6910.39, "change_pct": -3.7 },
+    "nasdaq": { "value": 22617.73, "change_pct": -5.28 },
+    "vix": { "value": 35.9, "change_pct": 26.2 },
+    "fear_greed": { "value": 10, "rating": "extreme fear" }
+  },
+  "stocks": [
+    { "symbol": "NRDX", "name": "Nordex Semiconductors", "price": 118.4, "currency": "USD", "change_pct": -6.2, "pct_from_52w_high": -38.5, "score": 4, "label": "strong", "fired": ["T1", "T2", "T3", "S1"], "vs_sma": 2.1, "rsi": 27.4, "prev_score": 3, "notes": "Wait for weekly RSI under 30." },
+    { "symbol": "BLMT.BR", "name": "Belmont Chemicals", "price": 42.15, "currency": "EUR", "change_pct": -1.4, "pct_from_52w_high": -27.3, "score": 2, "label": "watch", "fired": ["T2", "S1"], "vs_sma": 9.4, "rsi": 29.1, "prev_score": 1, "buy_below": 43, "na": [] },
+    { "symbol": "ORCA", "name": "Orca Cloud Systems", "price": 342.56, "currency": "USD", "change_pct": 0.84, "pct_from_52w_high": -3.9, "score": 1, "label": "normal", "fired": ["S1"], "vs_sma": 52.0, "rsi": 61.2, "prev_score": 1 },
+    { "symbol": "VLTA.AS", "name": "Valtara International Holding & Infrastructure Group", "price": 1288.2, "currency": "EUR", "change_pct": 0.0, "pct_from_52w_high": -25.2, "score": 1, "label": "normal", "fired": ["S1"], "vs_sma": 48.6, "rsi": 42.1, "prev_score": 1, "suspect": true },
+    { "symbol": "WORLD.AS", "name": "Global Index Tracker ETF", "price": 126.73, "currency": "EUR", "change_pct": -0.29, "pct_from_52w_high": -4.2, "score": 1, "label": "normal", "fired": ["S1"], "vs_sma": 28.8, "rsi": 52.0, "prev_score": 1 },
+    { "symbol": "NEWCO", "name": "Newly Listed Co", "price": 18.9, "currency": "USD", "change_pct": 2.3, "pct_from_52w_high": -12.0, "score": 1, "label": "normal", "fired": ["S1"], "na": ["T1"], "rsi": 47.0, "prev_score": 1 },
+    { "symbol": "KESL.DE", "name": "Kessler Maschinenbau", "score": null },
+    { "symbol": "ZZQX", "name": "Unknown ticker test", "error": "no price data" }
+  ]
+}

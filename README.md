@@ -143,11 +143,23 @@ Run the daily job without Supabase. It uses the example watchlist and writes to 
 python -m src.run_daily --local
 ```
 
-Preview the app with that data (demo mode, no login) at http://localhost:8000:
+Preview the app with FAKE fixture data (demo mode, no login) at http://localhost:8000.
+Add `?fixture=empty` (or `calm`, `stale`, `failed`, `partial`, `error`, `offline`, `new`, `login`) to see each state:
 
 ```bash
 sh scripts/preview_local.sh
 ```
+
+UI checks (CLAUDE.md 8.11): screenshots of every screen and state at 375/768/1280 px in both themes,
+axe-core accessibility, tap targets, overflow, untranslated text and the task walkthroughs.
+Screenshots land in `docs/screenshots/` (gitignored):
+
+```bash
+npm ci && npx playwright install chromium
+npx playwright test
+```
+
+The style guide (every component in every state) is at `/styleguide.html`, and the screen specs are in `docs/screens/`.
 
 Set `LOCAL_DEBUG=1` to see tickers and scores in the local logs. **Never set it in GitHub.**
 

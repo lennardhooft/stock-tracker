@@ -1,35 +1,42 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#0e1116">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="description" content="Personal long-term stock watchlist with a transparent Bottom Score.">
   <title>Bottom Tracker</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="design/tokens.css">
+  <link rel="stylesheet" href="design/components.css">
+  <script>
+    /* apply the saved theme before first paint (no flash) */
+    try {
+      var p = JSON.parse(localStorage.getItem("bt.prefs.v1") || "{}");
+      var th = p.theme === "system" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : (p.theme || "dark");
+      document.documentElement.dataset.theme = th;
+    } catch (e) { /* storage blocked: default dark */ }
+  </script>
 </head>
 <body>
-  <header class="topbar">
-    <a href="#" class="brand">Bottom Tracker</a>
-    <nav id="nav" hidden>
-      <a href="#">Watchlist</a>
-      <a href="#health">Health</a>
-      <a href="#help">Help</a>
-      <button id="logout" class="link">Log out</button>
-    </nav>
-  </header>
+  <a class="visually-hidden" href="#main">Skip to content</a>
+  <div class="shell" id="shell">
+    <nav class="rail" id="rail" aria-label="Main"></nav>
+    <div>
+      <header class="topbar" id="topbar"></header>
+      <main class="content" id="main" tabindex="-1">
+        <div class="list" role="status" aria-label="Loading">
+          <span class="skeleton skeleton--title"></span>
+        </div>
+      </main>
+    </div>
+  </div>
+  <nav class="tabbar" id="tabbar" aria-label="Main"></nav>
+  <noscript><p style="padding:16px">This app needs JavaScript.</p></noscript>
 
-  <main id="app">
-    <p class="muted center">Loading…</p>
-  </main>
-
-  <footer class="footer">
-    Not financial advice. Signals mark things worth researching, not buy calls.
-  </footer>
-
-  <!-- config.js is generated at deploy time (scripts/build_web.sh); only the PUBLIC anon key. -->
+  <!-- config.js is generated at deploy time (scripts/build_web.sh): only the PUBLIC key. -->
   <script src="config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

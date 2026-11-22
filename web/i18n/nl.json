@@ -13,7 +13,8 @@
     "save": "Opslaan",
     "more": "Meer",
     "info": "Wat betekent dit?",
-    "loading": "Laden…"
+    "loading": "Laden…",
+    "back": "Terug"
   },
   "change": {
     "up": "gestegen",
@@ -92,7 +93,10 @@
     "suspectTitle": "Sommige koersen lijken fout.",
     "suspectBody": "Ze tellen niet mee tot de volgende update ze bevestigt.",
     "offlineTitle": "Offline.",
-    "offlineBody": "Gegevens van {time}."
+    "offlineBody": "Gegevens van {time}.",
+    "failedTitle": "De laatste update is mislukt.",
+    "failedBody": "Je ziet de vorige scores.",
+    "healthAction": "Details"
   },
   "state": {
     "emptyWatchlistTitle": "Je volglijst is leeg",
@@ -121,5 +125,293 @@
   "styleguide": {
     "title": "Stijlgids",
     "intro": "Elke component in elke toestand. Schermen gebruiken alleen wat hier staat."
+  },
+  "errors": {
+    "configTitle": "De app is niet correct ingesteld",
+    "configBody": "De verbindingsinstellingen ontbreken. Je gegevens zijn veilig.",
+    "saveFailed": "Opslaan mislukt: {reason}"
+  },
+  "login": {
+    "title": "Inloggen",
+    "body": "We mailen je een eenmalige inloglink. Alleen het account van de eigenaar kan inloggen.",
+    "email": "E-mailadres",
+    "send": "Inloglink versturen",
+    "sending": "Versturen…",
+    "sent": "Kijk in je mail en tik op de link om in te loggen.",
+    "invalid": "Vul een geldig e-mailadres in, bv. naam@voorbeeld.be.",
+    "failed": "De link kon niet verstuurd worden: {reason}"
+  },
+  "about": {
+    "disclaimerShort": "Geen financieel advies. Signalen tonen wat het onderzoeken waard is, geen koopadvies.",
+    "what": "Bottom Tracker controleert je volglijst elke weekdagavond en geeft elk aandeel een bodemscore: hoeveel signalen erop wijzen dat het dicht bij een langetermijnbodem zit. Elke score toont precies welke signalen afgingen en waarom.",
+    "disclaimer": "Dit is een persoonlijk onderzoeksinstrument. Het is geen financieel advies en plaatst nooit orders. Een hoge score betekent \"het onderzoeken waard\", niet \"kopen\". Aandelen kunnen lang goedkoop blijven.",
+    "privacy": "Je volglijst en scores worden privé bewaard: alleen jouw account kan ze lezen."
+  },
+  "search": {
+    "title": "Zoeken",
+    "placeholder": "Ticker of bedrijfsnaam",
+    "add": "{symbol} toevoegen aan je volglijst"
+  },
+  "glossary": {
+    "why": "Waarom het telt:",
+    "how": "Hoe lees je het:",
+    "limits": "Beperkingen:"
+  },
+  "market": {
+    "fearGreed": "Fear & Greed",
+    "unavailable": "bron niet beschikbaar"
+  },
+  "mood": {
+    "extremeFear": "Extreme angst",
+    "fear": "Angst",
+    "neutral": "Neutraal",
+    "greed": "Hebzucht",
+    "extremeGreed": "Extreme hebzucht",
+    "unknown": "onbekend",
+    "panic": "Paniek",
+    "nervous": "Nerveus",
+    "calm": "Rustig"
+  },
+  "sig": {
+    "T1": {
+      "name": "Dicht bij zijn 4-jaarsgemiddelde",
+      "short": "de koers zit dicht bij zijn 4-jaarsgemiddelde",
+      "na": "n.b.: vraagt 4 jaar koersgeschiedenis.",
+      "above": "Koers ligt {pct} boven het 200-wekengemiddelde van {sma} (gaat af binnen {limit}).",
+      "below": "Koers ligt {pct} onder het 200-wekengemiddelde van {sma} (gaat af binnen {limit})."
+    },
+    "T2": {
+      "name": "Wekelijkse RSI oversold",
+      "short": "de RSI is oversold",
+      "na": "n.b.: nog niet genoeg weekkoersen.",
+      "detail": "Wekelijkse RSI is {rsi} (gaat af onder {limit})."
+    },
+    "T3": {
+      "name": "Ver onder zijn 52-wekentop",
+      "short": "de koers ligt ver onder zijn top",
+      "na": "n.b.: niet genoeg koersgeschiedenis.",
+      "detail": "{pct} t.o.v. de 52-wekentop van {high} (gaat af bij {limit})."
+    },
+    "S1": {
+      "name": "Markt in angst",
+      "short": "de hele markt is angstig",
+      "na": "n.b.: VIX en Fear & Greed waren beide niet beschikbaar.",
+      "detail": "{values} (gaat af bij VIX ≥ 30 of Fear & Greed ≤ 25)."
+    }
+  },
+  "explain": {
+    "none": "Nu geen bodemsignalen.",
+    "withSignals": "{label}: {list}.",
+    "and": "en"
+  },
+  "today": {
+    "summaryOne": "1 aandeel toont sterke bodemsignalen",
+    "summaryMany": "{n} aandelen tonen sterke bodemsignalen",
+    "summaryAttention": "Geen sterke bodemsignalen, wel een paar dingen om na te kijken",
+    "summaryCalm": "Vandaag geen sterke bodemsignalen",
+    "summaryEmpty": "Je volglijst is leeg",
+    "mood": "Marktsfeer:",
+    "updated": "bijgewerkt {time}",
+    "attention": "Vraagt je aandacht",
+    "market": "Markt",
+    "topOfList": "Bovenaan je volglijst",
+    "seeAll": "Alle {n} aandelen",
+    "openStock": "{symbol} openen",
+    "summaryPending": "Je aandelen krijgen vanavond hun eerste score"
+  },
+  "attention": {
+    "strongTitle": "{symbol}: {score} van {max} bodemsignalen",
+    "research": "{symbol} onderzoeken",
+    "roseTitle": "{symbol} ging van {from} naar {to}",
+    "seeWhy": "Bekijk waarom",
+    "buyTitle": "{symbol} bereikte je aankoopniveau",
+    "buyBody": "Koers {price} ligt op of onder je niveau van {level}.",
+    "open": "{symbol} openen",
+    "jobFailedTitle": "De update van vanavond is mislukt",
+    "dataBody": "Betrokken scores tellen niet mee tot de gegevens bevestigd zijn.",
+    "health": "Gegevensstatus bekijken",
+    "dataTitleOne": "1 aandeel heeft een gegevensprobleem",
+    "dataTitleMany": "{n} aandelen hebben een gegevensprobleem",
+    "pendingOne": "{symbol} wacht op zijn eerste score",
+    "pendingMany": "{n} aandelen wachten op hun eerste score",
+    "pendingBody": "Nieuwe aandelen krijgen een score bij de update van vanavond (rond 22:45 Brusselse tijd).",
+    "seeWatchlist": "Volglijst openen"
+  },
+  "watchlist": {
+    "count": "{n} aandelen · {strong} met sterke bodemsignalen",
+    "sortBy": "Sorteren op",
+    "sort": {
+      "score": "Score",
+      "change": "Dag",
+      "high": "T.o.v. top",
+      "name": "A–Z"
+    },
+    "filter": "Filter",
+    "filtersTitle": "Filter",
+    "minScore": "Minimale score",
+    "market": "Markt",
+    "any": "Alle",
+    "showResults": "Resultaten tonen",
+    "chipScore": "Score ≥ {n}",
+    "removeFilter": "Filter verwijderen",
+    "noMatch": "Geen aandelen voor deze filters.",
+    "clearFilters": "Filters wissen",
+    "actionsFor": "Acties voor {symbol}",
+    "open": "Openen",
+    "remove": "Verwijderen uit volglijst",
+    "add": "Aandeel toevoegen",
+    "pickOne": "Kies links een aandeel om te zien waarom het zijn score heeft."
+  },
+  "add": {
+    "title": "Aandeel toevoegen",
+    "label": "Ticker of bedrijf",
+    "placeholder": "AAPL, ASML.AS, Solvay…",
+    "hint": "EU-aandelen hebben een achtervoegsel: .AS Amsterdam, .BR Brussel, .PA Parijs, .DE Xetra.",
+    "invalid": "Alleen letters, cijfers, punten of streepjes (max. 20).",
+    "exists": "Staat al op je volglijst.",
+    "didYouMean": "Bedoel je {symbol}? EU-aandelen hebben hun beurs-achtervoegsel nodig.",
+    "more": "Meer opties (naam, notities)",
+    "name": "Naam (optioneel)",
+    "notes": "Notities (optioneel)",
+    "submit": "Toevoegen aan volglijst",
+    "added": "{symbol} toegevoegd · score na de update van vanavond",
+    "onList": "op je lijst"
+  },
+  "ticker": {
+    "asOf": "slot van {date}",
+    "noScoreTitle": "Geen score.",
+    "noScoreBody": "Yahoo heeft geen koersen voor {symbol}. Controleer het symbool (EU-aandelen hebben een achtervoegsel zoals .AS).",
+    "pendingTitle": "Nog geen score.",
+    "pendingBody": "Dit aandeel krijgt zijn eerste score na de update van vanavond.",
+    "notOnListTitle": "{symbol} staat niet op je volglijst",
+    "notOnListBody": "Voeg het toe en het krijgt een bodemscore na de update van vanavond.",
+    "addIt": "Toevoegen aan volglijst",
+    "setBuyAlert": "Aankoopniveau instellen",
+    "buyIsSet": "Aankoopniveau {level}",
+    "buyTitle": "Aankoopniveau voor {symbol}",
+    "buyHint": "Vandaag toont een kaart wanneer de koers tot dit niveau zakt. Telegram-meldingen komen in fase 2.",
+    "buyLabel": "Koers ({cur})",
+    "buyInvalid": "Vul een positief getal in, bv. 105,50.",
+    "saveBuy": "Aankoopniveau opslaan",
+    "clearBuy": "Aankoopniveau verwijderen",
+    "tab": {
+      "overview": "Overzicht",
+      "chart": "Grafiek",
+      "notes": "Mijn notities"
+    },
+    "signalsTitle": "Welke signalen afgingen",
+    "vsMa": "t.o.v. 4-jaarsgemiddelde",
+    "vsMaAbove": "boven het 200-wekengemiddelde",
+    "vsMaBelow": "onder het 200-wekengemiddelde",
+    "fromHigh": "T.o.v. 52w-top",
+    "highWas": "top was {high}",
+    "range52": "Koers binnen zijn 52-wekenbereik",
+    "dataCheck": "Gegevenscontrole:",
+    "notes": "Notities",
+    "notesHint": "Alleen jij ziet deze."
+  },
+  "checks": {
+    "suspect_move": "Een onverklaarde koerssprong telt niet mee tot de volgende update hem bevestigt.",
+    "nonpositive_price": "Enkele koersen van nul of negatief zijn verwijderd.",
+    "stale": "De koers is al enkele dagen niet veranderd.",
+    "gap": "Er ontbreken enkele dagen koersgegevens.",
+    "no_data": "Geen bruikbare koersgegevens.",
+    "confirmed_move": "",
+    "split": "",
+    "minor_currency": ""
+  },
+  "chart": {
+    "source": "Soort grafiek",
+    "weekly": "Wekelijks",
+    "live": "Live",
+    "range": "Periode",
+    "price": "Weekslot",
+    "ma200": "200-wekengemiddelde",
+    "failed": "De grafiek kon niet geladen worden. Probeer later opnieuw.",
+    "summary": "Koers ligt {pct} {dir} het 200-wekengemiddelde (een maand geleden: {before}).",
+    "summaryNoMa": "Laatste weekslot {price}. Niet genoeg geschiedenis voor het 200-wekengemiddelde.",
+    "above": "boven",
+    "below": "onder"
+  },
+  "more": {
+    "settings": "Instellingen",
+    "settingsHint": "Thema, taal, getalnotatie",
+    "health": "Gegevensstatus",
+    "glossary": "Woordenlijst",
+    "glossaryHint": "Wat elk signaal betekent",
+    "about": "Over & disclaimer",
+    "logout": "Uitloggen",
+    "logoutHint": "Uitloggen via Meer"
+  },
+  "settings": {
+    "display": "Weergave",
+    "theme": "Thema",
+    "dark": "Donker",
+    "light": "Licht",
+    "system": "Zoals telefoon",
+    "themeHint": "Standaard: donker.",
+    "lang": "Taal",
+    "langHint": "Standaard: Engels.",
+    "numfmt": "Getalnotatie",
+    "numfmtHint": "Standaard: Belgisch (€ 1.234,56).",
+    "explain": "Uitleg voor beginners",
+    "explainHint": "Toont een ⓘ naast elke maatstaf. Standaard: aan.",
+    "account": "Account & beveiliging",
+    "privacy": "Je gegevens zijn privé: alleen jouw account kan ze lezen.",
+    "data": "Gegevens",
+    "schedule": "Scores worden elke weekdag rond 22:45 (Brusselse tijd) bijgewerkt.",
+    "about": "Over",
+    "tour": "Welkomstrondleiding opnieuw tonen",
+    "notStored": "Toegepast, maar kon niet bewaard worden op dit toestel."
+  },
+  "health": {
+    "lastUpdate": "Laatste scoreupdate: {time}.",
+    "lastRun": "Laatste dagelijkse update",
+    "counts": "{scored} van {tickers} aandelen gescoord · {errors} zonder gegevens · {suspect} verdacht",
+    "sources": "Gegevensbronnen",
+    "ok": "Werkt",
+    "failed": "Mislukt",
+    "lastSuccess": "laatst gelukt {time}",
+    "recent": "Recente updates",
+    "scoredOf": "{scored}/{tickers} gescoord",
+    "noRuns": "Er is nog geen update gelopen.",
+    "status": {
+      "ok": "OK",
+      "partial": "Deels OK",
+      "failed": "Mislukt"
+    },
+    "src": {
+      "yahoo_prices": "Aandelenkoersen (Yahoo)",
+      "yahoo_sp500": "S&P 500 (Yahoo)",
+      "yahoo_nasdaq": "Nasdaq (Yahoo)",
+      "yahoo_vix": "VIX (Yahoo)",
+      "cnn_fear_greed": "Fear & Greed (CNN)"
+    }
+  },
+  "welcome": {
+    "title": "Welkom",
+    "stepOf": "Stap {n} van {total}",
+    "skip": "Overslaan",
+    "next": "Volgende",
+    "later": "Later",
+    "done": "Starten",
+    "s1Title": "Spot mogelijke bodems, rustig",
+    "s1Body": "Bottom Tracker controleert je aandelen elke nacht en meldt wanneer er een dicht bij een langetermijnbodem zit. Het is een onderzoeksinstrument, geen advies.",
+    "s2Title": "Voeg je eerste aandelen toe",
+    "s2Body": "Tik er een paar aan om ze toe te voegen. Later kan je elk aandeel toevoegen met de +-knop.",
+    "examples": "Voorbeelden",
+    "examplesNote": "Voorbeelden om te starten, geen aanbevelingen.",
+    "addThese": "{n} geselecteerd toevoegen",
+    "s3Title": "Zo lees je de score",
+    "level": {
+      "normal": "Normaal: niets bijzonders.",
+      "watch": "Opvolgen: een paar signalen, hou het in het oog.",
+      "strong": "Sterk: meerdere signalen zijn het eens, het onderzoeken waard.",
+      "extreme": "Extreem: bijna alles wijst op een bodem."
+    },
+    "tapHint": "Tik op een score om te zien welke signalen afgingen en waarom.",
+    "selectFirst": "Kies aandelen om toe te voegen",
+    "addedOne": "1 aandeel toegevoegd",
+    "addedMany": "{n} aandelen toegevoegd"
   }
 }

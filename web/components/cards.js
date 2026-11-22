@@ -34,11 +34,13 @@ export function stockCard(s, { href = "" } = {}) {
   const body = scored
     ? html`<div class="stock__price num"><strong>${fmt.money(s.price, s.currency)}</strong>${changeTag(s.change_pct, 1)}</div>
       <div class="stock__meta num">${t("stock.fromHigh", { value: fmt.pct(s.pct_from_52w_high) })}</div>
-      <div class="stock__spark">${sparkline(s.sparkline)}</div>`
+      <div class="stock__spark">${sparkline(s.sparkline, { w: 72 })}</div>`
     : html`<div class="stock__note">${s.error ? t("stock.error") : t("stock.pending")}</div>`;
   return html`<${raw(Tag)} class="stock" ${href ? raw(`href="${href}"`) : ""}>
-    <div class="stock__id"><span class="stock__ticker">${s.symbol}</span><span class="stock__name truncate">${s.name || ""}</span></div>
-    <div class="stock__score">${s.top ? topBadge(s.top) : ""}${scoreBadge(s)}</div>
+    <div class="stock__head">
+      <div class="stock__id"><span class="stock__ticker">${s.symbol}</span><span class="stock__name truncate">${s.name || ""}</span></div>
+      <div class="stock__score">${s.top ? topBadge(s.top) : ""}${scoreBadge(s)}</div>
+    </div>
     ${body}
   </${raw(Tag)}>`;
 }

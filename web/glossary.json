@@ -61,5 +61,26 @@
     "why": "Free data sources sometimes contain errors. A bad price should never trigger a score or alert.",
     "how": "⚠️ next to a score = something looked wrong. A suspicious price is left out until the next run confirms it.",
     "limits": "Checks catch obvious errors only. See the Health page for each data source's status."
+  },
+  "range_52w": {
+    "title": "52-week range",
+    "what": "The lowest and highest closing price of the last 52 weeks, with today's price marked in between.",
+    "why": "It shows at a glance whether the stock trades near its yearly low (often where bottoms form) or near its high.",
+    "how": "Marker on the left = near the yearly low. On the right = near the yearly high.",
+    "limits": "One year is short for long-term investing. Use the 4-year average (T1) for the bigger picture."
+  },
+  "sp500": {
+    "title": "S&P 500",
+    "what": "An index of the 500 largest US companies, the most-watched measure of the US stock market.",
+    "why": "When the whole market falls, good companies fall with it. That context matters when judging one stock's drop.",
+    "how": "The day change shows how the market moved at the last close.",
+    "limits": "US only, and dominated by the largest tech companies."
+  },
+  "nasdaq": {
+    "title": "Nasdaq Composite",
+    "what": "An index of all stocks on the Nasdaq exchange, heavy in technology companies.",
+    "why": "Shows the mood in growth and tech stocks, which often move more than the overall market.",
+    "how": "The day change shows how it moved at the last close.",
+    "limits": "Tech-heavy, so it can differ a lot from the broader market."
   }
 }

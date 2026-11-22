@@ -13,7 +13,8 @@
     "save": "Save",
     "more": "More",
     "info": "What does this mean?",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "back": "Back"
   },
   "change": {
     "up": "up",
@@ -92,7 +93,10 @@
     "suspectTitle": "Some prices look wrong.",
     "suspectBody": "They're left out of the scores until the next update confirms them.",
     "offlineTitle": "Offline.",
-    "offlineBody": "Showing data from {time}."
+    "offlineBody": "Showing data from {time}.",
+    "failedTitle": "The last update failed.",
+    "failedBody": "You're seeing the previous scores.",
+    "healthAction": "Details"
   },
   "state": {
     "emptyWatchlistTitle": "Your watchlist is empty",
@@ -121,5 +125,293 @@
   "styleguide": {
     "title": "Style guide",
     "intro": "Every component in every state. Screens may only use what is shown here."
+  },
+  "errors": {
+    "configTitle": "The app isn't set up correctly",
+    "configBody": "The connection settings are missing. Your data is safe.",
+    "saveFailed": "Couldn't save: {reason}"
+  },
+  "login": {
+    "title": "Log in",
+    "body": "We'll email you a one-time login link. Only the owner's account can log in.",
+    "email": "Email address",
+    "send": "Send login link",
+    "sending": "Sending…",
+    "sent": "Check your email and tap the link to log in.",
+    "invalid": "Enter a valid email address, for example name@example.com.",
+    "failed": "Couldn't send the link: {reason}"
+  },
+  "about": {
+    "disclaimerShort": "Not financial advice. Signals mark things worth researching, not buy calls.",
+    "what": "Bottom Tracker checks your watchlist every weekday night and gives each stock a Bottom Score: how many signals suggest it may be near a long-term bottom. Every score shows exactly which signals fired and why.",
+    "disclaimer": "This is a personal research tool. It is not financial advice and never places orders. A high score means \"worth researching\", not \"buy\". Stocks can stay cheap for a long time.",
+    "privacy": "Your watchlist and scores are stored privately: only your account can read them."
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Ticker or company name",
+    "add": "Add {symbol} to your watchlist"
+  },
+  "glossary": {
+    "why": "Why it matters:",
+    "how": "How to read it:",
+    "limits": "Limitations:"
+  },
+  "market": {
+    "fearGreed": "Fear & Greed",
+    "unavailable": "source unavailable"
+  },
+  "mood": {
+    "extremeFear": "Extreme fear",
+    "fear": "Fear",
+    "neutral": "Neutral",
+    "greed": "Greed",
+    "extremeGreed": "Extreme greed",
+    "unknown": "unknown",
+    "panic": "Panic",
+    "nervous": "Nervous",
+    "calm": "Calm"
+  },
+  "sig": {
+    "T1": {
+      "name": "Near its 4-year average",
+      "short": "price is near its 4-year average",
+      "na": "n/a: needs 4 years of price history.",
+      "above": "Price is {pct} above its 200-week average of {sma} (fires within {limit}).",
+      "below": "Price is {pct} below its 200-week average of {sma} (fires within {limit})."
+    },
+    "T2": {
+      "name": "Weekly RSI oversold",
+      "short": "RSI is oversold",
+      "na": "n/a: not enough weekly prices yet.",
+      "detail": "Weekly RSI is {rsi} (fires below {limit})."
+    },
+    "T3": {
+      "name": "Far below its 52-week high",
+      "short": "the price is far below its high",
+      "na": "n/a: not enough price history.",
+      "detail": "{pct} from its 52-week high of {high} (fires at {limit})."
+    },
+    "S1": {
+      "name": "Market in fear",
+      "short": "the whole market is fearful",
+      "na": "n/a: VIX and Fear & Greed were both unavailable.",
+      "detail": "{values} (fires at VIX ≥ 30 or Fear & Greed ≤ 25)."
+    }
+  },
+  "explain": {
+    "none": "No bottom signals right now.",
+    "withSignals": "{label}: {list}.",
+    "and": "and"
+  },
+  "today": {
+    "summaryOne": "1 stock shows strong bottom signals",
+    "summaryMany": "{n} stocks show strong bottom signals",
+    "summaryAttention": "No strong bottom signals, but a few things to check",
+    "summaryCalm": "No strong bottom signals today",
+    "summaryEmpty": "Your watchlist is empty",
+    "mood": "Market mood:",
+    "updated": "updated {time}",
+    "attention": "Needs your attention",
+    "market": "Market",
+    "topOfList": "Top of your watchlist",
+    "seeAll": "See all {n} stocks",
+    "openStock": "Open {symbol}",
+    "summaryPending": "Your stocks get their first scores tonight"
+  },
+  "attention": {
+    "strongTitle": "{symbol}: {score} of {max} bottom signals",
+    "research": "Research {symbol}",
+    "roseTitle": "{symbol} moved from {from} to {to}",
+    "seeWhy": "See why",
+    "buyTitle": "{symbol} reached your buy level",
+    "buyBody": "Price {price} is at or below your level of {level}.",
+    "open": "Open {symbol}",
+    "jobFailedTitle": "Tonight's update failed",
+    "dataBody": "Affected scores are left out until the data is confirmed.",
+    "health": "See data health",
+    "dataTitleOne": "1 stock has a data problem",
+    "dataTitleMany": "{n} stocks have a data problem",
+    "pendingOne": "{symbol} is waiting for its first score",
+    "pendingMany": "{n} stocks are waiting for their first score",
+    "pendingBody": "New stocks are scored in tonight's update (about 22:45 Brussels time).",
+    "seeWatchlist": "Open watchlist"
+  },
+  "watchlist": {
+    "count": "{n} stocks · {strong} with strong bottom signals",
+    "sortBy": "Sort by",
+    "sort": {
+      "score": "Score",
+      "change": "Day",
+      "high": "From high",
+      "name": "A–Z"
+    },
+    "filter": "Filter",
+    "filtersTitle": "Filter",
+    "minScore": "Minimum score",
+    "market": "Market",
+    "any": "Any",
+    "showResults": "Show results",
+    "chipScore": "Score ≥ {n}",
+    "removeFilter": "Remove filter",
+    "noMatch": "No stocks match these filters.",
+    "clearFilters": "Clear filters",
+    "actionsFor": "Actions for {symbol}",
+    "open": "Open",
+    "remove": "Remove from watchlist",
+    "add": "Add stock",
+    "pickOne": "Pick a stock on the left to see why it has its score."
+  },
+  "add": {
+    "title": "Add stock",
+    "label": "Ticker or company",
+    "placeholder": "AAPL, ASML.AS, Solvay…",
+    "hint": "EU stocks use a suffix: .AS Amsterdam, .BR Brussels, .PA Paris, .DE Xetra.",
+    "invalid": "Use letters, digits, dots or dashes only (max 20).",
+    "exists": "Already on your watchlist.",
+    "didYouMean": "Did you mean {symbol}? EU stocks need their exchange suffix.",
+    "more": "More options (name, notes)",
+    "name": "Name (optional)",
+    "notes": "Notes (optional)",
+    "submit": "Add to watchlist",
+    "added": "Added {symbol} · scored after tonight's update",
+    "onList": "on your list"
+  },
+  "ticker": {
+    "asOf": "close of {date}",
+    "noScoreTitle": "No score.",
+    "noScoreBody": "Yahoo has no price data for {symbol}. Check the symbol (EU stocks need a suffix like .AS).",
+    "pendingTitle": "Not scored yet.",
+    "pendingBody": "This stock gets its first score after tonight's update.",
+    "notOnListTitle": "{symbol} isn't on your watchlist",
+    "notOnListBody": "Add it and it gets a Bottom Score after tonight's update.",
+    "addIt": "Add to watchlist",
+    "setBuyAlert": "Set buy level",
+    "buyIsSet": "Buy level {level}",
+    "buyTitle": "Buy level for {symbol}",
+    "buyHint": "Today shows a card when the price drops to this level. Telegram alerts come in Phase 2.",
+    "buyLabel": "Price ({cur})",
+    "buyInvalid": "Enter a positive number, for example 105,50.",
+    "saveBuy": "Save buy level",
+    "clearBuy": "Remove buy level",
+    "tab": {
+      "overview": "Overview",
+      "chart": "Chart",
+      "notes": "My notes"
+    },
+    "signalsTitle": "Which signals fired",
+    "vsMa": "vs 4-year average",
+    "vsMaAbove": "above its 200-week average",
+    "vsMaBelow": "below its 200-week average",
+    "fromHigh": "From 52w high",
+    "highWas": "high was {high}",
+    "range52": "Price now within its 52-week range",
+    "dataCheck": "Data check:",
+    "notes": "Notes",
+    "notesHint": "Only you can see these."
+  },
+  "checks": {
+    "suspect_move": "An unexplained price jump is left out until the next update confirms it.",
+    "nonpositive_price": "Some zero or negative prices were removed.",
+    "stale": "The price hasn't changed for several days.",
+    "gap": "Some days of price data are missing.",
+    "no_data": "No usable price data.",
+    "confirmed_move": "",
+    "split": "",
+    "minor_currency": ""
+  },
+  "chart": {
+    "source": "Chart type",
+    "weekly": "Weekly",
+    "live": "Live",
+    "range": "Time range",
+    "price": "Weekly close",
+    "ma200": "200-week average",
+    "failed": "The chart couldn't be loaded. Try again later.",
+    "summary": "Price is {pct} {dir} its 200-week average (a month ago: {before}).",
+    "summaryNoMa": "Latest weekly close {price}. Not enough history for the 200-week average.",
+    "above": "above",
+    "below": "below"
+  },
+  "more": {
+    "settings": "Settings",
+    "settingsHint": "Theme, language, number format",
+    "health": "Data health",
+    "glossary": "Glossary",
+    "glossaryHint": "What every signal means",
+    "about": "About & disclaimer",
+    "logout": "Log out",
+    "logoutHint": "Log out from More"
+  },
+  "settings": {
+    "display": "Display",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "system": "Match phone",
+    "themeHint": "Default: Dark.",
+    "lang": "Language",
+    "langHint": "Default: English.",
+    "numfmt": "Number format",
+    "numfmtHint": "Default: Belgian (€ 1.234,56).",
+    "explain": "Beginner explanations",
+    "explainHint": "Shows an ⓘ next to every metric. Default: on.",
+    "account": "Account & security",
+    "privacy": "Your data is private: only your account can read it.",
+    "data": "Data",
+    "schedule": "Scores update every weekday at about 22:45 Brussels time.",
+    "about": "About",
+    "tour": "Show the welcome tour again",
+    "notStored": "Applied, but couldn't be saved on this device."
+  },
+  "health": {
+    "lastUpdate": "Last score update: {time}.",
+    "lastRun": "Last daily update",
+    "counts": "{scored} of {tickers} stocks scored · {errors} without data · {suspect} suspect",
+    "sources": "Data sources",
+    "ok": "Working",
+    "failed": "Failed",
+    "lastSuccess": "last success {time}",
+    "recent": "Recent updates",
+    "scoredOf": "{scored}/{tickers} scored",
+    "noRuns": "No updates have run yet.",
+    "status": {
+      "ok": "OK",
+      "partial": "Partly OK",
+      "failed": "Failed"
+    },
+    "src": {
+      "yahoo_prices": "Stock prices (Yahoo)",
+      "yahoo_sp500": "S&P 500 (Yahoo)",
+      "yahoo_nasdaq": "Nasdaq (Yahoo)",
+      "yahoo_vix": "VIX (Yahoo)",
+      "cnn_fear_greed": "Fear & Greed (CNN)"
+    }
+  },
+  "welcome": {
+    "title": "Welcome",
+    "stepOf": "Step {n} of {total}",
+    "skip": "Skip",
+    "next": "Next",
+    "later": "Skip for now",
+    "done": "Start",
+    "s1Title": "Spot possible bottoms, calmly",
+    "s1Body": "Bottom Tracker checks your stocks every night and tells you when one may be near a long-term bottom. It's a research tool, not advice.",
+    "s2Title": "Add your first stocks",
+    "s2Body": "Tap a few to add them. You can add any stock later with the + button.",
+    "examples": "Examples",
+    "examplesNote": "Examples to get started, not recommendations.",
+    "addThese": "Add {n} selected",
+    "s3Title": "How to read the score",
+    "level": {
+      "normal": "Normal: nothing special.",
+      "watch": "Watch: a couple of signals, keep an eye on it.",
+      "strong": "Strong: several signals agree, worth researching.",
+      "extreme": "Extreme: almost everything points to a bottom."
+    },
+    "tapHint": "Tap any score to see which signals fired and why.",
+    "selectFirst": "Select stocks to add",
+    "addedOne": "Added 1 stock",
+    "addedMany": "Added {n} stocks"
   }
 }

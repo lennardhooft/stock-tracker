@@ -39,7 +39,10 @@ export function openSheet({ title, body }) {
   document.body.append(d);
   const close = () => { d.close(); d.remove(); };
   d.querySelector("[data-close]").addEventListener("click", close);
-  d.addEventListener("click", (e) => { if (e.target === d) close(); }); // tap on backdrop
+  d.addEventListener("click", (e) => {
+    if (e.target === d) close(); // tap on backdrop
+    else if (e.target.closest("a[href]")) close(); // links navigate away
+  });
   d.addEventListener("cancel", (e) => { e.preventDefault(); close(); });
   d.showModal();
   return { el: d, close };
