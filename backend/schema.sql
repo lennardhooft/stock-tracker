@@ -97,6 +97,28 @@ create table if not exists public.job_runs (
 create index if not exists job_runs_job_started on public.job_runs (job, started_at desc);
 
 -- ---------------------------------------------------------------------------
+-- Table privileges (newer Supabase projects do not grant these automatically)
+--   service_role (daily job): read + write everything
+--   authenticated (owner, further limited by RLS): read all, edit only the watchlist
+--   anon (not logged in): nothing
+-- ---------------------------------------------------------------------------
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on
+  public.watchlist, public.latest_scores, public.ticker_detail, public.score_history,
+  public.market_snapshot, public.job_runs
+  to service_role;
+grant usage, select on all sequences in schema public to service_role;
+grant select on
+  public.watchlist, public.latest_scores, public.ticker_detail, public.score_history,
+  public.market_snapshot, public.job_runs
+  to authenticated;
+grant insert, update, delete on public.watchlist to authenticated;
+revoke all on
+  public.watchlist, public.latest_scores, public.ticker_detail, public.score_history,
+  public.market_snapshot, public.job_runs
+  from anon;
+
+-- ---------------------------------------------------------------------------
 -- Row-level security
 -- ---------------------------------------------------------------------------
 alter table public.watchlist        enable row level security;
