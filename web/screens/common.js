@@ -6,7 +6,7 @@ import { marketMood, vixWord, describeSignal, explainScore, GLOSSARY_KEY } from 
 import { banner } from "../components/states.js";
 import { statTile, signalRow } from "../components/cards.js";
 import { scoreBadge } from "../components/badges.js";
-import { openSheet } from "../components/overlays.js";
+import { openSheet, toast } from "../components/overlays.js";
 
 /** Offline / stale / failed / suspect banners for the top of a screen (8.6). */
 export function statusBanners(ctx, { suspect = true } = {}) {
@@ -64,4 +64,30 @@ export function openBreakdown(ctx, symbol) {
       <a class="btn btn--secondary btn--block" href="#/ticker/${encodeURIComponent(row.symbol)}" data-close-sheet>${t("today.openStock", { symbol: row.symbol })}</a>
     </div>`,
   });
+}
+
+
+/** "Update now": start the scoring job, then refresh when the new scores arrive (~2 min). */
+let updateRunning = false;
+export async function startUpdate(ctx) {
+  if (updateRunning) { toast(t("update.waiting")); return; }
+  let status;
+  try {
+    status = await ctx.api.runUpdate();
+  } catch (e) {
+    toast(e.message === "not_configured" ? t("update.notConfigured") : t("update.failed"));
+    return;
+  }
+  toast(status === "already_running" ? t("update.already") : t("update.started"), { ms: 7000 });
+  updateRunning = true;
+  const before = ctx.latestUpdate;
+  for (let i = 0; i < 12; i += 1) {         // check every 30 s for up to 6 minutes
+    await new Promise((r) => setTimeout(r, ctx.api.demo ? 300 : 30000));
+    await ctx.reload({ quiet: true });
+    if (ctx.api.demo || ctx.latestUpdate !== before) {
+      toast(t("update.done"));
+      break;
+    }
+  }
+  updateRunning = false;
 }

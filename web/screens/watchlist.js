@@ -8,7 +8,7 @@ import { icon } from "../components/icons.js";
 import { stockCard } from "../components/cards.js";
 import { emptyState } from "../components/states.js";
 import { openSheet, toast } from "../components/overlays.js";
-import { statusBanners } from "./common.js";
+import { statusBanners, startUpdate } from "./common.js";
 import { renderTicker } from "./ticker.js";
 
 /* A small local list for search-as-you-type. Examples only, never recommendations. */
@@ -53,6 +53,7 @@ function listHtml(ctx, selected) {
   return html`
     <div class="toolbar">
       <p class="text-2 toolbar__grow">${t("watchlist.count", { n: ctx.rows.length, strong })}</p>
+      <button type="button" class="icon-btn" data-action="run-update" aria-label="${t("update.button")}" title="${t("update.button")}">${icon("refresh")}</button>
       <button type="button" class="btn btn--secondary" data-action="filters">${icon("settings")}${t("watchlist.filter")}</button>
     </div>
     <div class="segmented" style="display:flex;margin-bottom:var(--space-3)" role="group" aria-label="${t("watchlist.sortBy")}">
@@ -288,7 +289,7 @@ export function openAddSheet(ctx, prefill = "") {
         name: form.name.value.trim() || known?.[1] || null, notes: form.notes.value.trim() || null,
       });
       close();
-      toast(t("add.added", { symbol: s.sym }));
+      toast(t("add.added", { symbol: s.sym }), { action: { label: t("update.scoreNow"), run: () => startUpdate(ctx) }, ms: 8000 });
       await ctx.reload({ quiet: true });
     } catch (err) {
       msg.className = "field__error";

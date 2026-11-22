@@ -114,14 +114,36 @@ test("state loading shows skeletons", async ({ page }) => {
   await shot(page, "state-loading");
 });
 
-test("login screen", async ({ page }) => {
+test("login with email + password (works in the home-screen app)", async ({ page }) => {
   await open(page, "#/", { fixture: "login" });
   await expect(page.locator("#tabbar")).toBeHidden();
+  await expect(page.locator("#login-password")).toHaveAttribute("autocomplete", "current-password");
   await quality(page, "login");
   await page.fill("#login-email", "not-an-email");
-  await page.click("button[type=submit]");
+  await page.click("#login-form button[type=submit]");
   await expect(page.locator("#login-msg")).toHaveClass(/field__error/);
+  await page.fill("#login-email", "owner@example.com");
+  await page.fill("#login-password", "wrong-password");
+  await page.click("#login-form button[type=submit]");
+  await expect(page.locator("#login-msg")).toContainText("wrong");
   await shot(page, "login");
+  await page.fill("#login-password", "correct-horse-battery");
+  await page.click("#login-form button[type=submit]");
+  await expect(page.locator("html")).toHaveAttribute("data-screen", "today");  // logged in, in this app
+});
+
+test("settings: set a password with validation", async ({ page }) => {
+  await open(page, "#/more/settings");
+  await page.fill('input[name="pw1"]', "short");
+  await page.getByRole("button", { name: "Save password" }).click();
+  await expect(page.locator("#pw-msg")).toContainText("at least 12");
+  await page.fill('input[name="pw1"]', "a-long-enough-password");
+  await page.fill('input[name="pw2"]', "a-different-password!!");
+  await page.getByRole("button", { name: "Save password" }).click();
+  await expect(page.locator("#pw-msg")).toContainText("don't match");
+  await page.fill('input[name="pw2"]', "a-long-enough-password");
+  await page.getByRole("button", { name: "Save password" }).click();
+  await expect(page.locator("#pw-msg")).toContainText("Password saved");
 });
 
 test("onboarding 3 steps, each fits a 375x667 screen", async ({ page }) => {
@@ -313,4 +335,19 @@ test("why is it down: latest headline under a big drop", async ({ page }) => {
   await open(page, "#/ticker/NRDX");
   await expect(page.locator("#why-down")).toContainText("Why is it down?");
   await expect(page.locator("#why-down")).toContainText("cuts full-year guidance");
+});
+
+test("update now: starts the job and refreshes when scores arrive", async ({ page }) => {
+  await open(page, "#/more/health");
+  await page.getByRole("button", { name: "Update now" }).click();
+  await expect(page.locator(".toast").first()).toContainText("Update started");
+  await expect(page.locator(".toast", { hasText: "Scores updated" })).toBeVisible({ timeout: 5000 });
+});
+
+test("adding a stock offers to score it now", async ({ page }) => {
+  await open(page, "#/watchlist");
+  await page.getByRole("button", { name: "Add stock" }).click();
+  await page.locator('input[name="q"]').fill("SAP.DE");
+  await page.getByRole("button", { name: "Add to watchlist" }).click();
+  await expect(page.locator(".toast").getByRole("button", { name: "Score now" })).toBeVisible();
 });

@@ -52,6 +52,17 @@ export function renderSettings(ctx, main) {
     <h2 class="section-title">${t("settings.account")}</h2>
     <div class="card stack">
       <p class="text-2">${t("settings.privacy")}</p>
+      <form id="pw-form" class="stack" novalidate>
+        <h3 style="font-size:var(--text-md)">${t("settings.pwTitle")}</h3>
+        <p class="small text-2">${t("settings.pwHint")}</p>
+        <input type="email" autocomplete="username" id="pw-user" hidden>
+        <label class="field"><span class="field__label">${t("settings.pwNew")}</span>
+          <input class="input" type="password" name="pw1" autocomplete="new-password" minlength="12" aria-describedby="pw-msg"></label>
+        <label class="field"><span class="field__label">${t("settings.pwRepeat")}</span>
+          <input class="input" type="password" name="pw2" autocomplete="new-password" aria-describedby="pw-msg"></label>
+        <button class="btn btn--primary" type="submit">${t("settings.pwSave")}</button>
+        <p id="pw-msg" class="small" role="status" aria-live="polite"></p>
+      </form>
       <a class="btn btn--secondary" href="#/more">${t("more.logoutHint")}</a>
     </div>
     <h2 class="section-title">${t("settings.data")}</h2>
@@ -65,6 +76,34 @@ export function renderSettings(ctx, main) {
       <a class="btn btn--secondary" href="#/welcome" data-tour>${t("settings.tour")}</a>
     </div>
   </div>`);
+
+  // password (owner decision): needed to log in inside the home-screen app
+  const pwForm = main.querySelector("#pw-form");
+  ctx.api.userEmail?.().then((email) => { pwForm.querySelector("#pw-user").value = email; });
+  pwForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = pwForm.querySelector("#pw-msg");
+    const [a, b] = [pwForm.pw1.value, pwForm.pw2.value];
+    const fail = (key) => { msg.className = "small field__error"; msg.textContent = t(key); };
+    pwForm.pw1.removeAttribute("aria-invalid");
+    pwForm.pw2.removeAttribute("aria-invalid");
+    if (a.length < 12) { pwForm.pw1.setAttribute("aria-invalid", "true"); return fail("settings.pwTooShort"); }
+    if (a !== b) { pwForm.pw2.setAttribute("aria-invalid", "true"); return fail("settings.pwMismatch"); }
+    const btn = pwForm.querySelector("button");
+    btn.setAttribute("aria-busy", "true");
+    try {
+      await ctx.api.setPassword(a);
+      pwForm.reset();
+      msg.className = "small";
+      msg.style.color = "var(--color-positive)";
+      msg.textContent = t("settings.pwSaved");
+    } catch (ex) {
+      msg.className = "small field__error";
+      msg.textContent = t("errors.saveFailed", { reason: ex.message || "" });
+    } finally {
+      btn.removeAttribute("aria-busy");
+    }
+  });
 
   main.addEventListener("click", async (e) => {
     const b = e.target.closest("[data-set]");
@@ -93,6 +132,10 @@ export function renderHealth(ctx, main) {
   mount(main, html`<div class="stack" style="max-width:720px">
     ${banner({ tone: ctx.freshness === "fresh" ? "positive" : ctx.freshness === "failed" ? "negative" : "warning",
       title: t(`freshness.${ctx.freshness}`), body: t("health.lastUpdate", { time: fmt.relativeTime(ctx.latestUpdate) }) })}
+    <section class="card stack" style="gap:var(--space-2)">
+      <button type="button" class="btn btn--primary" data-action="run-update">${icon("refresh")}${t("update.button")}</button>
+      <p class="small text-2">${t("update.hint")}</p>
+    </section>
     ${last ? html`<section class="card">
       <h2 class="card__title">${t("health.lastRun")}</h2>
       <p><span class="badge badge--${last.status === "ok" ? "normal" : last.status === "partial" ? "watch" : "extreme"}">${t(`health.status.${last.status}`)}</span> <span class="text-2">${fmt.dateTime(last.finished_at)}</span></p>

@@ -53,7 +53,7 @@ export function attentionItems(ctx) {
   if (pending.length) {
     items.push({ kind: "info", icon: "refresh",
       title: t(pending.length === 1 ? "attention.pendingOne" : "attention.pendingMany", { n: pending.length, symbol: pending[0].symbol }),
-      body: t("attention.pendingBody"), action: t("attention.seeWatchlist"), href: "#/watchlist" });
+      body: t("attention.pendingBody"), action: t("update.scoreNow"), run: true });
   }
   const problems = ctx.rows.filter((r) => r.suspect || r.error).length;
   if (problems || ctx.freshness === "failed") {
@@ -78,7 +78,9 @@ function summary(ctx, items) {
 }
 
 function card(it) {
-  const btn = it.breakdown
+  const btn = it.run
+    ? html`<button type="button" class="btn btn--primary attention__action" data-action="run-update">${icon("refresh")}${it.action}</button>`
+    : it.breakdown
     ? html`<button type="button" class="btn btn--secondary attention__action" data-breakdown="${it.breakdown}">${it.action}</button>`
     : html`<a class="btn ${it.kind === "strong" ? "btn--primary" : "btn--secondary"} attention__action" href="${it.href}">${it.action}</a>`;
   return html`<li class="attention attention--${it.kind}">

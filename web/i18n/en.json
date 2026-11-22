@@ -133,13 +133,19 @@
   },
   "login": {
     "title": "Log in",
-    "body": "We'll email you a one-time login link. Only the owner's account can log in.",
+    "body": "We'll email you a 6-digit login code. Only the owner's account can log in.",
     "email": "Email address",
-    "send": "Send login link",
     "sending": "Sending…",
-    "sent": "Check your email and tap the link to log in.",
     "invalid": "Enter a valid email address, for example name@example.com.",
-    "failed": "Couldn't send the link: {reason}"
+    "failed": "Couldn't send the link: {reason}",
+    "password": "Password",
+    "submit": "Log in",
+    "checking": "Logging in…",
+    "passwordMissing": "Enter your password.",
+    "wrongPassword": "Email or password is wrong. No password yet? Use the email link below.",
+    "noPassword": "No password yet, or forgot it? Get an email link, open it in your browser, then set a password under More → Settings.",
+    "sendLink": "Email me a login link",
+    "linkSent": "Link sent. Open it in your browser (Safari), then set a password in Settings."
   },
   "about": {
     "disclaimerShort": "Not financial advice. Signals mark things worth researching, not buy calls.",
@@ -399,7 +405,15 @@
     "schedule": "Scores update every weekday at about 22:45 Brussels time.",
     "about": "About",
     "tour": "Show the welcome tour again",
-    "notStored": "Applied, but couldn't be saved on this device."
+    "notStored": "Applied, but couldn't be saved on this device.",
+    "pwTitle": "Password",
+    "pwHint": "Needed to log in from the app on your home screen (email links open in Safari instead). Use at least 12 characters; a password manager is ideal.",
+    "pwNew": "New password",
+    "pwRepeat": "Repeat password",
+    "pwSave": "Save password",
+    "pwTooShort": "Use at least 12 characters.",
+    "pwMismatch": "The two passwords don't match.",
+    "pwSaved": "Password saved. You can now log in with it in the home-screen app."
   },
   "health": {
     "lastUpdate": "Last score update: {time}.",
@@ -530,5 +544,16 @@
     "headlines": "Latest news",
     "none": "No recent news found.",
     "opensNewTab": "(opens in a new tab)"
+  },
+  "update": {
+    "button": "Update now",
+    "scoreNow": "Score now",
+    "hint": "Scores your whole watchlist now, including stocks you just added. Takes about 2 minutes; the app refreshes by itself.",
+    "started": "Update started. New scores in about 2 minutes.",
+    "already": "An update is already running. The app refreshes when it's done.",
+    "waiting": "Still updating… the app refreshes when it's done.",
+    "done": "Scores updated.",
+    "failed": "Couldn't start the update. Try again in a minute.",
+    "notConfigured": "The update button isn't set up yet (GitHub key missing in Supabase)."
   }
 }

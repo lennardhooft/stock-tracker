@@ -25,6 +25,25 @@ function supabaseApi(cfg) {
       });
       if (error) throw error;
     },
+    /** Email + password: works inside the home-screen app (an email link opens Safari instead). */
+    async loginPassword(email, password) {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    async setPassword(password) {
+      const { error } = await sb.auth.updateUser({ password });
+      if (error) throw error;
+    },
+    async userEmail() { return (await sb.auth.getUser()).data.user?.email || ""; },
+    /** "Update now": asks the run-update function to start the scoring job on GitHub. */
+    async runUpdate() {
+      const { data, error } = await sb.functions.invoke("run-update", { method: "POST" });
+      if (error) {
+        const body = await error.context?.json?.().catch(() => null);
+        throw new Error(body?.error || error.message);
+      }
+      return data?.status || "started";
+    },
     logout: () => sb.auth.signOut(),
 
     async loadAll() {
@@ -101,6 +120,7 @@ function demoSignals(s, market) {
 
 function demoApi(fixture) {
   const UID = "demo";
+  let demoLoggedIn = false;
   let state = null;
 
   async function build() {
@@ -154,9 +174,17 @@ function demoApi(fixture) {
   return {
     demo: true,
     fixture,
-    session: async () => (fixture === "login" ? null : { user: { email: "owner@example.com" } }),
+    session: async () => (fixture === "login" && !demoLoggedIn ? null : { user: { email: "owner@example.com" } }),
     onAuth() {},
     login: async () => { await delay(300); },
+    loginPassword: async (email, password) => {
+      await delay(200);
+      if (password !== "correct-horse-battery") throw new Error("Invalid login credentials");
+      demoLoggedIn = true;
+    },
+    setPassword: async () => { await delay(200); },
+    userEmail: async () => "owner@example.com",
+    runUpdate: async () => { await delay(300); return "started"; },
     logout: async () => {},
     async loadAll() {
       if (fixture === "loading") await new Promise(() => {}); // never resolves: skeleton screenshot

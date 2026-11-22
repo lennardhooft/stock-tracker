@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="0" fill="#0f1115"/>
+  <!-- a price line that falls to a bottom and recovers, with the bottom marked -->
+  <polyline points="80,150 160,230 215,205 256,330 300,260 350,290 432,150" fill="none" stroke="#7aaefc" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="330" r="34" fill="#4cc08a"/>
+  <path d="M256 380 v52 M228 408 l28 28 l28 -28" fill="none" stroke="#4cc08a" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 256 408)"/>
+</svg>

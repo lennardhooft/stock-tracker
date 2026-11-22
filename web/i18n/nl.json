@@ -133,13 +133,19 @@
   },
   "login": {
     "title": "Inloggen",
-    "body": "We mailen je een eenmalige inloglink. Alleen het account van de eigenaar kan inloggen.",
+    "body": "We mailen je een inlogcode van 6 cijfers. Alleen het account van de eigenaar kan inloggen.",
     "email": "E-mailadres",
-    "send": "Inloglink versturen",
     "sending": "Versturen…",
-    "sent": "Kijk in je mail en tik op de link om in te loggen.",
     "invalid": "Vul een geldig e-mailadres in, bv. naam@voorbeeld.be.",
-    "failed": "De link kon niet verstuurd worden: {reason}"
+    "failed": "De link kon niet verstuurd worden: {reason}",
+    "password": "Wachtwoord",
+    "submit": "Inloggen",
+    "checking": "Inloggen…",
+    "passwordMissing": "Vul je wachtwoord in.",
+    "wrongPassword": "E-mail of wachtwoord klopt niet. Nog geen wachtwoord? Gebruik de e-maillink hieronder.",
+    "noPassword": "Nog geen wachtwoord, of vergeten? Vraag een e-maillink, open die in je browser en stel dan een wachtwoord in via Meer → Instellingen.",
+    "sendLink": "Mail me een inloglink",
+    "linkSent": "Link verstuurd. Open hem in je browser (Safari) en stel daarna een wachtwoord in bij Instellingen."
   },
   "about": {
     "disclaimerShort": "Geen financieel advies. Signalen tonen wat het onderzoeken waard is, geen koopadvies.",
@@ -399,7 +405,15 @@
     "schedule": "Scores worden elke weekdag rond 22:45 (Brusselse tijd) bijgewerkt.",
     "about": "Over",
     "tour": "Welkomstrondleiding opnieuw tonen",
-    "notStored": "Toegepast, maar kon niet bewaard worden op dit toestel."
+    "notStored": "Toegepast, maar kon niet bewaard worden op dit toestel.",
+    "pwTitle": "Wachtwoord",
+    "pwHint": "Nodig om in te loggen vanuit de app op je beginscherm (e-maillinks openen in Safari). Gebruik minstens 12 tekens; een wachtwoordbeheerder is ideaal.",
+    "pwNew": "Nieuw wachtwoord",
+    "pwRepeat": "Herhaal wachtwoord",
+    "pwSave": "Wachtwoord opslaan",
+    "pwTooShort": "Gebruik minstens 12 tekens.",
+    "pwMismatch": "De twee wachtwoorden zijn niet gelijk.",
+    "pwSaved": "Wachtwoord opgeslagen. Je kan er nu mee inloggen in de app op je beginscherm."
   },
   "health": {
     "lastUpdate": "Laatste scoreupdate: {time}.",
@@ -530,5 +544,16 @@
     "headlines": "Laatste nieuws",
     "none": "Geen recent nieuws gevonden.",
     "opensNewTab": "(opent in een nieuw tabblad)"
+  },
+  "update": {
+    "button": "Nu bijwerken",
+    "scoreNow": "Nu scoren",
+    "hint": "Scoort je hele volglijst nu, ook aandelen die je net toevoegde. Duurt ongeveer 2 minuten; de app ververst vanzelf.",
+    "started": "Update gestart. Nieuwe scores binnen ongeveer 2 minuten.",
+    "already": "Er loopt al een update. De app ververst als die klaar is.",
+    "waiting": "Nog bezig… de app ververst als het klaar is.",
+    "done": "Scores bijgewerkt.",
+    "failed": "De update kon niet starten. Probeer het over een minuut opnieuw.",
+    "notConfigured": "De bijwerkknop is nog niet ingesteld (GitHub-sleutel ontbreekt in Supabase)."
   }
 }

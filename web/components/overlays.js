@@ -15,13 +15,14 @@ function region() {
   return r;
 }
 
-/** toast("Removed NVDA", {undo: () => …}) — auto-hides after 5 s. */
-export function toast(message, { undo = null, ms = 5000 } = {}) {
+/** toast("Removed NVDA", {undo: () => …}) or toast("Added", {action: {label, run}}) — hides after 5 s. */
+export function toast(message, { undo = null, action = null, ms = 5000 } = {}) {
   const el = document.createElement("div");
   el.className = "toast";
-  mount(el, html`<span class="toast__msg">${message}</span>${undo ? html`<button type="button" class="btn btn--ghost">${t("common.undo")}</button>` : ""}`);
+  const act = action || (undo ? { label: t("common.undo"), run: undo } : null);
+  mount(el, html`<span class="toast__msg">${message}</span>${act ? html`<button type="button" class="btn btn--ghost">${act.label}</button>` : ""}`);
   const close = () => el.remove();
-  if (undo) el.querySelector("button").addEventListener("click", () => { undo(); close(); });
+  if (act) el.querySelector("button").addEventListener("click", () => { act.run(); close(); });
   region().append(el);
   setTimeout(close, ms);
   return close;

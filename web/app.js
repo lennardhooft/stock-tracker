@@ -16,6 +16,7 @@ import { renderWatchlist, openAddSheet } from "./screens/watchlist.js";
 import { renderMore, renderSettings, renderHealth, renderGlossary, renderAbout } from "./screens/more.js";
 import { renderOnboarding } from "./screens/onboarding.js";
 import { renderAlerts } from "./screens/alerts.js";
+import { startUpdate } from "./screens/common.js";
 
 const CFG = window.APP_CONFIG || {};
 const params = new URLSearchParams(location.search);
@@ -250,6 +251,7 @@ document.addEventListener("click", (e) => {
   if (act === "search") openSearch();
   else if (act === "health") ctx.navigate("#/more/health");
   else if (act === "retry" || act === "refresh") { ctx.loadError = null; reload(); }
+  else if (act === "run-update") startUpdate(ctx);
 });
 
 let gPressed = 0;
