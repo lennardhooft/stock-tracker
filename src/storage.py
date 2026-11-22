@@ -30,14 +30,22 @@ class Store(Protocol):
     def insert(self, table: str, rows: list[dict[str, Any]]) -> bool: ...
 
 
+def auth_headers(key: str) -> dict[str, str]:
+    """Request headers for a Supabase API key.
+
+    New-style keys (sb_secret_… / sb_publishable_…) go only in the `apikey` header; they are not
+    JWTs and must not be sent as a Bearer token. Legacy JWT keys (eyJ…) also need the
+    Authorization header.
+    """
+    if key.startswith("sb_"):
+        return {"apikey": key}
+    return {"apikey": key, "Authorization": f"Bearer {key}"}
+
+
 class SupabaseStore:
     def __init__(self, url: str, service_key: str) -> None:
         self.base = url.rstrip("/") + "/rest/v1"
-        self.headers = {
-            "apikey": service_key,
-            "Authorization": f"Bearer {service_key}",
-            "Content-Type": "application/json",
-        }
+        self.headers = {**auth_headers(service_key), "Content-Type": "application/json"}
 
     @classmethod
     def from_env(cls) -> SupabaseStore:

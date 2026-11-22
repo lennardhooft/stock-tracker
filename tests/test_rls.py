@@ -13,6 +13,8 @@ import os
 import pytest
 import requests
 
+from src.storage import auth_headers
+
 URL = os.environ.get("SUPABASE_URL")
 ANON = os.environ.get("SUPABASE_ANON_KEY")
 TABLES = [
@@ -32,7 +34,7 @@ def test_anonymous_reads_nothing(table):
     r = requests.get(
         f"{URL.rstrip('/')}/rest/v1/{table}",
         params={"select": "*", "limit": "1"},
-        headers={"apikey": ANON, "Authorization": f"Bearer {ANON}"},
+        headers=auth_headers(ANON),
         timeout=20,
     )
     assert r.status_code in (200, 401, 403)
@@ -45,7 +47,7 @@ def test_anonymous_cannot_write(table):
     r = requests.post(
         f"{URL.rstrip('/')}/rest/v1/{table}",
         json={"symbol": "TEST"},
-        headers={"apikey": ANON, "Authorization": f"Bearer {ANON}"},
+        headers=auth_headers(ANON),
         timeout=20,
     )
     assert r.status_code in (401, 403)
