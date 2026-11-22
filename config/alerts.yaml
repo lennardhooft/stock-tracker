@@ -20,3 +20,9 @@ quiet_hours:
   end: "07:00"
   timezone: Europe/Brussels
   allow_kinds_when_quiet: [score_cross]   # only if the score is Extreme
+
+# Intraday job (CLAUDE.md 7.1), every 15 minutes while a market is open.
+# drop / rise / buy_level use the same settings as above and share the once-a-day limit.
+intraday:
+  volume_spike: { enabled: true, multiple: 2, min_minutes: 30 }   # volume so far >= 2x normal for this time of day
+  news:         { enabled: true, window_minutes: 35 }             # headline published since the last check

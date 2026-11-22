@@ -28,6 +28,7 @@ class Store(Protocol):
     def load_previous_suspects(self) -> dict[str, set[str]]: ...
     def load_previous_scores(self) -> dict[tuple[str, str], float | None]: ...
     def load_alert_state(self, day: str) -> set[tuple[str, str, str]]: ...
+    def load_latest_scores(self) -> dict[tuple[str, str], dict[str, Any]]: ...
     def upsert(self, table: str, rows: list[dict[str, Any]], on_conflict: str) -> bool: ...
     def insert(self, table: str, rows: list[dict[str, Any]]) -> bool: ...
 
@@ -86,6 +87,11 @@ class SupabaseStore:
     def load_previous_scores(self) -> dict[tuple[str, str], float | None]:
         rows = self._get("latest_scores", {"select": "user_id,symbol,score"}) or []
         return {(r["user_id"], r["symbol"]): r.get("score") for r in rows}
+
+    def load_latest_scores(self) -> dict[tuple[str, str], dict[str, Any]]:
+        sel = "user_id,symbol,currency,score,max_score,label"
+        rows = self._get("latest_scores", {"select": sel}) or []
+        return {(r["user_id"], r["symbol"]): r for r in rows}
 
     def load_alert_state(self, day: str) -> set[tuple[str, str, str]]:
         rows = self._get("alert_state", {"select": "user_id,symbol,kind", "day": f"eq.{day}"}) or []
