@@ -18,13 +18,14 @@ signals:
     weight: 1
     min_pct: 30
     lookback_days: 252
-  valuation_pct:                 # V1: Phase 2
-    enabled: false
+  valuation_pct:                 # V1 (Phase 2C): P/E (P/S if losses) vs its own 5–10y history
+    enabled: true
     weight: 1
     years: 10
     below_percentile: 20
-  insider_buying:                # V2: Phase 2
-    enabled: false
+    min_years: 3                 # less history than this → n/a
+  insider_buying:                # V2 (Phase 2C): net open-market insider buying (US only on free data)
+    enabled: true
     weight: 1
     days: 90
   near_major_bottom:             # T4 (6.4/6.5): optional, off by default

@@ -197,3 +197,9 @@ grant usage, select on all sequences in schema public to service_role;
 grant select on public.alerts_log to authenticated;
 revoke all on public.alert_state, public.alerts_log from anon;
 revoke all on public.alert_state from authenticated;
+
+-- ===========================================================================
+-- Phase 2C: fundamentals, news and earnings (CLAUDE.md 6.2, 13.1, 13.3)
+-- ===========================================================================
+alter table public.ticker_detail add column if not exists fundamentals jsonb;   -- valuation, insiders, news, earnings
+alter table public.latest_scores add column if not exists next_earnings jsonb;  -- {date, hour, eps_est, source}

@@ -13,6 +13,7 @@ from datetime import datetime, time
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import numpy as np
 import requests
 
 from src import log
@@ -191,17 +192,54 @@ def evaluate(
                 )
             )
 
+        # Earnings reminders (13.3): one week of trading days ahead, and the trading day before
+        ne = (r.get("next_earnings") or {}).get("date")
+        today = r.get("today")
+        if ne and today and ne >= today:
+            bdays = int(np.busday_count(today, ne))
+            nice = datetime.strptime(ne, "%Y-%m-%d")
+            when_txt = f"{nice:%a} {nice.day} {nice:%b}"
+            hour = {"bmo": " before the open", "amc": " after the close"}.get(
+                (r.get("next_earnings") or {}).get("hour") or "", ""
+            )
+            if on("earnings_7d") and bdays == 5:
+                out.append(
+                    Alert(
+                        r["user_id"],
+                        sym,
+                        "earnings_7d",
+                        f"📅 {sym} reports earnings in a week",
+                        f"{when_txt}{hour}\n{score_line(r)}",
+                        url,
+                        extreme,
+                    )
+                )
+            if on("earnings_1d") and bdays == 1:
+                out.append(
+                    Alert(
+                        r["user_id"],
+                        sym,
+                        "earnings_1d",
+                        f"📅 {sym} reports earnings tomorrow",
+                        f"{when_txt}{hour}\n{score_line(r)}",
+                        url,
+                        extreme,
+                    )
+                )
+
         # Big daily drop / rise at the close (intraday version: stage 2D)
         chg = r.get("change_pct")
         if chg is not None:
             if on("drop") and chg <= -float(k["drop"].get("pct", 5)):
+                news = r.get("headline")  # "why is it down?" (13.1): latest headline, last 48 h
+                why = f"\nNews: {news['headline']} ({news.get('source', '')})" if news else ""
                 out.append(
                     Alert(
                         r["user_id"],
                         sym,
                         "drop",
                         f"🔻 {sym} {pct(chg)} {when(r)} ({money(price, cur)})",
-                        score_line(r),
+                        score_line(r) + why,
                         url,
                         extreme,
                     )

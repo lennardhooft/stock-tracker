@@ -11,9 +11,10 @@
 | `drop` | Close ≥ 5 % below the previous close | 🔻 **NVDA −6,2 % today** ($118,40) · Bottom Score 3/4 (Watch) · ▶ link |
 | `support_test` | Price within 2 % of (or inside) a monthly/yearly support zone with ≥ 2 touches | 🟢 **NVDA is testing support $105–110** · 3 previous bottoms (2022, 2023, 2024) · ▶ link |
 | `support_break` | Close drops below such a zone that the previous close was still above | ⚠️ **NVDA broke below support $105–110** · ▶ link |
+| `earnings_7d` / `earnings_1d` | Earnings in 7 days / tomorrow (Phase 2C) | 📅 **ASML.AS reports earnings in 7 days** · Wed 26 Nov · ▶ link |
 | `data_problem` | Something in the run is red (suspect prices, unscored stocks) — one summary per day | ⚠️ **Data check: 1 stock has suspect prices** · left out of scores until confirmed · ▶ health link |
 
-Intraday alerts (drop, volume, buy level and news every 15 minutes) come in stage 2D. Earnings reminders come in 2C (Finnhub).
+Intraday alerts (drop, volume, buy level and news every 15 minutes) come in stage 2D. Drop alerts include the latest headline from the last 48 hours ("why is it down?", 13.1).
 
 ## Rules (7.2)
 - Each kind fires **at most once per stock per day** (state in `alert_state`, Brussels date).

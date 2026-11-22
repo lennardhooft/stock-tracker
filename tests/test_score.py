@@ -88,9 +88,12 @@ def test_compute_signals_full_pipeline_crash_scenario():
     # 5 years flat at 100, then a slide to 55: should fire T1, T2, T3 (+ S1 with VIX 35)
     values = [100.0] * (252 * 5) + list(np.linspace(100, 55, 120))
     sigs = sc.compute_signals(_daily(values), {"vix": {"value": 35}}, CFG)
-    assert [s["code"] for s in sigs] == ["T1", "T2", "T3", "S1"]
-    assert all(s["passed"] is True for s in sigs)
-    assert sc.build_score(sigs, CFG)["score"] == 4
+    assert [s["code"] for s in sigs] == ["T1", "T2", "T3", "V1", "V2", "S1"]
+    price_sigs = [s for s in sigs if s["code"] in ("T1", "T2", "T3", "S1")]
+    assert all(s["passed"] is True for s in price_sigs)
+    total = sc.build_score(sigs, CFG)
+    # no fundamentals given → V1/V2 are n/a, not 0 (6.7): "4/6 (2 n/a)"
+    assert (total["score"], total["max_score"], total["n_na"]) == (4, 6, 2)
 
 
 def test_weekly_score_history_crash_reaches_4():
@@ -129,3 +132,40 @@ def test_t4_near_major_bottom():
     lv["zones"][0]["distance_pct"] = -9.0
     assert sc.signal_near_major_bottom(100, lv, cfg)["passed"] is False
     assert sc.signal_near_major_bottom(100, None, cfg)["passed"] is None
+
+
+def test_v1_valuation_signal():
+    cfg = CFG["signals"]["valuation_pct"]
+    cheap = {
+        "valuation": {
+            "metric": "pe",
+            "now": 15,
+            "pct": 10.0,
+            "min": 14,
+            "max": 40,
+            "n": 10,
+            "years": 9.9,
+        }
+    }
+    assert sc.signal_valuation(cheap, cfg)["passed"] is True
+    pricey = {"valuation": {**cheap["valuation"], "pct": 60.0}}
+    assert sc.signal_valuation(pricey, cfg)["passed"] is False
+    short = {"valuation": {**cheap["valuation"], "years": 2.0}}
+    assert sc.signal_valuation(short, cfg)["passed"] is None
+    assert sc.signal_valuation(None, cfg)["passed"] is None
+
+
+def test_v2_insider_signal():
+    cfg = CFG["signals"]["insider_buying"]
+    ins = {
+        "net_value": 5000,
+        "buy_value": 7000,
+        "sell_value": 2000,
+        "buys": 2,
+        "sells": 1,
+        "days": 90,
+    }
+    assert sc.signal_insider({"insiders": ins}, cfg)["passed"] is True
+    assert sc.signal_insider({"insiders": {**ins, "net_value": -1}}, cfg)["passed"] is False
+    eu = sc.signal_insider({"insiders": None, "insiders_na": "eu"}, cfg)
+    assert eu["passed"] is None and "EU" in eu["detail"]

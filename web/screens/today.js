@@ -38,6 +38,17 @@ export function attentionItems(ctx) {
       body: t("attention.buyBody", { price: fmt.money(r.price, r.currency), level: fmt.money(r.buy_below, r.currency) }),
       action: t("attention.open", { symbol: r.symbol }), href: `#/ticker/${encodeURIComponent(r.symbol)}` });
   }
+  // earnings within 7 days (13.3)
+  const todayNoon = new Date(new Date().toISOString().slice(0, 10) + "T12:00:00Z");
+  for (const r of ctx.rows.filter((x) => x.next_earnings?.date)) {
+    const days = Math.round((new Date(`${r.next_earnings.date}T12:00:00Z`) - todayNoon) / 864e5);
+    if (days < 0 || days > 7) continue;
+    const when = days === 0 ? t("news.today").toLowerCase() : days === 1 ? t("news.tomorrow").toLowerCase() : t("news.inDays", { n: days }).toLowerCase();
+    items.push({ kind: "info", icon: "calendar", symbol: r.symbol,
+      title: t("attention.earningsTitle", { symbol: r.symbol, when }),
+      body: t("attention.earningsBody", { date: fmt.date(`${r.next_earnings.date}T12:00:00Z`) }),
+      action: t("attention.seeDetails"), href: `#/ticker/${encodeURIComponent(r.symbol)}` });
+  }
   const pending = ctx.rows.filter((r) => r.score == null && !r.error);
   if (pending.length) {
     items.push({ kind: "info", icon: "refresh",

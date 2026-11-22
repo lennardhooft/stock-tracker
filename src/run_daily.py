@@ -11,14 +11,14 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 import yaml
 
-from src import alerts, data_checks, fetch, levels, log
+from src import alerts, data_checks, fetch, fundamentals, levels, log
 from src import indicators as ind
 from src import score as sc
 from src.storage import LocalStore, Store, SupabaseStore
@@ -94,7 +94,8 @@ def process_symbol(
         if "levels" in cfg
         else {"zones": [], "swings": []}
     )
-    signals = sc.compute_signals(close, market, cfg, zones)
+    fund = fundamentals.collect(symbol, close, date.today())
+    signals = sc.compute_signals(close, market, cfg, zones, fund)
     total = sc.build_score(signals, cfg)
 
     last, prev = float(close.iloc[-1]), float(close.iloc[-2])
@@ -134,6 +135,8 @@ def process_symbol(
             "score": _clean_list(hist, 0),  # reconstructed weekly Bottom Score (S1 = VIX only)
             "levels": zones,  # support / resistance zones + major swings (6.5)
         },
+        "fundamentals": fund,
+        "next_earnings": fund.get("earnings"),
         "rows": len(raw),
     }
 
@@ -193,6 +196,8 @@ def send_alerts(
                 "buy_below": w.get("buy_below"),
                 "prev_score": prev_scores.get((uid, sym)),
                 "zones": (r.get("weekly") or {}).get("levels", {}).get("zones", []),
+                "next_earnings": r.get("next_earnings"),
+                "news": (r.get("fundamentals") or {}).get("news") or [],
             }
         )
 
@@ -200,6 +205,7 @@ def send_alerts(
     day = alerts.brussels_day(now)
     for x in rows:
         x["today"] = day
+        x["headline"] = fundamentals.recent_headline(x.pop("news"), now)
     found = []
     for uid, p in problems.items():
         user_rows = [x for x in rows if x["user_id"] == uid]
@@ -302,12 +308,13 @@ def run(store: Store) -> int:
                         "sparkline",
                         "checks",
                         "suspect",
+                        "next_earnings",
                     )
                 },
                 "error": None,
             }
         )
-        detail_rows.append({**base, "weekly": r["weekly"]})
+        detail_rows.append({**base, "weekly": r["weekly"], "fundamentals": r["fundamentals"]})
         history_rows.append(
             {
                 "user_id": uid,

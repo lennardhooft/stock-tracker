@@ -12,7 +12,8 @@
    1. **Strong bottom signals** — score ≥ 4 (alert threshold from config). "NRDX: 4 of 4 bottom signals. Price is 38 % below its high and RSI is oversold." → **Research NRDX**
    2. **Score rose** since the previous snapshot into Watch or higher. "BLMT.BR moved from Normal to Watch." → **See why**
    3. **Buy level reached** — price ≤ owner's buy level. → **Open BLMT.BR**
-   4. **Data problem** — suspect prices or a failed job. → **See data health**
+   4. **Earnings within 7 days** (Phase 2C) — "ASML reports in 3 days (Wed 26 Nov)". → **See details**
+   5. **Data problem** — suspect prices or a failed job. → **See data health**
 3. **Calm state** when there are no cards: "Nothing needs your attention today. Your watchlist is calm." (green, positive tone).
 4. **Market strip:** 4 compact tiles: S&P 500 · Nasdaq · VIX · Fear & Greed, each with a **word** next to the number ("High fear", "Calm") and a day change. ⓘ on VIX and F&G.
    *Note: the plan mentions MSCI World in the strip; Phase 1 has Nasdaq data. MSCI World (IWDA.AS) is added when the market job fetches it.*

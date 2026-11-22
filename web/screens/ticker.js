@@ -40,7 +40,8 @@ export function renderTicker(ctx, el, symbol, { embedded = false } = {}) {
         <div>${changeTag(row.change_pct, 1)}</div>
         <div class="xs muted">${eu ? t("time.delayed") : t("ticker.asOf", { date: fmt.date(row.as_of) })}</div>
       </div>` : ""}
-    </div>`;
+    </div>
+    ${scored && row.change_pct <= -5 ? html`<p class="small text-2" id="why-down" style="margin:calc(-1 * var(--space-2)) 0 var(--space-3)" aria-live="polite"></p>` : ""}`;
 
   let lead;
   if (row.error) {
@@ -55,7 +56,7 @@ export function renderTicker(ctx, el, symbol, { embedded = false } = {}) {
     </div>`;
   }
 
-  const tabs = scored ? ["overview", "chart", "notes"] : ["notes"];
+  const tabs = scored ? ["overview", "chart", "fundamentals", "news", "notes"] : ["news", "notes"];
   if (!tabs.includes(activeTab)) activeTab = tabs[0];
 
   mount(el, html`
@@ -78,7 +79,7 @@ export function renderTicker(ctx, el, symbol, { embedded = false } = {}) {
     const panel = old.cloneNode(false);
     panel.setAttribute("aria-labelledby", `tab-${k}`);
     old.replaceWith(panel);
-    ({ overview: overviewTab, chart: chartTab, notes: notesTab })[k](ctx, panel, row);
+    ({ overview: overviewTab, chart: chartTab, fundamentals: fundamentalsTab, news: newsTab, notes: notesTab })[k](ctx, panel, row);
   };
   el.addEventListener("click", (e) => {
     const tb = e.target.closest("[data-tab]");
@@ -86,7 +87,100 @@ export function renderTicker(ctx, el, symbol, { embedded = false } = {}) {
     if (e.target.closest('[data-t="buy"]')) openBuyLevelSheet(ctx, row);
   });
   show(activeTab);
+
+  // "why is it down?" (13.1): the latest headline from the last 48 hours under a big drop
+  const why = $("#why-down", el);
+  if (why) {
+    ctx.api.detail(row.symbol).then((d) => {
+      const cut = Date.now() - 48 * 3600e3;
+      const n = (d?.fundamentals?.news || []).find((x) => new Date(x.time).getTime() >= cut);
+      if (n && why.isConnected) {
+        mount(why, html`<b>${t("ticker.whyDown")}</b> <a href="${n.url}" target="_blank" rel="noopener noreferrer">${n.headline}</a> <span class="muted">· ${n.source}</span>`);
+      } else why.remove();
+    }).catch(() => why.remove());
+  }
   return { title: row.symbol, back: "#/watchlist" };
+}
+
+/* ------------------------------------------------------------------ Fundamentals (2C) */
+function fundamentalsTab(ctx, panel, row) {
+  mount(panel, html`<div class="stack"><span class="skeleton skeleton--title"></span><span class="skeleton skeleton--text"></span></div>`);
+  ctx.api.detail(row.symbol).then((d) => {
+    if (!panel.isConnected) return;
+    const f = d?.fundamentals || {};
+    const v = f.valuation;
+    const ins = f.insiders;
+    const metric = v?.metric === "ps" ? "P/S" : "P/E";
+    const valuation = v ? html`
+      <div class="tiles" style="margin-bottom:var(--space-3)">
+        ${statTile({ label: metric, value: fmt.num(v.now, 1),
+          word: t(v.pct <= 20 ? "fund.cheap" : v.pct >= 80 ? "fund.expensive" : "fund.fair"),
+          wordTone: v.pct <= 20 ? "positive" : v.pct >= 80 ? "warning" : "text-2",
+          context: t("fund.cheaperThan", { pct: fmt.pct(100 - v.pct, 0), years: fmt.num(v.years, 0) }),
+          glossaryKey: ctx.glossaryButton("valuation_pct") ? "valuation_pct" : "" })}
+      </div>
+      ${rangeBar({ min: v.min, max: v.max, value: v.now, format: (x) => fmt.num(x, 1), caption: t("fund.rangeCaption", { metric, years: fmt.num(v.years, 0) }) })}
+      ${v.metric === "ps" ? html`<p class="small text-2" style="margin-top:var(--space-2)">${t("fund.psNote")}</p>` : ""}
+      ${v.years < 5 ? html`<p class="small text-2" style="margin-top:var(--space-2)">${t("fund.shortHistory", { years: fmt.num(v.years, 1) })}</p>` : ""}`
+      : html`<p class="text-2">${t("fund.noValuation")}</p>`;
+
+    const money = (x) => fmt.money(x, "USD", { compact: true });
+    const insiders = ins ? html`
+      <p style="margin-bottom:var(--space-3)">${t(ins.net_value > 0 ? "fund.insBought" : ins.net_value < 0 ? "fund.insSold" : "fund.insNone",
+        { value: money(Math.abs(ins.net_value)), days: ins.days, buys: ins.buys, sells: ins.sells })}</p>
+      ${ins.recent?.length ? html`<ul class="signals">${ins.recent.map((r) => html`<li class="signal" data-state="${r.kind === "buy" ? "passed" : "na"}">
+        <span class="signal__icon" style="color:var(--color-${r.kind === "buy" ? "positive" : "negative"})">${icon(r.kind === "buy" ? "plus" : "dash", { label: t(`fund.${r.kind}`) })}</span>
+        <span class="signal__name">${t(`fund.${r.kind}`)} · ${r.name}</span>
+        <span class="signal__detail num">${fmt.date(`${r.date}T12:00:00Z`)} · ${fmt.num(r.shares, 0)} × ${fmt.money(r.price, "USD")} = ${money(r.value)}</span></li>`)}</ul>`
+        : html`<p class="small text-2">${t("fund.insNoList")}</p>`}`
+      : html`<p class="text-2">${t(f.insiders_na === "eu" ? "sig.V2.naEu" : "sig.V2.na")}</p>`;
+
+    mount(panel, html`
+      <section class="card" style="margin-bottom:var(--space-4)">
+        <h3 class="card__title">${t("fund.valuationTitle")}</h3>${valuation}
+      </section>
+      <section class="card" style="margin-bottom:var(--space-4)">
+        <div class="cluster" style="justify-content:space-between;margin-bottom:var(--space-2)"><h3 class="card__title" style="margin:0">${t("fund.insidersTitle")}</h3>${ctx.glossaryButton("insider_buying", t("fund.insidersTitle"))}</div>
+        ${insiders}
+      </section>
+      <p class="xs muted">${t("fund.source", { source: f.source || t("common.na"), date: fmt.date(`${f.as_of || row.as_of}T12:00:00Z`) })}</p>`);
+  }).catch(() => {
+    if (panel.isConnected) mount(panel, banner({ tone: "negative", title: t("levels.failed"), body: "" }));
+  });
+}
+
+/* ------------------------------------------------------------------ News & events (2C) */
+function newsTab(ctx, panel, row) {
+  mount(panel, html`<div class="stack"><span class="skeleton skeleton--title"></span><span class="skeleton skeleton--text"></span></div>`);
+  ctx.api.detail(row.symbol).then((d) => {
+    if (!panel.isConnected) return;
+    const f = d?.fundamentals || {};
+    const e = f.earnings || row.next_earnings;
+    let earnings;
+    if (e?.date) {
+      const days = Math.round((new Date(`${e.date}T12:00:00Z`) - new Date(new Date().toISOString().slice(0, 10) + "T12:00:00Z")) / 864e5);
+      const when = days === 0 ? t("news.today") : days === 1 ? t("news.tomorrow") : t("news.inDays", { n: days });
+      const hour = e.hour === "bmo" ? t("news.bmo") : e.hour === "amc" ? t("news.amc") : "";
+      earnings = html`<p class="tile__value" style="font-size:var(--text-lg)">${when}</p>
+        <p>${fmt.date(`${e.date}T12:00:00Z`)}${hour ? ` · ${hour}` : ""}</p>
+        ${e.eps_est != null ? html`<p class="small text-2 num">${t("news.epsEst", { eps: fmt.num(e.eps_est, 2) })}</p>` : ""}
+        <p class="xs muted">${t("news.estimated", { source: e.source || "" })}</p>`;
+    } else {
+      earnings = html`<p class="text-2">${t("news.noEarnings")}</p>`;
+    }
+    const news = f.news || [];
+    mount(panel, html`
+      <section class="card" style="margin-bottom:var(--space-4)">
+        <h3 class="card__title">${t("news.earningsTitle")}</h3>${earnings}
+      </section>
+      <h3 class="section-title" style="margin-top:0">${t("news.headlines")}</h3>
+      ${news.length ? html`<ul class="menu">${news.map((n) => html`<li><a class="menu__item" href="${n.url}" target="_blank" rel="noopener noreferrer" style="align-items:flex-start;padding-top:var(--space-3);padding-bottom:var(--space-3)">
+          <span class="menu__label"><span style="display:block">${n.headline}</span><span class="menu__hint">${n.source} · ${fmt.relativeTime(n.time)}</span></span>
+          <span class="visually-hidden">${t("news.opensNewTab")}</span></a></li>`)}</ul>`
+        : html`<div class="state"><p class="state__body">${t("news.none")}</p></div>`}`);
+  }).catch(() => {
+    if (panel.isConnected) mount(panel, banner({ tone: "negative", title: t("levels.failed"), body: "" }));
+  });
 }
 
 /* ------------------------------------------------------------------ Overview */

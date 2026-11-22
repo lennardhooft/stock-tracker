@@ -206,3 +206,27 @@ def test_drop_names_the_trading_day_when_not_today():
     assert "NVDA \u22129,3\u202f% on Fri 20 Nov" in weekend[0].title
     same_day = al.evaluate([row(change_pct=-9.3, as_of="2026-11-20", today="2026-11-20")], CFG, 4)
     assert "% today" in same_day[0].title
+
+
+def test_earnings_reminders_week_ahead_and_day_before():
+    # Fri 20 Nov → earnings Fri 27 Nov is 5 trading days ahead; Thu 26 Nov → 1 trading day
+    ne = {"date": "2026-11-27", "hour": "amc"}
+    a = al.evaluate([row(next_earnings=ne, today="2026-11-20")], CFG, 4)
+    assert kinds(a) == ["earnings_7d"] and "Fri 27 Nov after the close" in a[0].body
+    assert kinds(al.evaluate([row(next_earnings=ne, today="2026-11-26")], CFG, 4)) == [
+        "earnings_1d"
+    ]
+    assert (
+        al.evaluate([row(next_earnings=ne, today="2026-11-23")], CFG, 4) == []
+    )  # in between: nothing
+    # earnings on Monday: the reminder comes on the Friday before (the last run before it)
+    mon = {"date": "2026-11-30"}
+    assert kinds(al.evaluate([row(next_earnings=mon, today="2026-11-27")], CFG, 4)) == [
+        "earnings_1d"
+    ]
+
+
+def test_drop_alert_includes_recent_headline():
+    h = {"headline": "Chipmaker cuts guidance", "source": "Reuters"}
+    a = al.evaluate([row(change_pct=-7, headline=h)], CFG, 4)
+    assert "News: Chipmaker cuts guidance (Reuters)" in a[0].body

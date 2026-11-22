@@ -26,18 +26,70 @@
       "currency": "USD",
       "change_pct": -6.2,
       "pct_from_52w_high": -38.5,
-      "score": 4,
-      "label": "strong",
+      "score": 6,
+      "label": "extreme",
       "fired": [
         "T1",
         "T2",
         "T3",
+        "V1",
+        "V2",
         "S1"
       ],
       "vs_sma": 2.1,
       "rsi": 27.4,
       "prev_score": 3,
-      "notes": "Wait for weekly RSI under 30."
+      "notes": "Wait for weekly RSI under 30.",
+      "next_earnings": {
+        "date": "2026-11-26",
+        "hour": "amc",
+        "eps_est": 1.24,
+        "source": "Finnhub"
+      },
+      "valuation": {
+        "metric": "pe",
+        "now": 18.2,
+        "pct": 12.0,
+        "min": 14.1,
+        "max": 41.7,
+        "n": 10,
+        "years": 9.8
+      },
+      "insiders": {
+        "net_value": 2140000,
+        "buy_value": 2400000,
+        "sell_value": 260000,
+        "buys": 3,
+        "sells": 1,
+        "days": 90,
+        "recent": [
+          {
+            "date": "2026-11-12",
+            "name": "Jane Ortega (CEO)",
+            "kind": "buy",
+            "shares": 12000,
+            "price": 121.5,
+            "value": 1458000
+          },
+          {
+            "date": "2026-11-05",
+            "name": "Tom Baker (Director)",
+            "kind": "buy",
+            "shares": 5000,
+            "price": 124.0,
+            "value": 620000
+          },
+          {
+            "date": "2026-10-20",
+            "name": "Ali Chen (CFO)",
+            "kind": "sell",
+            "shares": 2000,
+            "price": 130.0,
+            "value": 260000
+          }
+        ]
+      },
+      "insiders_na": null
     },
     {
       "symbol": "BLMT.BR",
@@ -56,7 +108,24 @@
       "rsi": 29.1,
       "prev_score": 1,
       "buy_below": 43,
-      "na": []
+      "na": [],
+      "next_earnings": {
+        "date": "2027-02-19",
+        "hour": null,
+        "eps_est": null,
+        "source": "Yahoo"
+      },
+      "valuation": {
+        "metric": "pe",
+        "now": 14.8,
+        "pct": 45.0,
+        "min": 10.2,
+        "max": 22.9,
+        "n": 44,
+        "years": 3.6
+      },
+      "insiders": null,
+      "insiders_na": "eu"
     },
     {
       "symbol": "ORCA",
@@ -72,7 +141,26 @@
       ],
       "vs_sma": 52.0,
       "rsi": 61.2,
-      "prev_score": 1
+      "prev_score": 1,
+      "valuation": {
+        "metric": "ps",
+        "now": 11.4,
+        "pct": 88.0,
+        "min": 5.2,
+        "max": 13.0,
+        "n": 8,
+        "years": 7.9
+      },
+      "insiders": {
+        "net_value": -3800000,
+        "buy_value": 0,
+        "sell_value": 3800000,
+        "buys": 0,
+        "sells": 4,
+        "days": 90,
+        "recent": []
+      },
+      "insiders_na": null
     },
     {
       "symbol": "VLTA.AS",
@@ -89,7 +177,10 @@
       "vs_sma": 48.6,
       "rsi": 42.1,
       "prev_score": 1,
-      "suspect": true
+      "suspect": true,
+      "valuation": null,
+      "insiders": null,
+      "insiders_na": null
     },
     {
       "symbol": "WORLD.AS",
@@ -105,7 +196,10 @@
       ],
       "vs_sma": 28.8,
       "rsi": 52.0,
-      "prev_score": 1
+      "prev_score": 1,
+      "valuation": null,
+      "insiders": null,
+      "insiders_na": null
     },
     {
       "symbol": "NEWCO",
@@ -123,7 +217,10 @@
         "T1"
       ],
       "rsi": 47.0,
-      "prev_score": 1
+      "prev_score": 1,
+      "valuation": null,
+      "insiders": null,
+      "insiders_na": null
     },
     {
       "symbol": "KESL.DE",

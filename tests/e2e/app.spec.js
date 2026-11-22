@@ -43,6 +43,10 @@ async function quality(page, label) {
   );
   expect(small, `${label}: tap targets under 44px`).toEqual([]);
 
+  const tabsOverflow = await page.evaluate(() =>
+    [...document.querySelectorAll(".tabs")].some((t) => t.scrollWidth > t.clientWidth + 1));
+  expect(tabsOverflow, `${label}: in-page tabs wider than the screen`).toBe(false);
+
   const emptyAria = await page.evaluate(() =>
     [...document.querySelectorAll("[aria-pressed=''], [aria-checked=''], [aria-selected='']")].map((e) => e.outerHTML.slice(0, 60)));
   expect(emptyAria, `${label}: empty aria state`).toEqual([]);
@@ -158,10 +162,10 @@ test("task: Today answers 'anything worth my attention?' above the fold on a sma
   await expect(firstAction).toBeInViewport();
 });
 
-test("task: why does NRDX have a score of 4 — ≤ 2 taps from Today", async ({ page }) => {
+test("task: why does NRDX have its score — ≤ 2 taps from Today", async ({ page }) => {
   await open(page, "#/");
   await page.getByRole("link", { name: "Research NRDX" }).click();                   // tap 1
-  await expect(page.locator("section.card").first().locator(".signal")).toHaveCount(4);
+  await expect(page.locator("section.card").first().locator(".signal")).toHaveCount(6);
   await expect(page.locator(".signal__detail").first()).toContainText("200-week average");
 });
 
@@ -276,4 +280,37 @@ test("alerts page: grouped by day, kind as word + icon, tap opens the stock", as
   await expect(page.getByText("not delivered to Telegram", { exact: false })).toBeVisible();
   await page.getByText("NRDX: 4/4 bottom signals").click();
   await expect(page.locator("html")).toHaveAttribute("data-screen", "ticker/NRDX");
+});
+
+test("fundamentals tab: valuation vs history and insider trades (US)", async ({ page }) => {
+  await open(page, "#/ticker/NRDX");
+  await page.getByRole("tab", { name: "Fundamentals" }).click();
+  await expect(page.locator("#panel")).toContainText("cheaper than 88");
+  await expect(page.locator("#panel")).toContainText("Insiders bought");
+  await expect(page.locator("#panel")).toContainText("Jane Ortega");
+  await quality(page, "fundamentals");
+  await shot(page, "ticker-fundamentals-dark-375");
+});
+
+test("fundamentals tab: EU stock says why insiders are n/a and that history is short", async ({ page }) => {
+  await open(page, "#/ticker/BLMT.BR");
+  await page.getByRole("tab", { name: "Fundamentals" }).click();
+  await expect(page.locator("#panel")).toContainText("no free insider data for EU stocks");
+  await expect(page.locator("#panel")).toContainText("only 3,6 years");
+  await quality(page, "fundamentals eu");
+});
+
+test("news tab: earnings countdown and headlines open in a new tab", async ({ page }) => {
+  await open(page, "#/ticker/NRDX");
+  await page.getByRole("tab", { name: "News" }).click();
+  await expect(page.locator("#panel")).toContainText("Next earnings");
+  await expect(page.locator('#panel a[target="_blank"]').first()).toHaveAttribute("rel", /noopener/);
+  await quality(page, "news");
+  await shot(page, "ticker-news-dark-375");
+});
+
+test("why is it down: latest headline under a big drop", async ({ page }) => {
+  await open(page, "#/ticker/NRDX");
+  await expect(page.locator("#why-down")).toContainText("Why is it down?");
+  await expect(page.locator("#why-down")).toContainText("cuts full-year guidance");
 });

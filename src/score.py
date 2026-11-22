@@ -134,6 +134,46 @@ def signal_market_fear(market: dict, cfg: dict) -> dict:
     )
 
 
+def signal_valuation(fund: dict | None, cfg: dict) -> dict:
+    """V1 (6.2): current P/E (P/S if losses) in the bottom `below_percentile` of its own history."""
+    below = float(cfg.get("below_percentile", 20))
+    min_years = float(cfg.get("min_years", 3))
+    v = (fund or {}).get("valuation")
+    if not v:
+        return _signal("valuation_pct", None, None, below, "no usable valuation history")
+    if v["years"] < min_years:
+        return _signal("valuation_pct", None, v, below, f"only {v['years']} years of history")
+    passed = v["pct"] <= below
+    return _signal(
+        "valuation_pct",
+        passed,
+        v,
+        below,
+        f"{v['metric'].upper()} {v['now']} is at the {v['pct']:.0f}th percentile of "
+        f"{v['years']:.0f} years (fires at <= {below:g})",
+    )
+
+
+def signal_insider(fund: dict | None, cfg: dict) -> dict:
+    """V2 (6.2): net insider open-market purchases > 0 over the last `days` days."""
+    ins = (fund or {}).get("insiders")
+    if not ins:
+        reason = (
+            "no free insider data for EU stocks"
+            if (fund or {}).get("insiders_na") == "eu"
+            else "insider data unavailable"
+        )
+        return _signal("insider_buying", None, {"na": (fund or {}).get("insiders_na")}, 0, reason)
+    passed = ins["net_value"] > 0
+    return _signal(
+        "insider_buying",
+        passed,
+        {k: ins[k] for k in ("net_value", "buy_value", "sell_value", "buys", "sells", "days")},
+        0,
+        f"net open-market buying {ins['net_value']:.0f} over {ins['days']} days",
+    )
+
+
 def signal_near_major_bottom(price: float, levels: dict | None, cfg: dict) -> dict:
     """T4 (6.5): price within `within_pct` of a monthly/yearly support zone with ≥ min_touches."""
     within = float(cfg.get("within_pct", 5))
@@ -171,7 +211,11 @@ def signal_near_major_bottom(price: float, levels: dict | None, cfg: dict) -> di
 
 
 def compute_signals(
-    daily_close: pd.Series, market: dict, scoring_cfg: dict, levels: dict | None = None
+    daily_close: pd.Series,
+    market: dict,
+    scoring_cfg: dict,
+    levels: dict | None = None,
+    fundamentals: dict | None = None,
 ) -> list[dict]:
     """All enabled signals for one ticker, in display order."""
     sig_cfg = scoring_cfg["signals"]
@@ -180,6 +224,8 @@ def compute_signals(
         "near_200w_ma": lambda c: signal_near_200w_ma(weekly, c),
         "weekly_rsi": lambda c: signal_weekly_rsi(weekly, c),
         "drawdown": lambda c: signal_drawdown(daily_close, c),
+        "valuation_pct": lambda c: signal_valuation(fundamentals, c),
+        "insider_buying": lambda c: signal_insider(fundamentals, c),
         "near_major_bottom": lambda c: signal_near_major_bottom(
             float(daily_close.iloc[-1]), levels, c
         ),

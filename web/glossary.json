@@ -89,5 +89,19 @@
     "why": "Buyers often step in again near an old bottom, so long-term investors use support zones to plan staged buys.",
     "how": "Stronger = seen on longer timeframes (yearly, monthly) and touched more often. An old ceiling that price broke through often becomes support (and the other way round).",
     "limits": "Levels are history, not a promise. A support can break, especially after bad news. Daily levels matter far less than monthly or yearly ones."
+  },
+  "valuation_pct": {
+    "title": "V1 · Cheap vs its own history",
+    "what": "Compares today's price/earnings ratio (P/E) with the stock's own P/E over the last 5–10 years. Loss-making companies use price/sales (P/S) instead.",
+    "why": "A great company bought at a historically low valuation leaves more room for error and more upside.",
+    "how": "Fires when today's P/E is lower than 80 % of its own history (bottom 20 %). The range bar shows where it sits between its lowest and highest value.",
+    "limits": "A low P/E can mean profits are about to fall. Free data for EU stocks covers only about 4 years. ETFs have no P/E of their own."
+  },
+  "insider_buying": {
+    "title": "V2 · Insider buying",
+    "what": "Directors and executives buying their own company's shares on the open market in the last 90 days, minus what they sold. Share grants and option exercises are ignored.",
+    "why": "Insiders sell for many reasons, but they usually buy for one: they think the shares are cheap.",
+    "how": "Fires when insiders bought more than they sold (in value). Several insiders buying at once is the strongest sign.",
+    "limits": "Only available for US stocks on free data. Planned sales and small purchases can be noise."
   }
 }

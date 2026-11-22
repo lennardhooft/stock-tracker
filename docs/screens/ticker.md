@@ -10,7 +10,7 @@
   "Strong bottom signals: price is near its 4-year average, 38 % below its high, and RSI is oversold."
 
 ## Tabs inside the page (Phase 1)
-**Overview · Chart · My notes.** Fundamentals and News & events tabs appear in Phase 2.
+**Overview · Chart · Fundamentals · News · My notes** (Fundamentals and News from Phase 2C).
 
 ### Overview
 1. **Bottom Score card:** each signal as a signal row (✅/❌/n/a, plain-language name, value vs threshold, ⓘ glossary). n/a rows always say why.
@@ -34,6 +34,25 @@
 - Same for the nearest resistance above. Flipped levels say so: "old ceiling, now support".
 - ⓘ glossary entry for support/resistance.
 - n/a state: "Not enough price history to find previous bottoms." 
+
+### Fundamentals tab (Phase 2C)
+- **Valuation vs its own history (V1):** "P/E 18,2 — cheaper than 85 % of the last 10 years" as a stat tile + range bar
+  (min · now · max of its own history). Loss-making companies use P/S instead, and say so.
+  The history length is always shown ("based on 4 years for EU stocks"). n/a with reason when there isn't enough.
+- **Insider trades (V2):** net open-market buying in the last 90 days in words ("Insiders bought $ 2,1 mln net"),
+  then the last 6 months of open-market buys/sells (who, role, date, shares, value). Grants and option exercises are left out.
+  EU stocks: "n/a: no free insider data for EU stocks."
+- Source and date of every number.
+
+### News & events tab (Phase 2C)
+- **Next earnings date** with countdown ("in 12 days · Tue 2 Dec · after the close"), EPS estimate if known,
+  "estimated" vs "confirmed".
+- **Latest 10 headlines**: headline, source, time ago; tap opens the article in a new tab.
+- Empty state: "No recent news found."
+
+### "Why is it down?" (13.1)
+- When the stock fell ≥ 5 % on the day, the header shows the most recent headline from the last 48 hours under the price.
+  Drop alerts on Telegram include it too.
 
 ### My notes
 Buy level (decimal keyboard), notes (multi-line), Save. **Remove from watchlist** at the bottom (destructive style, Undo toast).

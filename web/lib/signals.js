@@ -7,6 +7,8 @@ import * as fmt from "./format.js";
 export const ALERT_THRESHOLD = 4;
 
 export const GLOSSARY_KEY = {
+  V1: "valuation_pct",
+  V2: "insider_buying",
   T4: "support_resistance",
   T1: "near_200w_ma",
   T2: "weekly_rsi",
@@ -20,6 +22,12 @@ const num = (v, d = 1) => fmt.num(v, d);
 export function describeSignal(sig, currency = "EUR") {
   const name = t(`sig.${sig.code}.name`);
   const v = sig.value;
+  if (sig.code === "V1" && sig.passed === null && v?.years != null) {
+    return { name, detail: t("sig.V1.short_history", { years: num(v.years, 1) }) };
+  }
+  if (sig.code === "V2" && sig.passed === null) {
+    return { name, detail: t(v?.na === "eu" ? "sig.V2.naEu" : v?.na === "no_key" ? "sig.V2.naKey" : "sig.V2.na") };
+  }
   if (sig.passed === null || v == null) {
     return { name, detail: t(`sig.${sig.code}.na`) };
   }
@@ -37,6 +45,16 @@ export function describeSignal(sig, currency = "EUR") {
       return { name, detail: t("sig.T3.detail", {
         pct: fmt.pct(v.pct), high: fmt.money(v.high, currency), limit: fmt.pct(sig.threshold, 0),
       }) };
+    case "V1":
+      return { name, detail: t("sig.V1.detail", {
+        metric: v.metric === "ps" ? "P/S" : "P/E", now: num(v.now, 1),
+        cheaper: fmt.pct(100 - v.pct, 0), years: num(v.years, 0), limit: fmt.pct(100 - sig.threshold, 0),
+      }) };
+    case "V2": {
+      const usd = (x) => fmt.money(Math.abs(x), "USD", { compact: true });
+      const key = v.net_value > 0 ? "sig.V2.bought" : v.net_value < 0 ? "sig.V2.sold" : "sig.V2.none";
+      return { name, detail: t(key, { value: usd(v.net_value), days: v.days, buys: v.buys, sells: v.sells }) };
+    }
     case "T4":
       return { name, detail: t("sig.T4.detail", {
         range: `${fmt.money(v.low, currency)}–${fmt.money(v.high, currency)}`, dist: fmt.pct(Math.abs(v.distance_pct)),

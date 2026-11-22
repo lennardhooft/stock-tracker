@@ -39,7 +39,7 @@ function supabaseApi(cfg) {
       return { watchlist, scores, market: market[0] || null, runs, history, alerts };
     },
     async detail(symbol) {
-      return (await q(sb.from("ticker_detail").select("weekly").eq("symbol", symbol)))[0] || null;
+      return (await q(sb.from("ticker_detail").select("weekly,fundamentals").eq("symbol", symbol)))[0] || null;
     },
     add: (row) => q(sb.from("watchlist").insert(row).select().single()),
     update: (id, row) => q(sb.from("watchlist").update(row).eq("id", id)),
@@ -87,6 +87,10 @@ function demoSignals(s, market) {
     { code: "T2", key: "weekly_rsi", passed: fired.includes("T2"), value: s.rsi ?? 48, threshold: 30, weight: 1 },
     { code: "T3", key: "drawdown", passed: fired.includes("T3"),
       value: { pct: s.pct_from_52w_high, high: s.price / (1 + s.pct_from_52w_high / 100) }, threshold: -30, weight: 1 },
+    { code: "V1", key: "valuation_pct", passed: s.valuation ? s.valuation.pct <= 20 : null,
+      value: s.valuation || null, threshold: 20, weight: 1 },
+    { code: "V2", key: "insider_buying", passed: s.insiders ? s.insiders.net_value > 0 : null,
+      value: s.insiders ? { ...s.insiders } : { na: s.insiders_na || null }, threshold: 0, weight: 1 },
     { code: "S1", key: "market_fear", passed: fired.includes("S1"),
       value: { vix: market.vix?.value ?? null, fear_greed: market.fear_greed?.value ?? null },
       threshold: { vix_above: 30, fear_greed_below: 25 }, weight: 1 },
@@ -122,7 +126,9 @@ function demoApi(fixture) {
           user_id: UID, symbol: s.symbol, as_of: updated.slice(0, 10), price: s.price, currency: s.currency,
           change_pct: s.change_pct, pct_from_52w_high: s.pct_from_52w_high,
           high_52w: s.price / (1 + s.pct_from_52w_high / 100), low_52w: s.low_52w ?? s.price * 0.82,
-          score: s.score, max_score: 4, n_na: (s.na || []).length, label: s.label, suspect: !!s.suspect,
+          score: s.score, max_score: 6, n_na: (s.na || []).length + (s.valuation ? 0 : 1) + (s.insiders ? 0 : 1),
+          label: s.label, suspect: !!s.suspect,
+          next_earnings: s.next_earnings || null,
           signals: demoSignals(s, market), sparkline: weeklySeries(s.symbol, s.price, s.pct_from_52w_high).c.slice(-52),
           checks: s.suspect ? { status: "red", issues: [{ code: "suspect_move", level: "red", detail: "unexplained move > 40%" }], suspect_dates: [] } : { status: "green", issues: [] },
           updated_at: updated,
@@ -158,7 +164,10 @@ function demoApi(fixture) {
     async detail(symbol) {
       if (fixture === "nochart") throw new Error("Failed to fetch");
       const d = await (await fetch("fixtures/detail.json", { cache: "no-cache" })).json();
-      return d[symbol] ? { weekly: d[symbol] } : null;
+      const out = d[symbol] ? structuredClone(d[symbol]) : null;
+      // fake headlines get recent times, so "why is it down?" (last 48 h) works on any day
+      out?.fundamentals?.news?.forEach((n, i) => { n.time = new Date(Date.now() - (6 + i * 30) * 3600e3).toISOString(); });
+      return out;
     },
     async add(row) {
       const w = { ...row, id: `w${Date.now()}`, user_id: UID, created_at: new Date().toISOString() };

@@ -203,6 +203,23 @@
       "short": "de koers zit dicht bij een grote vorige bodem",
       "na": "n.b.: nog geen vorige bodems gevonden.",
       "detail": "Steun {range} ligt op {dist}, {n} keer geraakt (gaat af binnen {limit})."
+    },
+    "V1": {
+      "name": "Goedkoop t.o.v. eigen geschiedenis",
+      "short": "het is goedkoop t.o.v. zijn eigen geschiedenis",
+      "na": "n.b.: geen bruikbare waarderingsgeschiedenis (ETF's en jonge bedrijven hebben er geen).",
+      "short_history": "n.b.: slechts {years} jaar geschiedenis (vraagt 3).",
+      "detail": "{metric} {now} is goedkoper dan {cheaper} van de laatste {years} jaar (gaat af bij goedkoper dan {limit})."
+    },
+    "V2": {
+      "name": "Insiders kopen",
+      "short": "insiders kopen",
+      "naEu": "n.b.: geen gratis insidergegevens voor EU-aandelen.",
+      "naKey": "n.b.: insiderbron niet ingesteld.",
+      "na": "n.b.: insidergegevens niet beschikbaar.",
+      "bought": "Insiders kochten {value} meer dan ze verkochten in {days} dagen ({buys} aankopen, {sells} verkopen).",
+      "sold": "Insiders verkochten {value} meer dan ze kochten in {days} dagen ({buys} aankopen, {sells} verkopen).",
+      "none": "Geen insidertransacties op de beurs in {days} dagen."
     }
   },
   "explain": {
@@ -241,7 +258,10 @@
     "pendingOne": "{symbol} wacht op zijn eerste score",
     "pendingMany": "{n} aandelen wachten op hun eerste score",
     "pendingBody": "Nieuwe aandelen krijgen een score bij de update van vanavond (rond 22:45 Brusselse tijd).",
-    "seeWatchlist": "Volglijst openen"
+    "seeWatchlist": "Volglijst openen",
+    "earningsTitle": "{symbol} publiceert resultaten {when}",
+    "earningsBody": "{date}. Rond resultaten bewegen koersen vaak sterk.",
+    "seeDetails": "Details bekijken"
   },
   "watchlist": {
     "count": "{n} aandelen · {strong} met sterke bodemsignalen",
@@ -301,9 +321,11 @@
     "saveBuy": "Aankoopniveau opslaan",
     "clearBuy": "Aankoopniveau verwijderen",
     "tab": {
-      "overview": "Overzicht",
+      "overview": "Score",
       "chart": "Grafiek",
-      "notes": "Mijn notities"
+      "notes": "Notities",
+      "fundamentals": "Cijfers",
+      "news": "Nieuws"
     },
     "signalsTitle": "Welke signalen afgingen",
     "vsMa": "t.o.v. 4-jaarsgemiddelde",
@@ -314,7 +336,8 @@
     "range52": "Koers binnen zijn 52-wekenbereik",
     "dataCheck": "Gegevenscontrole:",
     "notes": "Notities",
-    "notesHint": "Alleen jij ziet deze."
+    "notesHint": "Alleen jij ziet deze.",
+    "whyDown": "Waarom daalt het?"
   },
   "checks": {
     "suspect_move": "Een onverklaarde koerssprong telt niet mee tot de volgende update hem bevestigt.",
@@ -467,5 +490,38 @@
       "support_break": "Steun gebroken",
       "data_problem": "Gegevenscontrole"
     }
+  },
+  "fund": {
+    "valuationTitle": "Waardering t.o.v. eigen geschiedenis",
+    "insidersTitle": "Insidertransacties (op de beurs)",
+    "cheap": "Goedkoop t.o.v. geschiedenis",
+    "expensive": "Duur t.o.v. geschiedenis",
+    "fair": "Normaal voor dit aandeel",
+    "cheaperThan": "goedkoper dan {pct} van de laatste {years} jaar",
+    "rangeCaption": "{metric} nu binnen zijn {years}-jaarsbereik",
+    "psNote": "Het bedrijf maakt verlies, dus koers/omzet (P/S) wordt gebruikt in plaats van K/W.",
+    "shortHistory": "Gebaseerd op slechts {years} jaar gegevens: gratis gegevens voor EU-aandelen zijn beperkt.",
+    "noValuation": "n.b.: niet genoeg geschiedenis om te vergelijken (ETF's en jonge bedrijven hebben er geen).",
+    "insBought": "Insiders kochten {value} meer dan ze verkochten in {days} dagen ({buys} aankopen, {sells} verkopen).",
+    "insSold": "Insiders verkochten {value} meer dan ze kochten in {days} dagen ({buys} aankopen, {sells} verkopen).",
+    "insNone": "Geen insidertransacties op de beurs in {days} dagen.",
+    "insNoList": "Geen transacties op de beurs in de laatste 6 maanden.",
+    "buy": "Gekocht",
+    "sell": "Verkocht",
+    "source": "Bron: {source} · bijgewerkt {date}"
+  },
+  "news": {
+    "earningsTitle": "Volgende resultaten",
+    "today": "Vandaag",
+    "tomorrow": "Morgen",
+    "inDays": "Over {n} dagen",
+    "bmo": "voor de opening",
+    "amc": "na de sluiting",
+    "epsEst": "Verwachte winst per aandeel: {eps}",
+    "estimated": "Datum van {source}; kan nog wijzigen.",
+    "noEarnings": "Nog geen resultatendatum bekend.",
+    "headlines": "Laatste nieuws",
+    "none": "Geen recent nieuws gevonden.",
+    "opensNewTab": "(opent in een nieuw tabblad)"
   }
 }

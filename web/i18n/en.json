@@ -203,6 +203,23 @@
       "short": "the price is near a major previous bottom",
       "na": "n/a: no previous bottoms found yet.",
       "detail": "Support {range} is {dist} away, {n} touches (fires within {limit})."
+    },
+    "V1": {
+      "name": "Cheap vs its own history",
+      "short": "it's cheap vs its own history",
+      "na": "n/a: no usable valuation history (ETFs and young companies have none).",
+      "short_history": "n/a: only {years} years of history (needs 3).",
+      "detail": "{metric} {now} is cheaper than {cheaper} of its last {years} years (fires when cheaper than {limit})."
+    },
+    "V2": {
+      "name": "Insider buying",
+      "short": "insiders are buying",
+      "naEu": "n/a: no free insider data for EU stocks.",
+      "naKey": "n/a: insider source not set up.",
+      "na": "n/a: insider data unavailable.",
+      "bought": "Insiders bought {value} more than they sold in {days} days ({buys} buys, {sells} sells).",
+      "sold": "Insiders sold {value} more than they bought in {days} days ({buys} buys, {sells} sells).",
+      "none": "No open-market insider trades in {days} days."
     }
   },
   "explain": {
@@ -241,7 +258,10 @@
     "pendingOne": "{symbol} is waiting for its first score",
     "pendingMany": "{n} stocks are waiting for their first score",
     "pendingBody": "New stocks are scored in tonight's update (about 22:45 Brussels time).",
-    "seeWatchlist": "Open watchlist"
+    "seeWatchlist": "Open watchlist",
+    "earningsTitle": "{symbol} reports earnings {when}",
+    "earningsBody": "{date}. Prices often move a lot around earnings.",
+    "seeDetails": "See details"
   },
   "watchlist": {
     "count": "{n} stocks · {strong} with strong bottom signals",
@@ -301,9 +321,11 @@
     "saveBuy": "Save buy level",
     "clearBuy": "Remove buy level",
     "tab": {
-      "overview": "Overview",
+      "overview": "Score",
       "chart": "Chart",
-      "notes": "My notes"
+      "notes": "Notes",
+      "fundamentals": "Fundamentals",
+      "news": "News"
     },
     "signalsTitle": "Which signals fired",
     "vsMa": "vs 4-year average",
@@ -314,7 +336,8 @@
     "range52": "Price now within its 52-week range",
     "dataCheck": "Data check:",
     "notes": "Notes",
-    "notesHint": "Only you can see these."
+    "notesHint": "Only you can see these.",
+    "whyDown": "Why is it down?"
   },
   "checks": {
     "suspect_move": "An unexplained price jump is left out until the next update confirms it.",
@@ -467,5 +490,38 @@
       "support_break": "Support broken",
       "data_problem": "Data check"
     }
+  },
+  "fund": {
+    "valuationTitle": "Valuation vs its own history",
+    "insidersTitle": "Insider trades (open market)",
+    "cheap": "Cheap vs its history",
+    "expensive": "Expensive vs its history",
+    "fair": "Normal for this stock",
+    "cheaperThan": "cheaper than {pct} of the last {years} years",
+    "rangeCaption": "{metric} now within its {years}-year range",
+    "psNote": "The company makes a loss, so price-to-sales (P/S) is used instead of P/E.",
+    "shortHistory": "Based on only {years} years of data: free data for EU stocks is limited.",
+    "noValuation": "n/a: not enough history to compare (ETFs and young companies have none).",
+    "insBought": "Insiders bought {value} more than they sold in {days} days ({buys} buys, {sells} sells).",
+    "insSold": "Insiders sold {value} more than they bought in {days} days ({buys} buys, {sells} sells).",
+    "insNone": "No open-market insider trades in {days} days.",
+    "insNoList": "No open-market trades in the last 6 months.",
+    "buy": "Bought",
+    "sell": "Sold",
+    "source": "Source: {source} · updated {date}"
+  },
+  "news": {
+    "earningsTitle": "Next earnings",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "inDays": "In {n} days",
+    "bmo": "before the open",
+    "amc": "after the close",
+    "epsEst": "Expected earnings per share: {eps}",
+    "estimated": "Date from {source}; it can still change.",
+    "noEarnings": "No earnings date known yet.",
+    "headlines": "Latest news",
+    "none": "No recent news found.",
+    "opensNewTab": "(opens in a new tab)"
   }
 }
