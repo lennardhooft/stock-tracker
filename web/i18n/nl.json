@@ -554,6 +554,9 @@
     "waiting": "Nog bezig… de app ververst als het klaar is.",
     "done": "Scores bijgewerkt.",
     "failed": "De update kon niet starten. Probeer het over een minuut opnieuw.",
-    "notConfigured": "De bijwerkknop is nog niet ingesteld (GitHub-sleutel ontbreekt in Supabase)."
+    "notConfigured": "De bijwerkknop is nog niet ingesteld (GitHub-sleutel ontbreekt in Supabase).",
+    "notLoggedIn": "Update kon niet starten: je login is verlopen. Log uit en opnieuw in.",
+    "github": "Update kon niet starten: GitHub weigerde de sleutel (code {code}). Controleer dat de token voor de stock-tracker-repository is met Actions: lezen en schrijven.",
+    "failedReason": "Update kon niet starten ({reason}). Probeer het over een minuut opnieuw."
   }
 }

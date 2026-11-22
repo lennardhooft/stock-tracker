@@ -8,7 +8,6 @@
 //
 // Deploy: Supabase dashboard → Edge Functions → Deploy a new function → name "run-update",
 // paste this file. Secret: Edge Functions → Secrets → GITHUB_TOKEN.
-import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 
 const REPO = "lennardhooft/stock-tracker"; // public repo name, not a secret
 const WORKFLOW = "daily.yml";
@@ -46,19 +45,26 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return json({ error: "method" }, 405, headers);
 
-  // 1. who is calling? (the platform already checked the JWT; double-check the user exists)
+  // 1. who is calling? Ask Supabase Auth to validate the user's access token.
+  //    (works with both the new publishable keys and legacy anon keys)
   const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const anon = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
-  const sb = createClient(url, anon, { auth: { persistSession: false } });
-  const { data: { user }, error } = await sb.auth.getUser(token);
-  if (error || !user) return json({ error: "not_logged_in" }, 401, headers);
+  const apikey = req.headers.get("apikey") || Deno.env.get("SUPABASE_ANON_KEY") || "";
+  const who = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+    headers: { Authorization: `Bearer ${token}`, apikey },
+  });
+  const user = who.ok ? await who.json() : null;
+  if (!token || !user?.id) {
+    console.log("run-update: not logged in, auth status", who.status);
+    return json({ error: "not_logged_in" }, 401, headers);
+  }
+  console.log("run-update: user ok");
 
   if (!Deno.env.get("GITHUB_TOKEN")) return json({ error: "not_configured" }, 503, headers);
 
   // 2. already queued or running? then don't start another one
   for (const status of ["queued", "in_progress"]) {
     const r = await github(`/actions/workflows/${WORKFLOW}/runs?status=${status}&per_page=1`);
+    if (!r.ok) console.log("run-update: github runs check", r.status);
     if (r.ok && ((await r.json()).total_count ?? 0) > 0) return json({ status: "already_running" }, 200, headers);
   }
 
@@ -67,6 +73,11 @@ Deno.serve(async (req) => {
     method: "POST",
     body: JSON.stringify({ ref: "main" }),
   });
-  if (r.status === 204) return json({ status: "started" }, 202, headers);
+  if (r.status === 204) {
+    console.log("run-update: started");
+    return json({ status: "started" }, 202, headers);
+  }
+  // log GitHub's own message (never the token) so the reason is visible in the function logs
+  console.log("run-update: github dispatch failed", r.status, (await r.text()).slice(0, 200));
   return json({ error: "github", code: r.status }, 502, headers);
 });

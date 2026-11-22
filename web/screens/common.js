@@ -75,7 +75,8 @@ export async function startUpdate(ctx) {
   try {
     status = await ctx.api.runUpdate();
   } catch (e) {
-    toast(e.message === "not_configured" ? t("update.notConfigured") : t("update.failed"));
+    const key = { not_configured: "update.notConfigured", not_logged_in: "update.notLoggedIn", github: "update.github" }[e.message];
+    toast(key ? t(key, { code: e.code ?? "?" }) : t("update.failedReason", { reason: e.message || "?" }), { ms: 9000 });
     return;
   }
   toast(status === "already_running" ? t("update.already") : t("update.started"), { ms: 7000 });

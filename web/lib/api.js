@@ -40,7 +40,9 @@ function supabaseApi(cfg) {
       const { data, error } = await sb.functions.invoke("run-update", { method: "POST" });
       if (error) {
         const body = await error.context?.json?.().catch(() => null);
-        throw new Error(body?.error || error.message);
+        const e = new Error(body?.error || error.message);
+        e.code = body?.code || error.context?.status || null;
+        throw e;
       }
       return data?.status || "started";
     },

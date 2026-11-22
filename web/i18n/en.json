@@ -554,6 +554,9 @@
     "waiting": "Still updating… the app refreshes when it's done.",
     "done": "Scores updated.",
     "failed": "Couldn't start the update. Try again in a minute.",
-    "notConfigured": "The update button isn't set up yet (GitHub key missing in Supabase)."
+    "notConfigured": "The update button isn't set up yet (GitHub key missing in Supabase).",
+    "notLoggedIn": "Couldn't start the update: your login has expired. Log out and in again.",
+    "github": "Couldn't start the update: GitHub refused the key (code {code}). Check that the token is for the stock-tracker repository with Actions: read and write.",
+    "failedReason": "Couldn't start the update ({reason}). Try again in a minute."
   }
 }
