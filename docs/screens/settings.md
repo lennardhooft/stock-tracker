@@ -29,3 +29,21 @@ Settings never block: if storage is unavailable, choices still apply for this vi
 - [ ] Changing theme/language/number format applies instantly without a reload.
 - [ ] All labels and explanations come from `web/i18n/`.
 - [ ] Works at 375 / 768 / 1280 px in both themes; axe 0 serious.
+
+## Phase 3A additions
+
+### Account & security → Two-step login (CLAUDE.md 13.13.2)
+- Status line: "Two-step login is **on** / **off**".
+- **Set up**: shows a QR code + the secret in text (for copy) → "Scan it with an authenticator app (Google Authenticator,
+  Microsoft Authenticator, 1Password…), then type the 6-digit code." → **Turn on**. Wrong code: inline error, stays open.
+- After it's on, every login asks for the 6-digit code after the password (screen: "Enter the code from your authenticator app").
+- Portfolio data needs it (enforced by the database). Removing it is not offered in the app (do it in Supabase if a phone is lost).
+
+### Risk → `#/more/risk` (CLAUDE.md 13.13.4b)
+- **Profile** segmented: Conservative · Balanced · Aggressive · Custom (changing a number switches to Custom).
+- Grouped number inputs (decimal keyboard), each with a one-line effect + default:
+  max loss per position %, volatility factor k; core / satellite / speculative split, cash reserve %;
+  max weight per asset type (sector ETF, quality stock, other stock, speculative each + total); max per sector, max per region;
+  quality multipliers (high / medium / low), verdict multipliers (on sale / value trap).
+- **Live preview** at the top: "With these settings, NVDA's max becomes € 1.250" (first holding or NVDA-like example).
+- **Save** (stored in Supabase `risk_settings`, every change also logged with the date in `risk_settings_log`) and **Reset to defaults**.

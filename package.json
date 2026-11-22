@@ -6,7 +6,8 @@
   "scripts": {
     "serve": "python3 -m http.server -d web 8000",
     "test:ui": "playwright test",
-    "screenshots": "playwright test tests/e2e/styleguide.spec.js"
+    "screenshots": "playwright test tests/e2e/styleguide.spec.js",
+    "test:js": "node --test \"tests/js/*.test.mjs\""
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",

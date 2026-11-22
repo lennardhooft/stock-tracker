@@ -73,3 +73,43 @@ export function renderLogin(ctx, main) {
     }
   });
 }
+
+/** Second step: 6-digit code from the authenticator app (CLAUDE.md 13.13.2). */
+export function renderMfaCode(ctx, main) {
+  mount(main, html`<div class="narrow stack">
+    <div class="card stack">
+      <h1>${t("mfa.codeTitle")}</h1>
+      <p class="text-2">${t("mfa.codeBody")}</p>
+      <form id="mfa-form" class="stack" novalidate>
+        <label class="field"><span class="field__label">${t("mfa.code")}</span>
+          <input class="input num" id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required aria-describedby="mfa-msg"></label>
+        <button class="btn btn--primary btn--block" type="submit">${t("mfa.verify")}</button>
+      </form>
+      <p id="mfa-msg" class="small" role="status" aria-live="polite"></p>
+      <button type="button" class="btn btn--ghost btn--block" data-logout>${t("mfa.otherAccount")}</button>
+    </div>
+  </div>`);
+  const input = $("#mfa-code", main);
+  const msg = $("#mfa-msg", main);
+  input.focus();
+  $("#mfa-form", main).addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const code = input.value.replace(/\s/g, "");
+    if (!/^\d{6}$/.test(code)) { msg.className = "small field__error"; msg.textContent = t("mfa.sixDigits"); input.setAttribute("aria-invalid", "true"); return; }
+    const btn = e.target.querySelector("button");
+    btn.setAttribute("aria-busy", "true");
+    try {
+      await ctx.api.mfaVerify(code);
+      ctx.mfa = await ctx.api.mfaStatus();
+      ctx.data = null;
+      ctx.reload();
+    } catch {
+      btn.removeAttribute("aria-busy");
+      msg.className = "small field__error";
+      msg.textContent = t("mfa.wrong");
+      input.setAttribute("aria-invalid", "true");
+      input.select();
+    }
+  });
+  $("[data-logout]", main).addEventListener("click", async () => { await ctx.api.logout(); location.reload(); });
+}

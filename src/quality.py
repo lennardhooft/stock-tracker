@@ -512,8 +512,12 @@ def collect(symbol: str, price: float | None, cfg: dict | None = None) -> dict:
 
         t = yf.Ticker(symbol)
         info = with_retries(lambda: t.info or {}, "yahoo info") or {}
+        profile = {
+            k: info.get(k)
+            for k in ("sector", "industry", "country", "quoteType", "longName", "shortName")
+        }
         if (info.get("quoteType") or "").upper() in {"ETF", "MUTUALFUND", "INDEX"}:
-            return {"score": None, "label": None, "na": "etf", "parts": []}
+            return {"score": None, "label": None, "na": "etf", "parts": [], "profile": profile}
 
         def _frame(name: str) -> pd.DataFrame:
             df = getattr(t, name)
@@ -525,7 +529,13 @@ def collect(symbol: str, price: float | None, cfg: dict | None = None) -> dict:
         ]
         years = years_from_frames(*frames)
         if not years:
-            return {"score": None, "label": None, "na": "no_reports", "parts": []}
+            return {
+                "score": None,
+                "label": None,
+                "na": "no_reports",
+                "parts": [],
+                "profile": profile,
+            }
         mcap = info.get("marketCap")
         if not _ok(mcap) and _ok(price) and _ok(years[0].get("shares_out")):
             mcap = price * years[0]["shares_out"]
@@ -537,6 +547,7 @@ def collect(symbol: str, price: float | None, cfg: dict | None = None) -> dict:
         )
         out["source"] = "Yahoo"
         out["market_cap"] = round(float(mcap), 0) if _ok(mcap) else None
+        out["profile"] = profile
         return out
     except Exception as exc:  # noqa: BLE001 — one ticker must never crash the run
         log.error(f"quality: failed ({log.exc_kind(exc)})")

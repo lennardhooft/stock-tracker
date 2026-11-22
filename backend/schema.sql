@@ -270,3 +270,69 @@ as $$
 $$;
 revoke all on function public.calendar_feed(text) from public;
 grant execute on function public.calendar_feed(text) to anon, authenticated, service_role;
+
+-- ===========================================================================
+-- Phase 3A: portfolio & risk (CLAUDE.md 13.13). Personal money data:
+-- readable/writable only by the owner AND only after the two-step login (aal2).
+-- ===========================================================================
+alter table public.watchlist add column if not exists asset_type text
+  check (asset_type is null or asset_type in ('broad_etf','sector_etf','bond_etf','stock','speculative','crypto','other'));
+alter table public.latest_scores add column if not exists risk jsonb;  -- {vol, atr, max_dd, sector, region, suggested_type, ...}
+
+create table if not exists public.transactions (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  date        date not null,
+  symbol      text not null check (symbol ~ '^[A-Za-z0-9.\-^=]{1,20}$'),
+  kind        text not null check (kind in ('buy', 'sell', 'start')),
+  quantity    numeric not null check (quantity > 0),
+  price       numeric not null check (price >= 0),
+  currency    text not null check (currency ~ '^[A-Z]{3}$'),
+  fx_rate     numeric check (fx_rate is null or fx_rate > 0),  -- units of `currency` per 1 EUR on that day
+  fees        numeric not null default 0 check (fees >= 0),     -- in `currency`
+  taxes       numeric not null default 0 check (taxes >= 0),    -- in `currency` (e.g. TOB)
+  note        text check (char_length(note) <= 500),
+  source      text not null default 'manual' check (source in ('manual', 'import')),
+  created_at  timestamptz not null default now()
+);
+create index if not exists transactions_user_symbol on public.transactions (user_id, symbol, date);
+
+create table if not exists public.portfolio_settings (
+  user_id               uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+  cash                  jsonb not null default '{}'::jsonb,   -- {"EUR": 4200, "USD": 300}
+  emergency_fund        numeric not null default 0 check (emergency_fund >= 0),  -- EUR, excluded
+  monthly_contribution  numeric check (monthly_contribution is null or monthly_contribution >= 0),
+  updated_at            timestamptz not null default now()
+);
+
+create table if not exists public.risk_settings (
+  user_id     uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+  profile     text not null default 'balanced' check (profile in ('conservative', 'balanced', 'aggressive', 'custom')),
+  settings    jsonb not null,
+  updated_at  timestamptz not null default now()
+);
+
+create table if not exists public.risk_settings_log (
+  id          bigint generated always as identity primary key,
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  profile     text not null,
+  settings    jsonb not null,
+  changed_at  timestamptz not null default now()
+);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['transactions', 'portfolio_settings', 'risk_settings', 'risk_settings_log'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists %I on public.%I', t || '_owner_mfa', t);
+    execute format($p$create policy %I on public.%I for all to authenticated
+      using (user_id = (select auth.uid()) and (select auth.jwt() ->> 'aal') = 'aal2')
+      with check (user_id = (select auth.uid()) and (select auth.jwt() ->> 'aal') = 'aal2')$p$, t || '_owner_mfa', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    execute format('grant all on public.%I to service_role', t);
+    execute format('revoke all on public.%I from anon', t);
+  end loop;
+end $$;
+-- the settings log is append-only for the owner
+revoke update, delete on public.risk_settings_log from authenticated;

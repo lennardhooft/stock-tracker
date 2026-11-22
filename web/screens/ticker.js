@@ -68,7 +68,8 @@ export function renderTicker(ctx, el, symbol, { embedded = false } = {}) {
     ${embedded ? "" : statusBanners(ctx, { suspect: false })}
     ${header}
     ${lead}
-    <button type="button" class="btn btn--primary btn--block" style="margin-top:var(--space-3)" data-t="buy">${icon("bell")}${row.buy_below ? t("ticker.buyIsSet", { level: fmt.money(row.buy_below, row.currency) }) : t("ticker.setBuyAlert")}</button>
+    ${scored ? html`<a class="btn btn--primary btn--block" style="margin-top:var(--space-3)" href="#/canibuy/${encodeURIComponent(row.symbol)}">${icon("wallet")}${t("ticker.canIBuy")}</a>` : ""}
+    <button type="button" class="btn ${scored ? "btn--secondary" : "btn--primary"} btn--block" style="margin-top:var(--space-2)" data-t="buy">${icon("bell")}${row.buy_below ? t("ticker.buyIsSet", { level: fmt.money(row.buy_below, row.currency) }) : t("ticker.setBuyAlert")}</button>
     <div class="tabs" role="tablist" aria-label="${row.symbol}">
       ${tabs.map((k) => html`<button type="button" role="tab" id="tab-${k}" aria-controls="panel" aria-selected="${activeTab === k}" data-tab="${k}">${t(`ticker.tab.${k}`)}</button>`)}
     </div>

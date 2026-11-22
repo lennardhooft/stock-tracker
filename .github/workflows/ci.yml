@@ -30,6 +30,7 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
+      - run: npm run test:js   # sizing engine + portfolio maths (13.13.6)
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
       - name: Upload screenshots

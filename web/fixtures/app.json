@@ -101,7 +101,15 @@
       "verdict": "sale",
       "tags": [
         "core"
-      ]
+      ],
+      "risk": {
+        "vol": 0.48,
+        "max_dd": 0.62,
+        "sector": "Technology",
+        "region": "North America",
+        "suggested_type": "stock",
+        "atr": 4.2
+      }
     },
     {
       "symbol": "BLMT.BR",
@@ -161,6 +169,14 @@
         "currency": "EUR",
         "estimated": false,
         "per_year": 2
+      },
+      "risk": {
+        "vol": 0.27,
+        "max_dd": 0.48,
+        "sector": "Basic Materials",
+        "region": "Europe",
+        "suggested_type": "stock",
+        "atr": 1.1
       }
     },
     {
@@ -214,7 +230,15 @@
       "verdict": "trap",
       "tags": [
         "wait-for-dip"
-      ]
+      ],
+      "risk": {
+        "vol": 0.58,
+        "max_dd": 0.81,
+        "sector": "Consumer Cyclical",
+        "region": "North America",
+        "suggested_type": "stock",
+        "atr": 0.5
+      }
     },
     {
       "symbol": "ORCA",
@@ -274,6 +298,14 @@
         "currency": "USD",
         "estimated": true,
         "per_year": 4
+      },
+      "risk": {
+        "vol": 0.36,
+        "max_dd": 0.55,
+        "sector": "Technology",
+        "region": "North America",
+        "suggested_type": "stock",
+        "atr": 8.1
       }
     },
     {
@@ -309,7 +341,15 @@
           "debt"
         ]
       },
-      "verdict": "none"
+      "verdict": "none",
+      "risk": {
+        "vol": 0.31,
+        "max_dd": 0.5,
+        "sector": "Utilities",
+        "region": "Europe",
+        "suggested_type": "stock",
+        "atr": 30
+      }
     },
     {
       "symbol": "WORLD.AS",
@@ -337,7 +377,15 @@
         "na": "etf",
         "weak": []
       },
-      "verdict": "none"
+      "verdict": "none",
+      "risk": {
+        "vol": 0.15,
+        "max_dd": 0.34,
+        "sector": null,
+        "region": null,
+        "suggested_type": "broad_etf",
+        "atr": 1.2
+      }
     },
     {
       "symbol": "NEWCO",
@@ -367,7 +415,15 @@
         "na": "too_few_parts",
         "weak": []
       },
-      "verdict": "none"
+      "verdict": "none",
+      "risk": {
+        "vol": null,
+        "max_dd": null,
+        "sector": "Technology",
+        "region": "North America",
+        "suggested_type": "stock",
+        "atr": null
+      }
     },
     {
       "symbol": "KESL.DE",
@@ -444,5 +500,71 @@
       "tz": "America/New_York",
       "tentative": true
     }
-  ]
+  ],
+  "portfolio": {
+    "_note": "FAKE portfolio for the demo app and UI tests.",
+    "transactions": [
+      {
+        "date": "2024-03-01",
+        "symbol": "WORLD.AS",
+        "kind": "start",
+        "quantity": 280,
+        "price": 98.4,
+        "currency": "EUR",
+        "fees": 0,
+        "taxes": 0
+      },
+      {
+        "date": "2025-06-12",
+        "symbol": "NRDX",
+        "kind": "buy",
+        "quantity": 22,
+        "price": 131.2,
+        "currency": "USD",
+        "fx_rate": 1.14,
+        "fees": 15,
+        "taxes": 3.5
+      },
+      {
+        "date": "2025-02-03",
+        "symbol": "ORCA",
+        "kind": "buy",
+        "quantity": 14,
+        "price": 240.0,
+        "currency": "USD",
+        "fx_rate": 1.04,
+        "fees": 15,
+        "taxes": 2.5
+      },
+      {
+        "date": "2025-09-20",
+        "symbol": "BLMT.BR",
+        "kind": "buy",
+        "quantity": 40,
+        "price": 48.0,
+        "currency": "EUR",
+        "fees": 7.5,
+        "taxes": 2.3
+      },
+      {
+        "date": "2026-01-15",
+        "symbol": "HALD",
+        "kind": "buy",
+        "quantity": 120,
+        "price": 11.9,
+        "currency": "USD",
+        "fx_rate": 1.1,
+        "fees": 15,
+        "taxes": 1.7
+      }
+    ],
+    "settings": {
+      "cash": {
+        "EUR": 2900,
+        "USD": 400
+      },
+      "emergency_fund": 10000,
+      "monthly_contribution": 500
+    }
+  }
 }

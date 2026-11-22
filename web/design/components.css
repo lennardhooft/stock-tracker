@@ -641,3 +641,32 @@ button.badge::after { content: ""; position: absolute; inset: -8px -4px; }
 
 /* screens without a tab bar (login, onboarding) need no room for it */
 .no-tabbar .content { padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom)); }
+
+/* ==========================================================================
+   Portfolio (Phase 3A): allocation bar, risk budget gauge, holding card
+   ========================================================================== */
+.alloc { display: flex; flex-direction: column; gap: var(--space-2); }
+.alloc__bar { display: flex; height: 14px; border-radius: var(--radius-full); overflow: hidden; background: var(--color-raised); }
+.alloc__seg { height: 100%; min-width: 2px; }
+.alloc__seg + .alloc__seg { border-left: 2px solid var(--color-surface); }
+.alloc__legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+.alloc__legend li { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.alloc__dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.alloc__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-2); }
+
+.budget { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--space-3); padding: var(--space-2) 0; }
+.budget + .budget { border-top: 1px solid var(--color-border); }
+.budget__label { font-weight: var(--weight-semibold); }
+.budget__text { font-size: var(--text-sm); color: var(--color-text-2); text-align: right; font-variant-numeric: tabular-nums; }
+.budget__track { grid-column: 1 / -1; position: relative; height: 8px; border-radius: var(--radius-full); background: var(--color-raised); }
+.budget__fill { position: absolute; inset: 0 auto 0 0; border-radius: var(--radius-full); background: var(--color-accent); }
+.budget[data-state="over"] .budget__fill { background: var(--color-warning); }
+.budget__limit { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--color-text); border-radius: 1px; }
+.budget__note { grid-column: 1 / -1; font-size: var(--text-xs); color: var(--color-warning); }
+
+.holding__line { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); color: var(--color-text-2); font-variant-numeric: tabular-nums; }
+.holding__over { color: var(--color-warning); font-weight: var(--weight-semibold); }
+
+.answer { font-size: var(--text-2xl, 32px); font-weight: var(--weight-bold); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.rule-row[data-limiting="true"] .signal__name { color: var(--color-accent); }
+details.explain > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: var(--weight-semibold); }

@@ -93,3 +93,48 @@ export function rangeBar({ min, max, value, format = (v) => fmt.num(v, 1), capti
     <div class="range__labels"><span>${t("range.min")} ${format(min)}</span><span>${t("range.now")} ${format(value)}</span><span>${t("range.max")} ${format(max)}</span></div>
   </div>`;
 }
+
+/* ---------------- Portfolio components (Phase 3A) ---------------- */
+const PALETTE = ["--chart-1", "--chart-2", "--chart-3", "--chart-5", "--chart-6", "--chart-7", "--chart-4", "--chart-8"];
+
+/**
+ * Stacked allocation bar with a text legend (never colour alone).
+ * items: [{label, pct}] (already sorted). Small slices after `max` are grouped as "other".
+ */
+export function allocBar(items, { label = "", max = 6, otherLabel = "Other" } = {}) {
+  let list = items.filter((x) => x.pct > 0.05);
+  if (list.length > max) {
+    const rest = list.slice(max - 1).reduce((s, x) => s + x.pct, 0);
+    list = [...list.slice(0, max - 1), { label: otherLabel, pct: rest }];
+  }
+  return html`<div class="alloc" role="group" aria-label="${label}">
+    <div class="alloc__bar" aria-hidden="true">${list.map((x, i) => html`<span class="alloc__seg" style="width:${x.pct.toFixed(2)}%;background:var(${PALETTE[i % PALETTE.length]})"></span>`)}</div>
+    <ul class="alloc__legend">${list.map((x, i) => html`<li><span class="alloc__dot" style="background:var(${PALETTE[i % PALETTE.length]})"></span><span class="alloc__name">${x.label}</span><span class="num">${fmt.pct(x.pct, 0)}</span></li>`)}</ul>
+  </div>`;
+}
+
+/** Risk budget row: "Satellite 22 % of max 30 %" with a bar and a limit marker. kind: "max" | "min". */
+export function budgetBar({ label, pct, limit, kind = "max", text = "", note = "" }) {
+  const over = kind === "max" ? pct > limit + 0.05 : pct < limit - 0.05;
+  const scale = Math.max(100, pct);
+  return html`<div class="budget" data-state="${over ? "over" : "ok"}">
+    <span class="budget__label">${label}</span><span class="budget__text">${text}</span>
+    <div class="budget__track" role="img" aria-label="${label}: ${text}">
+      <span class="budget__fill" style="width:${Math.min(100, (pct / scale) * 100).toFixed(1)}%"></span>
+      ${limit != null ? html`<span class="budget__limit" style="left:${Math.min(99.5, (limit / scale) * 100).toFixed(1)}%"></span>` : ""}
+    </div>
+    ${over && note ? html`<span class="budget__note">⚠️ ${note}</span>` : ""}
+  </div>`;
+}
+
+/** Holding card: stock card layout + value, weight vs cap, P/L. h from valuePortfolio(). */
+export function holdingCard(h, { href = "", capText = "", over = false, valueText = "", plText = "" } = {}) {
+  return html`<a class="stock" href="${href}">
+    <div class="stock__head">
+      <div class="stock__id"><span class="stock__ticker">${h.symbol}</span><span class="stock__name truncate">${h.name || ""}</span></div>
+      <div class="stock__score">${h.row?.score != null ? scoreBadge(h.row) : ""}</div>
+    </div>
+    <div class="stock__price num"><strong>${valueText}</strong>${h.change_pct != null ? changeTag(h.change_pct, 1) : ""}</div>
+    <div class="holding__line"><span>${plText}</span><span class="${over ? "holding__over" : ""}">${over ? "⚠️ " : ""}${capText}</span></div>
+  </a>`;
+}

@@ -35,6 +35,51 @@ function supabaseApi(cfg) {
       if (error) throw error;
     },
     async userEmail() { return (await sb.auth.getUser()).data.user?.email || ""; },
+
+    /* ---- two-step login (TOTP authenticator app), CLAUDE.md 13.13.2 ---- */
+    /** {level: "aal1"|"aal2", needsCode: bool, enabled: bool} */
+    async mfaStatus() {
+      const { data: a } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      const { data: f } = await sb.auth.mfa.listFactors();
+      const enabled = (f?.totp || []).some((x) => x.status === "verified");
+      return { level: a?.currentLevel || "aal1", needsCode: a?.currentLevel === "aal1" && a?.nextLevel === "aal2", enabled };
+    },
+    async mfaVerify(code) {
+      const { data: f } = await sb.auth.mfa.listFactors();
+      const factor = (f?.totp || []).find((x) => x.status === "verified");
+      if (!factor) throw new Error("no factor");
+      const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
+      if (error) throw error;
+    },
+    /** Start setting up: {factorId, qr (SVG data URL), secret}. Leftover unfinished setups are removed first. */
+    async mfaEnroll() {
+      const { data: f } = await sb.auth.mfa.listFactors();
+      for (const x of f?.all || []) if (x.status !== "verified") await sb.auth.mfa.unenroll({ factorId: x.id });
+      const { data, error } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: `Bottom Tracker ${new Date().toISOString().slice(0, 10)}` });
+      if (error) throw error;
+      return { factorId: data.id, qr: data.totp.qr_code, secret: data.totp.secret };
+    },
+    async mfaConfirm(factorId, code) {
+      const { error } = await sb.auth.mfa.challengeAndVerify({ factorId, code });
+      if (error) throw error;
+    },
+
+    /* ---- portfolio (readable only at aal2: row-level security) ---- */
+    async loadPortfolio() {
+      const [tx, ps, rs] = await Promise.all([
+        q(sb.from("transactions").select("*").order("date")),
+        q(sb.from("portfolio_settings").select("*")),
+        q(sb.from("risk_settings").select("*")),
+      ]);
+      return { transactions: tx, settings: ps[0] || null, risk: rs[0] || null };
+    },
+    addTransaction: (row) => q(sb.from("transactions").insert(row).select().single()),
+    deleteTransaction: (id) => q(sb.from("transactions").delete().eq("id", id)),
+    savePortfolioSettings: (row) => q(sb.from("portfolio_settings").upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "user_id" })),
+    async saveRisk(profile, settings) {
+      await q(sb.from("risk_settings").upsert({ profile, settings, updated_at: new Date().toISOString() }, { onConflict: "user_id" }));
+      await q(sb.from("risk_settings_log").insert({ profile, settings }));
+    },
     /** "Update now": asks the run-update function to start the scoring job on GitHub. */
     async runUpdate() {
       const { data, error } = await sb.functions.invoke("run-update", { method: "POST" });
@@ -157,6 +202,9 @@ function demoTop(s, market) {
 function demoApi(fixture) {
   const UID = "demo";
   let demoLoggedIn = false;
+  // two-step login in the demo: fixture "mfa" asks for the code (123456); "nomfa" has none set up yet
+  let demoMfa = { enabled: fixture !== "nomfa", level: fixture === "mfa" || fixture === "nomfa" ? "aal1" : "aal2" };
+  let demoPf = null;
   let demoToken = null;
   let state = null;
 
@@ -166,7 +214,7 @@ function demoApi(fixture) {
     const hoursAgo = (h) => new Date(now - h * 3600e3).toISOString();
     const updated = fixture === "stale" ? hoursAgo(50) : hoursAgo(3);
     const inDays = (n) => new Date(now + n * 864e5).toISOString().slice(0, 10);
-    const market = { ...f.market, updated_at: updated };
+    const market = { ...f.market, updated_at: updated, fx: { rates: { USD: 1.16, GBP: 0.88, CAD: 1.62 } } };
     if (fixture === "partial") market.fear_greed = null;
 
     let stocks = f.stocks;
@@ -190,6 +238,7 @@ function demoApi(fixture) {
           label: s.label, suspect: !!s.suspect,
           next_earnings: s.next_earnings || null,
           signals: demoSignals(s, market), top: demoTop(s, market), quality: s.quality || null, verdict: s.verdict || null,
+          risk: s.risk || null,
           next_dividend: s.dividend ? { ...s.dividend, ex_date: inDays(s.dividend.ex_in_days), pay_date: s.dividend.pay_in_days != null ? inDays(s.dividend.pay_in_days) : null } : null,
           sparkline: weeklySeries(s.symbol, s.price, s.pct_from_52w_high).c.slice(-52),
           checks: s.suspect ? { status: "red", issues: [{ code: "suspect_move", level: "red", detail: "unexplained move > 40%" }], suspect_dates: [] } : { status: "green", issues: [] },
@@ -225,6 +274,25 @@ function demoApi(fixture) {
     },
     setPassword: async () => { await delay(200); },
     userEmail: async () => "owner@example.com",
+    mfaStatus: async () => ({ ...demoMfa, needsCode: demoMfa.enabled && demoMfa.level === "aal1" }),
+    mfaVerify: async (code) => { await delay(150); if (code !== "123456") throw new Error("Invalid TOTP code entered"); demoMfa.level = "aal2"; },
+    mfaEnroll: async () => ({ factorId: "demo-factor", secret: "JBSWY3DPEHPK3PXP",
+      qr: "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="164" height="164"><rect width="164" height="164" fill="#fff"/><rect x="12" y="12" width="40" height="40"/><rect x="112" y="12" width="40" height="40"/><rect x="12" y="112" width="40" height="40"/><rect x="70" y="70" width="24" height="24"/></svg>') }),
+    mfaConfirm: async (_id, code) => { await delay(150); if (code !== "123456") throw new Error("Invalid TOTP code entered"); demoMfa = { enabled: true, level: "aal2" }; },
+    async loadPortfolio() {
+      if (demoMfa.level !== "aal2") return { transactions: [], settings: null, risk: null }; // like RLS: nothing at aal1
+      if (!demoPf) {
+        const f = await (await fetch("fixtures/app.json", { cache: "no-cache" })).json();
+        const empty = fixture === "empty" || fixture === "new" || fixture === "noportfolio";
+        demoPf = { transactions: empty ? [] : (f.portfolio?.transactions || []).map((t, i) => ({ id: `t${i}`, ...t })),
+          settings: empty ? null : f.portfolio?.settings || null, risk: null };
+      }
+      return structuredClone(demoPf);
+    },
+    async addTransaction(row) { const r = { id: `t${Date.now()}`, ...row }; demoPf.transactions.push(r); return r; },
+    async deleteTransaction(id) { demoPf.transactions = demoPf.transactions.filter((x) => x.id !== id); },
+    async savePortfolioSettings(row) { demoPf.settings = { ...(demoPf.settings || {}), ...row }; },
+    async saveRisk(profile, settings) { demoPf.risk = { profile, settings }; },
     runUpdate: async () => { await delay(300); return "started"; },
     logout: async () => {},
     async loadAll() {

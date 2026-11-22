@@ -27,7 +27,7 @@ async function quality(page, label) {
   const rawKeys = await page.evaluate(() => {
     const txt = document.body.innerText;
     return (txt.match(/\b[a-z]+\.[a-zA-Z]+(\.[a-zA-Z0-9]+)*\b/g) || [])
-      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal)\./.test(k));
+      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal|pf|cib|risk|trade|mfa)\./.test(k));
   });
   expect(rawKeys, `${label}: untranslated i18n keys`).toEqual([]);
 
@@ -68,6 +68,9 @@ const SCREENS = [
   ["ticker-trap", "#/ticker/HALD"],
   ["ticker-hot", "#/ticker/ORCA"],
   ["calendar", "#/calendar"],
+  ["portfolio", "#/portfolio"],
+  ["canibuy", "#/canibuy/VLTA.AS"],
+  ["risk", "#/more/risk"],
   ["more", "#/more"],
   ["settings", "#/more/settings"],
   ["health", "#/more/health"],
@@ -93,6 +96,9 @@ const STATES = [
   ["empty-watchlist", "#/watchlist", "empty"],
   ["empty-alerts", "#/more/alerts", "empty"],
   ["empty-calendar", "#/calendar", "empty"],
+  ["portfolio-no-mfa", "#/portfolio", "nomfa"],
+  ["portfolio-empty", "#/portfolio", "noportfolio"],
+  ["mfa-code", "#/", "mfa"],
   ["calm", "#/", "calm"],
   ["partial", "#/", "partial"],
   ["stale", "#/", "stale"],
@@ -574,4 +580,108 @@ test("calendar in Dutch", async ({ page }) => {
   await open(page, "#/calendar", { lang: "nl" });
   await expect(page.locator("#main")).toContainText("Rentebeslissing Fed");
   await quality(page, "calendar nl");
+});
+
+/* ------------------------------------------------------------ Phase 3A: portfolio, sizing, two-step login */
+test("two-step login: wrong code is refused, right code opens the portfolio", async ({ page }) => {
+  await open(page, "#/portfolio", { fixture: "mfa" });
+  await expect(page.locator("html")).toHaveAttribute("data-screen", "mfa");
+  await expect(page.locator("#mfa-code")).toHaveAttribute("autocomplete", "one-time-code");
+  await page.fill("#mfa-code", "111111");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.locator("#mfa-msg")).toContainText("didn't work");
+  await shot(page, "mfa-code");
+  await page.fill("#mfa-code", "123456");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.locator(".summary")).toContainText("Portfolio €");
+});
+
+test("two-step login: set up from the portfolio gate (QR + code)", async ({ page }) => {
+  await open(page, "#/portfolio", { fixture: "nomfa" });
+  await expect(page.locator("#main")).toContainText("Set up two-step login first");
+  await page.getByRole("button", { name: "Set up two-step login" }).click();
+  await expect(page.locator("dialog[open] img")).toBeVisible();
+  await expect(page.locator("#mfa-secret")).toHaveValue(/[A-Z2-7]{16}/);
+  await quality(page, "mfa setup");
+  await shot(page, "mfa-setup");
+  await page.fill("#mfa-new-code", "123456");
+  await page.getByRole("button", { name: "Turn on" }).click();
+  await expect(page.locator(".toast").first()).toContainText("Two-step login is on");
+  await expect(page.locator(".summary")).toContainText("Portfolio €");
+});
+
+test("portfolio: value, warnings with the rule, risk budget, holdings, allocation", async ({ page }) => {
+  await open(page, "#/portfolio");
+  await expect(page.locator(".summary")).toContainText("Portfolio €");
+  await expect(page.locator("#main")).toContainText("ORCA is 8,7 % of your portfolio, above the 8,0 % cap.");
+  await expect(page.locator(".budget")).toHaveCount(4);
+  await expect(page.locator(".list .stock")).toHaveCount(5);
+  await expect(page.locator(".alloc")).toHaveCount(4);
+  await expect(page.locator("#main")).toContainText("not financial advice");
+});
+
+test("add trade: validation in Belgian format, sell more than owned is refused, undo", async ({ page }) => {
+  await open(page, "#/portfolio");
+  await page.getByRole("button", { name: "Add trade" }).click();
+  await page.locator('[data-kind="sell"]').click();
+  await page.fill('input[name="symbol"]', "HALD");
+  await page.fill('input[name="quantity"]', "500");
+  await page.fill('input[name="price"]', "8,42");
+  await page.getByRole("button", { name: "Save trade" }).click();
+  await expect(page.locator("#trade-msg")).toContainText("You own 120 shares");
+  await page.locator('[data-kind="start"]').click();
+  await page.fill('input[name="symbol"]', "VLTA.AS");
+  await page.fill('input[name="quantity"]', "1");
+  await page.fill('input[name="price"]', "1.150,00");
+  await quality(page, "trade sheet");
+  await shot(page, "trade-sheet");
+  await page.getByRole("button", { name: "Save trade" }).click();
+  await expect(page.locator(".toast").first()).toContainText("VLTA.AS saved");
+  await expect(page.locator(".list .stock")).toHaveCount(6);
+});
+
+test("can I buy this: the answer first, limiting rule, check an amount, how it's calculated, staged plan", async ({ page }) => {
+  await open(page, "#/canibuy/VLTA.AS");
+  await expect(page.locator(".answer")).toContainText("Up to €");
+  await expect(page.locator("#cib-answer")).toContainText("Limited by:");
+  await page.fill("#cib-amount", "2.000");
+  await expect(page.locator("#cib-check")).toContainText("more than your rules allow");
+  await page.fill("#cib-amount", "100");
+  await expect(page.locator("#cib-check")).toContainText("fits your rules");
+  await page.getByText("How is this calculated?").click();
+  await expect(page.locator("details.explain")).toContainText("max loss per position");
+  await expect(page.locator("#cib-plan .signal")).toHaveCount(3);
+  await quality(page, "can I buy");
+  await shot(page, "canibuy-dark-375");
+  await open(page, "#/canibuy/NRDX");
+  await expect(page.locator(".answer")).toHaveText("No room to add");
+  await expect(page.locator("#cib-answer")).toContainText("already above this rule's max");
+});
+
+test("can I buy this: ≤ 3 taps from a ticker page", async ({ page }) => {
+  await open(page, "#/ticker/VLTA.AS");
+  await page.getByRole("link", { name: "Can I buy this?" }).click(); // tap 1
+  await page.fill("#cib-amount", "300");                             // tap 2 (type)
+  await expect(page.locator("#cib-check")).toContainText("fits");
+});
+
+test("risk settings: profile changes the preview, invalid numbers are refused, saving works", async ({ page }) => {
+  await open(page, "#/more/risk");
+  const before = await page.locator("#risk-preview").textContent();
+  await page.locator('[data-profile="aggressive"]').click();
+  await expect(page.locator("#risk-preview")).not.toHaveText(before);
+  await page.fill('[data-key="risk_per_position"]', "9");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator("#risk-msg")).toContainText("between");
+  await page.fill('[data-key="risk_per_position"]', "2,0");
+  await expect(page.locator('[data-profile="custom"]')).toHaveAttribute("aria-pressed", "true");
+  await quality(page, "risk settings");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".toast").first()).toContainText("Saved");
+});
+
+test("portfolio in Dutch", async ({ page }) => {
+  await open(page, "#/portfolio", { lang: "nl" });
+  await expect(page.locator(".summary")).toContainText("Portefeuille");
+  await quality(page, "portfolio nl");
 });

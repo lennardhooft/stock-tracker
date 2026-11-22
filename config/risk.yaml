@@ -1,0 +1,60 @@
+# Risk profiles and position sizing defaults (CLAUDE.md 13.13.4). Owner decision: Balanced.
+# These are only starting values: the owner changes them in the app (Settings → Risk), and the
+# app stores its own copy in Supabase. web/lib/risk-defaults.js must match this file
+# (checked by tests/test_risk_defaults.py). Percentages are in % of the total portfolio
+# (investments + cash, without the emergency fund).
+
+profiles:
+  conservative:
+    risk_per_position: 1.0     # max acceptable loss per position, % of portfolio
+    k: 1.5                     # bad-case drop = k × annual volatility (≈ a bad year)
+    core_min: 85               # broad ETFs + bond ETFs at least
+    satellite_max: 15          # single stocks + sector ETFs at most
+    speculative_max: 5         # speculative + crypto at most (total)
+    cash_reserve: 5            # keep at least this much cash
+  balanced:
+    risk_per_position: 1.5
+    k: 1.5
+    core_min: 70
+    satellite_max: 30
+    speculative_max: 10
+    cash_reserve: 5
+  aggressive:
+    risk_per_position: 2.5
+    k: 1.5
+    core_min: 50
+    satellite_max: 50
+    speculative_max: 15
+    cash_reserve: 5
+
+# Max weight of ONE position per asset type (% of portfolio). null = no cap.
+type_caps:
+  broad_etf: null
+  bond_etf: null
+  sector_etf: 15
+  stock_quality: 8             # single stock with Quality Score >= 70
+  stock: 5                     # other single stocks
+  speculative: 2
+  crypto: 2
+  other: 5
+
+sector_max: 25                 # all single stocks + sector ETFs in one sector
+region_max: 75                 # single stocks + sector ETFs in one region (broad ETFs not counted)
+
+multipliers:
+  quality_high: 1.0            # Quality >= 70
+  quality_medium: 0.75         # 40-70
+  quality_low: 0.5             # < 40
+  verdict_sale: 1.2            # "Quality on sale" (never above the type cap)
+  verdict_trap: 0.5            # "Possible value trap"
+  correlated: 0.7              # correlation > 0.8 with existing holdings (Phase 3B)
+
+# Used when a stock has no volatility yet (new on the watchlist): typical annual volatility per type.
+typical_vol:
+  broad_etf: 0.15
+  sector_etf: 0.25
+  bond_etf: 0.07
+  stock: 0.35
+  speculative: 0.8
+  crypto: 0.8
+  other: 0.3

@@ -10,7 +10,8 @@ import { freshness } from "./lib/signals.js";
 import { icon } from "./components/icons.js";
 import { openSheet, toast } from "./components/overlays.js";
 import { skeletonCards, errorState } from "./components/states.js";
-import { renderLogin } from "./screens/login.js";
+import { renderLogin, renderMfaCode } from "./screens/login.js";
+import { renderPortfolio, renderCanIBuy, renderRiskSettings } from "./screens/portfolio.js";
 import { renderToday } from "./screens/today.js";
 import { renderWatchlist, openAddSheet } from "./screens/watchlist.js";
 import { renderCalendar } from "./screens/calendar.js";
@@ -61,6 +62,7 @@ function waitFor(test, ms) {
 const ctx = {
   api, t, fmt, data: null, offline: null, loadError: null,
   rows: [], market: null, runs: [], freshness: "fresh", latestUpdate: null,
+  mfa: null, pf: null, pfError: null, // portfolio data: memory only, never cached on the device
   isWide: () => matchMedia("(min-width: 900px)").matches,
   navigate: (path) => { location.hash = path; },
   render: () => route(),
@@ -104,6 +106,7 @@ async function reload({ quiet = false } = {}) {
     setData(d);
     ctx.loadError = null;
     if (!api.demo) cacheSave(d);
+    await loadPortfolio();
   } catch (e) {
     const cached = api.demo && api.fixture === "offline"
       ? { at: new Date(Date.now() - 3 * 3600e3).toISOString(), data: await createApi(CFG, "normal").loadAll() }
@@ -114,10 +117,20 @@ async function reload({ quiet = false } = {}) {
   route();
 }
 
+/** Portfolio data needs the two-step login (aal2); the database returns nothing without it. */
+async function loadPortfolio() {
+  ctx.pf = null;
+  ctx.pfError = null;
+  if (ctx.mfa?.level !== "aal2") return;
+  try { ctx.pf = await api.loadPortfolio(); } catch (e) { ctx.pfError = e; }
+}
+ctx.loadPortfolio = loadPortfolio;
+
 /* ------------------------------------------------------------------ shell */
 const TABS = [
   { key: "today", path: "#/", icon: "today" },
   { key: "watchlist", path: "#/watchlist", icon: "list" },
+  { key: "portfolio", path: "#/portfolio", icon: "wallet" },
   { key: "calendar", path: "#/calendar", icon: "calendar" },
   { key: "more", path: "#/more", icon: "more" },
 ];
@@ -170,6 +183,19 @@ async function route() {
     document.documentElement.dataset.screen = "login";
     return;
   }
+  // second step: the 6-digit code from the authenticator app (only when it's set up)
+  if (!ctx.mfa) {
+    try { ctx.mfa = await api.mfaStatus(); } catch { ctx.mfa = { level: "aal1", needsCode: false, enabled: false }; }
+  }
+  if (ctx.mfa.needsCode) {
+    setShellVisible(false);
+    document.body.classList.add("no-tabbar");
+    const v = document.createElement("div");
+    mainEl.replaceChildren(v);
+    renderMfaCode(ctx, v);
+    document.documentElement.dataset.screen = "mfa";
+    return;
+  }
   setShellVisible(true);
   $("#tabbar").hidden = r.name === "welcome";
   document.body.classList.toggle("no-tabbar", r.name === "welcome");
@@ -191,10 +217,12 @@ async function route() {
   switch (r.name) {
     case "watchlist": head = renderWatchlist(ctx, view, {}); renderNav("watchlist"); break;
     case "calendar": head = renderCalendar(ctx, view); renderNav("calendar"); break;
+    case "portfolio": head = renderPortfolio(ctx, view); renderNav("portfolio"); break;
+    case "canibuy": head = renderCanIBuy(ctx, view, r.arg.toUpperCase()); renderNav("portfolio"); break;
     case "ticker": head = renderWatchlist(ctx, view, { selected: r.arg.toUpperCase() }); renderNav("watchlist"); break;
     case "more":
       renderNav("more");
-      head = { settings: renderSettings, health: renderHealth, glossary: renderGlossary, about: renderAbout, alerts: renderAlerts }[r.arg]?.(ctx, view)
+      head = { settings: renderSettings, health: renderHealth, glossary: renderGlossary, about: renderAbout, alerts: renderAlerts, risk: renderRiskSettings }[r.arg]?.(ctx, view)
         ?? renderMore(ctx, view);
       break;
     case "welcome": head = renderOnboarding(ctx, view); renderNav(""); break; // focused flow: no tab bar
@@ -271,7 +299,7 @@ document.addEventListener("keydown", (e) => {
 window.addEventListener("hashchange", route);
 matchMedia("(min-width: 900px)").addEventListener("change", route);
 window.addEventListener("online", () => { if (ctx.offline) reload({ quiet: true }); });
-api.onAuth((s) => { if (!s) { cacheClear(); ctx.data = null; } reload(); });
+api.onAuth((s) => { ctx.mfa = null; ctx.pf = null; if (!s) { cacheClear(); ctx.data = null; } reload(); });
 
 export const appCtx = ctx;
 route().finally(() => { document.documentElement.dataset.app = "ready"; });

@@ -10,6 +10,25 @@ const MINUS = "−";
 
 let locale = "nl-BE";
 
+export const numberLocale = () => locale;
+
+/**
+ * Typed number → Number. Follows the chosen format: Belgian "1.234,56" / "2.000" / "12,5",
+ * English "1,234.56" / "2,000" / "12.5". Returns NaN for empty or invalid input.
+ */
+export function parseNumber(input, loc = locale) {
+  let x = String(input ?? "").trim().replace(/[\s€$\u00a0\u202f]/g, "");
+  if (!x) return NaN;
+  const [thou, dec] = loc === "en" ? [",", "."] : [".", ","];
+  if (x.includes(thou) && x.includes(dec)) x = x.split(thou).join("").replace(dec, ".");
+  else if (x.includes(dec)) x = x.replace(dec, ".");
+  else if (x.includes(thou)) {
+    // only the thousands sign: "2.000" (be) is 2000 when grouped by 3, otherwise read it as a decimal point
+    x = /^-?\d{1,3}([.,]\d{3})+$/.test(x) ? x.split(thou).join("") : x.replace(thou, ".");
+  }
+  return /^-?\d*\.?\d+$/.test(x) ? Number(x) : NaN;
+}
+
 export function setNumberLocale(next) {
   locale = next === "en" ? "en-GB" : "nl-BE";
 }

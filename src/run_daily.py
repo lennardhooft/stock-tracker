@@ -21,6 +21,7 @@ import yaml
 from src import alerts, data_checks, events, fetch, fundamentals, levels, log, quality, top_score
 from src import indicators as ind
 from src import score as sc
+from src.risk import volatility
 from src.storage import LocalStore, Store, SupabaseStore
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +49,14 @@ def build_market_snapshot() -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
         q = fetch.get_index_quote(symbol)
         market[key] = q
         sources[f"yahoo_{key}"] = {"ok": q is not None, "rows": 1 if q else 0}
+    # exchange rates for the portfolio (units per 1 EUR), Phase 3A
+    rates = {}
+    for cur in ("USD", "GBP", "CHF", "DKK", "SEK", "NOK", "JPY", "CAD"):
+        q = fetch.get_index_quote(f"EUR{cur}=X")
+        if q:
+            rates[cur] = q["value"]
+    market["fx"] = {"rates": rates, "as_of": _now()}
+    sources["yahoo_fx"] = {"ok": "USD" in rates, "rows": len(rates)}
     fg = fetch.get_fear_greed()
     market["fear_greed"] = fg
     sources["cnn_fear_greed"] = {"ok": fg is not None, "rows": 1 if fg else 0}
@@ -104,6 +113,7 @@ def process_symbol(
     top = top_score.compute_top(
         close, market, cfg, levels=zones, fundamentals=fund, market_cap=qual.get("market_cap")
     )
+    profile = qual.pop("profile", None)
     fund["quality"] = qual
     # Phase 2G: earnings reactions, next earnings (Yahoo fallback), next dividend (13.1, 13.3)
     ev = events.collect(symbol, close, date.today(), currency, fundamentals.is_us(symbol))
@@ -140,6 +150,7 @@ def process_symbol(
         "n_na": total["n_na"],
         "label": total["label"]["key"],
         "signals": signals,
+        "risk": volatility.risk_profile(ohlc, profile),  # Phase 3A: for the sizing engine
         "quality": quality.summary(qual),
         "top": top,
         "verdict": quality.verdict(total["score"], qual, float(cfg.get("alert_threshold", 4))),
@@ -340,6 +351,7 @@ def run(store: Store) -> int:
                         "top",
                         "verdict",
                         "next_dividend",
+                        "risk",
                     )
                 },
                 "error": None,

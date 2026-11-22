@@ -1,11 +1,11 @@
 /* More tab: Settings, Data health, Glossary, About — docs/screens/settings.md */
-import { html, mount, $$ } from "../lib/dom.js";
+import { html, mount, $, $$ } from "../lib/dom.js";
 import { t, initI18n } from "../lib/i18n.js";
 import * as fmt from "../lib/format.js";
 import { prefsGet, prefsSet, applyTheme, cacheClear } from "../lib/settings.js";
 import { icon } from "../components/icons.js";
 import { banner } from "../components/states.js";
-import { toast } from "../components/overlays.js";
+import { toast, openSheet } from "../components/overlays.js";
 
 export function renderMore(ctx, main) {
   const item = (href, ic, label, hint = "") => html`<li><a class="menu__item" href="${href}">${icon(ic)}<span class="menu__label">${label}${hint ? html`<span class="menu__hint">${hint}</span>` : ""}</span>${icon("chevron")}</a></li>`;
@@ -13,6 +13,7 @@ export function renderMore(ctx, main) {
     <ul class="menu">
       ${item("#/more/alerts", "bell", t("more.alerts"), t("more.alertsHint", { n: (ctx.data?.alerts || []).length }))}
       ${item("#/more/settings", "settings", t("more.settings"), t("more.settingsHint"))}
+      ${item("#/more/risk", "wallet", t("risk.title"), t("risk.menuHint"))}
       ${item("#/more/health", "refresh", t("more.health"), t(`freshness.${ctx.freshness}`))}
       ${item("#/more/glossary", "info", t("more.glossary"), t("more.glossaryHint"))}
       ${item("#/more/about", "calm", t("more.about"))}
@@ -52,6 +53,13 @@ export function renderSettings(ctx, main) {
     <h2 class="section-title">${t("settings.account")}</h2>
     <div class="card stack">
       <p class="text-2">${t("settings.privacy")}</p>
+      <div id="mfa-box" class="stack">
+        <h3 style="font-size:var(--text-md)">${t("mfa.title")}</h3>
+        <p class="small text-2">${t("mfa.why")}</p>
+        <p id="mfa-state" class="small">${ctx.mfa?.enabled ? html`<b style="color:var(--color-positive)">${icon("check")} ${t("mfa.on")}</b>` : html`<b style="color:var(--color-warning)">${t("mfa.off")}</b>`}</p>
+        ${ctx.mfa?.enabled ? "" : html`<button type="button" class="btn btn--primary" data-mfa-setup>${t("mfa.setup")}</button>`}
+      </div>
+      <hr style="border:0;border-top:1px solid var(--color-border);margin:var(--space-2) 0">
       <form id="pw-form" class="stack" novalidate>
         <h3 style="font-size:var(--text-md)">${t("settings.pwTitle")}</h3>
         <p class="small text-2">${t("settings.pwHint")}</p>
@@ -76,6 +84,8 @@ export function renderSettings(ctx, main) {
       <a class="btn btn--secondary" href="#/welcome" data-tour>${t("settings.tour")}</a>
     </div>
   </div>`);
+
+  main.querySelector("[data-mfa-setup]")?.addEventListener("click", () => openMfaSetup(ctx));
 
   // password (owner decision): needed to log in inside the home-screen app
   const pwForm = main.querySelector("#pw-form");
@@ -189,4 +199,53 @@ export function renderAbout(ctx, main) {
   </div>`);
   $$("a", main);
   return { title: t("more.about"), back: "#/more" };
+}
+
+/** Set up two-step login: QR + secret → 6-digit code → on (CLAUDE.md 13.13.2). */
+export async function openMfaSetup(ctx) {
+  const { el, close } = openSheet({ title: t("mfa.setupTitle"), body: html`<div class="stack" id="mfa-setup"><span class="skeleton skeleton--title"></span></div>` });
+  const box = $("#mfa-setup", el);
+  let enrol;
+  try {
+    enrol = await ctx.api.mfaEnroll();
+  } catch (e) {
+    mount(box, html`<p class="field__error">${t("mfa.setupFailed", { reason: e.message || "" })}</p>`);
+    return;
+  }
+  mount(box, html`
+    <ol class="stack small" style="padding-left:1.2em;margin:0">
+      <li>${t("mfa.step1")}</li><li>${t("mfa.step2")}</li><li>${t("mfa.step3")}</li>
+    </ol>
+    <img src="${enrol.qr}" alt="${t("mfa.qrAlt")}" width="180" height="180" style="background:#fff;border-radius:var(--radius-md);padding:8px;align-self:center">
+    <label class="field"><span class="field__label">${t("mfa.secret")}</span>
+      <input class="input num" readonly value="${enrol.secret}" id="mfa-secret"></label>
+    <form class="stack" id="mfa-confirm" novalidate>
+      <label class="field"><span class="field__label">${t("mfa.code")}</span>
+        <input class="input num" id="mfa-new-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required aria-describedby="mfa-setup-msg"></label>
+      <p id="mfa-setup-msg" class="small" role="status" aria-live="polite"></p>
+      <button type="submit" class="btn btn--primary btn--block">${t("mfa.turnOn")}</button>
+    </form>`);
+  $("#mfa-confirm", el).addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = $("#mfa-new-code", el);
+    const msg = $("#mfa-setup-msg", el);
+    const code = input.value.replace(/\s/g, "");
+    if (!/^\d{6}$/.test(code)) { msg.className = "small field__error"; msg.textContent = t("mfa.sixDigits"); return; }
+    const btn = e.target.querySelector("button");
+    btn.setAttribute("aria-busy", "true");
+    try {
+      await ctx.api.mfaConfirm(enrol.factorId, code);
+      ctx.mfa = await ctx.api.mfaStatus();
+      close();
+      toast(t("mfa.turnedOn"));
+      await ctx.loadPortfolio();
+      ctx.render();
+    } catch {
+      msg.className = "small field__error";
+      msg.textContent = t("mfa.wrong");
+      input.select();
+    } finally {
+      btn.removeAttribute("aria-busy");
+    }
+  });
 }

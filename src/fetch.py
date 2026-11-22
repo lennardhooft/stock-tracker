@@ -119,7 +119,7 @@ def get_index_quote(symbol: str) -> dict[str, Any] | None:
         return None
     last, prev = float(df["Close"].iloc[-1]), float(df["Close"].iloc[-2])
     return {
-        "value": round(last, 2),
+        "value": round(last, 4),
         "change_pct": round((last / prev - 1) * 100, 2) if prev else None,
         "as_of": df.index[-1].strftime("%Y-%m-%d"),
     }

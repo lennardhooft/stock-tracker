@@ -229,5 +229,12 @@
     "why": "Shows how jumpy the stock is around reports, so a big move after the next one doesn't surprise you, and whether the company tends to beat or miss.",
     "how": "'Typically moves ±7 %' is the average size of the next-day move, up or down. Beating estimates often isn't enough: the outlook (guidance) moves the price too.",
     "limits": "Estimates and dates come from free Yahoo data. A report after the close is measured from the next day's close."
+  },
+  "risk_budget": {
+    "title": "Risk budget",
+    "what": "How your money is split: core (broad and bond ETFs), satellite (single stocks and sector ETFs), speculative and cash, compared with your own targets.",
+    "why": "Most long-term return comes from the core. Keeping single stocks to a slice limits the damage when a pick goes wrong.",
+    "how": "Balanced default: core at least 70 %, satellite at most 30 %, speculative at most 10 %, cash at least 5 %. The black mark on each bar is your limit.",
+    "limits": "ETFs are put in a bucket by their type, not by what they hold (the look-through comes later)."
   }
 }
