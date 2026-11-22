@@ -31,5 +31,6 @@ def private(message: str) -> None:
 
 
 def exc_kind(exc: BaseException) -> str:
-    """Exception class name only — the message may contain a ticker."""
-    return type(exc).__name__
+    """Exception class name (plus HTTP status code if any) — the message may contain a ticker."""
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    return f"{type(exc).__name__} {status}" if status else type(exc).__name__
