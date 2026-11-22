@@ -15,6 +15,7 @@ import { renderToday } from "./screens/today.js";
 import { renderWatchlist, openAddSheet } from "./screens/watchlist.js";
 import { renderMore, renderSettings, renderHealth, renderGlossary, renderAbout } from "./screens/more.js";
 import { renderOnboarding } from "./screens/onboarding.js";
+import { renderAlerts } from "./screens/alerts.js";
 
 const CFG = window.APP_CONFIG || {};
 const params = new URLSearchParams(location.search);
@@ -187,7 +188,7 @@ async function route() {
     case "ticker": head = renderWatchlist(ctx, view, { selected: r.arg.toUpperCase() }); renderNav("watchlist"); break;
     case "more":
       renderNav("more");
-      head = { settings: renderSettings, health: renderHealth, glossary: renderGlossary, about: renderAbout }[r.arg]?.(ctx, view)
+      head = { settings: renderSettings, health: renderHealth, glossary: renderGlossary, about: renderAbout, alerts: renderAlerts }[r.arg]?.(ctx, view)
         ?? renderMore(ctx, view);
       break;
     case "welcome": head = renderOnboarding(ctx, view); renderNav(""); break; // focused flow: no tab bar

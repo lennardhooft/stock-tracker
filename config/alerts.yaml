@@ -1,0 +1,20 @@
+# Alert settings (CLAUDE.md 7.1, 7.2). Non-personal: thresholds and switches only.
+channel: telegram
+app_url: https://stock-tracker-dgz.pages.dev   # links in messages point here (login-protected site)
+
+kinds:
+  score_cross:   { enabled: true }                   # Bottom Score crosses up to >= scoring.yaml alert_threshold
+  buy_level:     { enabled: true }                   # close <= owner's buy level
+  drop:          { enabled: true, pct: 5 }           # close >= 5 % below previous close
+  rise:          { enabled: false, pct: 5 }          # optional (7.1)
+  support_test:  { enabled: true, within_pct: 2, min_touches: 2, timeframes: [Y, M] }
+  support_break: { enabled: true, min_touches: 2, timeframes: [Y, M] }
+  data_problem:  { enabled: true }                   # one summary per day when something is red (13.14 E)
+
+# Owner decision: no quiet hours. The feature stays available: set enabled: true to use it.
+quiet_hours:
+  enabled: false
+  start: "23:00"
+  end: "07:00"
+  timezone: Europe/Brussels
+  allow_kinds_when_quiet: [score_cross]   # only if the score is Extreme

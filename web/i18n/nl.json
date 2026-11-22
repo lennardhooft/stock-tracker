@@ -353,7 +353,9 @@
     "glossaryHint": "Wat elk signaal betekent",
     "about": "Over & disclaimer",
     "logout": "Uitloggen",
-    "logoutHint": "Uitloggen via Meer"
+    "logoutHint": "Uitloggen via Meer",
+    "alerts": "Meldingen",
+    "alertsHint": "Telegram-berichten, nieuwste eerst ({n})"
   },
   "settings": {
     "display": "Weergave",
@@ -449,5 +451,21 @@
     },
     "flippedSupport": "oude top, nu steun",
     "flippedResistance": "oude bodem, nu weerstand"
+  },
+  "alerts": {
+    "today": "Vandaag",
+    "yesterday": "Gisteren",
+    "emptyTitle": "Nog geen meldingen",
+    "emptyBody": "Je krijgt een Telegram-bericht wanneer een aandeel sterke bodemsignalen toont, fors daalt, een steunniveau test of je aankoopniveau bereikt.",
+    "notDelivered": "niet afgeleverd op Telegram, opnieuw geprobeerd bij de volgende update",
+    "kind": {
+      "score_cross": "Bodemsignalen",
+      "buy_level": "Aankoopniveau",
+      "drop": "Grote daling",
+      "rise": "Grote stijging",
+      "support_test": "Test steun",
+      "support_break": "Steun gebroken",
+      "data_problem": "Gegevenscontrole"
+    }
   }
 }

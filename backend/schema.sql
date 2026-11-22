@@ -156,3 +156,44 @@ create policy market_snapshot_auth_read on public.market_snapshot
 drop policy if exists job_runs_auth_read on public.job_runs;
 create policy job_runs_auth_read on public.job_runs
   for select to authenticated using (true);
+
+-- ===========================================================================
+-- Phase 2B: alerts (CLAUDE.md 7.2)
+-- ===========================================================================
+-- alert_state: de-duplication, one row per owner + ticker + kind + Brussels day.
+-- Only the daily job (service key) uses it: RLS on, no policies, no grants for users.
+create table if not exists public.alert_state (
+  user_id  uuid not null references auth.users (id) on delete cascade,
+  symbol   text not null,
+  kind     text not null,
+  day      date not null,
+  sent_at  timestamptz not null default now(),
+  primary key (user_id, symbol, kind, day)
+);
+
+-- alerts_log: every alert that was sent (or attempted), shown on More → Alerts.
+create table if not exists public.alerts_log (
+  id         bigint generated always as identity primary key,
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  symbol     text not null,
+  kind       text not null,
+  title      text not null,
+  body       text,
+  url        text,
+  delivered  boolean not null default false,
+  sent_at    timestamptz not null default now()
+);
+create index if not exists alerts_log_user_sent on public.alerts_log (user_id, sent_at desc);
+
+alter table public.alert_state enable row level security;
+alter table public.alerts_log  enable row level security;
+
+drop policy if exists alerts_log_owner_read on public.alerts_log;
+create policy alerts_log_owner_read on public.alerts_log
+  for select to authenticated using (user_id = (select auth.uid()));
+
+grant select, insert, update, delete on public.alert_state, public.alerts_log to service_role;
+grant usage, select on all sequences in schema public to service_role;
+grant select on public.alerts_log to authenticated;
+revoke all on public.alert_state, public.alerts_log from anon;
+revoke all on public.alert_state from authenticated;

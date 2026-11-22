@@ -353,7 +353,9 @@
     "glossaryHint": "What every signal means",
     "about": "About & disclaimer",
     "logout": "Log out",
-    "logoutHint": "Log out from More"
+    "logoutHint": "Log out from More",
+    "alerts": "Alerts",
+    "alertsHint": "Telegram messages, newest first ({n})"
   },
   "settings": {
     "display": "Display",
@@ -449,5 +451,21 @@
     },
     "flippedSupport": "old ceiling, now support",
     "flippedResistance": "old bottom, now resistance"
+  },
+  "alerts": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "emptyTitle": "No alerts yet",
+    "emptyBody": "You'll get a Telegram message when a stock shows strong bottom signals, drops sharply, tests a support level or reaches your buy level.",
+    "notDelivered": "not delivered to Telegram, retried at the next update",
+    "kind": {
+      "score_cross": "Bottom signals",
+      "buy_level": "Buy level",
+      "drop": "Big drop",
+      "rise": "Big rise",
+      "support_test": "Testing support",
+      "support_break": "Support broken",
+      "data_problem": "Data check"
+    }
   }
 }

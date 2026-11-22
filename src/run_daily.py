@@ -18,7 +18,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from src import data_checks, fetch, levels, log
+from src import alerts, data_checks, fetch, levels, log
 from src import indicators as ind
 from src import score as sc
 from src.storage import LocalStore, Store, SupabaseStore
@@ -112,6 +112,7 @@ def process_symbol(
         "price": round(last, 4),
         "currency": currency,
         "change_pct": round((last / prev - 1) * 100, 2),
+        "prev_close": round(prev, 4),
         "pct_from_52w_high": round((last / float(year.max()) - 1) * 100, 2),
         "high_52w": round(float(year.max()), 4),
         "low_52w": round(float(year.min()), 4),
@@ -138,6 +139,90 @@ def process_symbol(
 
 
 # ---------------------------------------------------------------------------
+# Alerts (7.1, 7.2)
+# ---------------------------------------------------------------------------
+
+
+def load_alert_config() -> dict[str, Any]:
+    path = ROOT / "config" / "alerts.yaml"
+    return yaml.safe_load(path.read_text()) if path.exists() else {"kinds": {}}
+
+
+def send_alerts(
+    store: Store,
+    watchlist: list[dict[str, Any]],
+    results: dict[str, dict[str, Any]],
+    prev_scores: dict[tuple[str, str], float | None],
+    cfg: dict[str, Any],
+    *,
+    writes_ok: bool,
+) -> tuple[int, int]:
+    """Evaluate, de-duplicate and send today's alerts. Returns (sent, failed). Logs counts only."""
+    acfg = load_alert_config()
+    rows: list[dict[str, Any]] = []
+    problems: dict[str, dict[str, Any]] = {}
+    for w in watchlist:
+        sym, uid = w["symbol"].upper(), w["user_id"]
+        r = results[sym]
+        p = problems.setdefault(
+            uid, {"user_id": uid, "suspect": 0, "errors": 0, "failed": not writes_ok}
+        )
+        if "error" in r:
+            p["errors"] += 1
+            continue
+        p["suspect"] += int(bool(r.get("suspect")))
+        rows.append(
+            {
+                **{
+                    k: r.get(k)
+                    for k in (
+                        "price",
+                        "prev_close",
+                        "currency",
+                        "change_pct",
+                        "score",
+                        "max_score",
+                        "label",
+                        "signals",
+                        "suspect",
+                    )
+                },
+                "user_id": uid,
+                "symbol": sym,
+                "buy_below": w.get("buy_below"),
+                "prev_score": prev_scores.get((uid, sym)),
+                "zones": (r.get("weekly") or {}).get("levels", {}).get("zones", []),
+            }
+        )
+
+    now = datetime.now(timezone.utc)
+    day = alerts.brussels_day(now)
+    found = []
+    for uid, p in problems.items():
+        user_rows = [x for x in rows if x["user_id"] == uid]
+        found += alerts.evaluate(user_rows, acfg, float(cfg.get("alert_threshold", 4)), p)
+    todo = alerts.apply_quiet_hours(alerts.dedupe(found, store.load_alert_state(day)), now, acfg)
+
+    can_send = alerts.telegram_configured()
+    log_rows, state_rows = [], []
+    sent = failed = 0
+    for a in todo:
+        ok = can_send and alerts.send_telegram(alerts.format_message(a))
+        sent += int(ok)
+        failed += int(not ok)
+        log_rows.append(alerts.to_log_row(a, ok, now.isoformat()))
+        if ok:  # undelivered alerts are retried by the next run the same day
+            state_rows.append(
+                {"user_id": a.user_id, "symbol": a.symbol, "kind": a.kind, "day": day}
+            )
+    store.insert("alerts_log", log_rows)
+    store.upsert("alert_state", state_rows, "user_id,symbol,kind,day")
+    if todo and not can_send:
+        log.info("alerts: telegram not configured, alerts logged but not sent")
+    return sent, failed
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -158,6 +243,7 @@ def run(store: Store) -> int:
         "rows": 0 if vix_hist is None else len(vix_hist),
     }
     previous = store.load_previous_suspects()
+    prev_scores = store.load_previous_scores()  # before today's scores overwrite them
 
     results: dict[str, dict[str, Any]] = {}
     for i, symbol in enumerate(symbols, 1):
@@ -242,6 +328,10 @@ def run(store: Store) -> int:
         ]
     )
 
+    alerts_sent, alerts_failed = send_alerts(
+        store, watchlist, results, prev_scores, cfg, writes_ok=writes_ok
+    )
+
     if not writes_ok or (symbols and not ok):
         status = "failed"
     elif failed or suspect or not all(s["ok"] for s in sources.values()):
@@ -263,6 +353,8 @@ def run(store: Store) -> int:
                     "errors": failed,
                     "suspect": suspect,
                     "rows_written": len(score_rows),
+                    "alerts_sent": alerts_sent,
+                    "alerts_failed": alerts_failed,
                 },
                 "sources": sources,
             }
@@ -271,7 +363,8 @@ def run(store: Store) -> int:
 
     log.info(
         f"scored {len(ok)} tickers, {failed} errors, {suspect} suspect, "
-        f"writes {'ok' if writes_ok else 'FAILED'}, status {status}"
+        f"writes {'ok' if writes_ok else 'FAILED'}, alerts {alerts_sent} sent / "
+        f"{alerts_failed} failed, status {status}"
     )
     return 1 if status == "failed" else 0
 

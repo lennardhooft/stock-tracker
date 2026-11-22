@@ -11,6 +11,7 @@ export function renderMore(ctx, main) {
   const item = (href, ic, label, hint = "") => html`<li><a class="menu__item" href="${href}">${icon(ic)}<span class="menu__label">${label}${hint ? html`<span class="menu__hint">${hint}</span>` : ""}</span>${icon("chevron")}</a></li>`;
   mount(main, html`<div class="stack" style="max-width:640px">
     <ul class="menu">
+      ${item("#/more/alerts", "bell", t("more.alerts"), t("more.alertsHint", { n: (ctx.data?.alerts || []).length }))}
       ${item("#/more/settings", "settings", t("more.settings"), t("more.settingsHint"))}
       ${item("#/more/health", "refresh", t("more.health"), t(`freshness.${ctx.freshness}`))}
       ${item("#/more/glossary", "info", t("more.glossary"), t("more.glossaryHint"))}

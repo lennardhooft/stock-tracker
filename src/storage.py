@@ -26,6 +26,8 @@ LOCAL_USER = "00000000-0000-0000-0000-000000000000"
 class Store(Protocol):
     def load_watchlist(self) -> list[dict[str, Any]]: ...
     def load_previous_suspects(self) -> dict[str, set[str]]: ...
+    def load_previous_scores(self) -> dict[tuple[str, str], float | None]: ...
+    def load_alert_state(self, day: str) -> set[tuple[str, str, str]]: ...
     def upsert(self, table: str, rows: list[dict[str, Any]], on_conflict: str) -> bool: ...
     def insert(self, table: str, rows: list[dict[str, Any]]) -> bool: ...
 
@@ -68,7 +70,7 @@ class SupabaseStore:
         return with_retries(_call, f"supabase read {table}")
 
     def load_watchlist(self) -> list[dict[str, Any]]:
-        rows = self._get("watchlist", {"select": "user_id,symbol,name,market"})
+        rows = self._get("watchlist", {"select": "user_id,symbol,name,market,buy_below"})
         if rows is None:
             raise RuntimeError("could not read watchlist from Supabase")
         return rows
@@ -80,6 +82,14 @@ class SupabaseStore:
             dates = ((row.get("checks") or {}).get("suspect_dates")) or []
             out.setdefault(row["symbol"], set()).update(dates)
         return out
+
+    def load_previous_scores(self) -> dict[tuple[str, str], float | None]:
+        rows = self._get("latest_scores", {"select": "user_id,symbol,score"}) or []
+        return {(r["user_id"], r["symbol"]): r.get("score") for r in rows}
+
+    def load_alert_state(self, day: str) -> set[tuple[str, str, str]]:
+        rows = self._get("alert_state", {"select": "user_id,symbol,kind", "day": f"eq.{day}"}) or []
+        return {(r["user_id"], r["symbol"], r["kind"]) for r in rows}
 
     def upsert(self, table: str, rows: list[dict[str, Any]], on_conflict: str) -> bool:
         if not rows:
@@ -99,6 +109,9 @@ class SupabaseStore:
         return bool(with_retries(_call, f"supabase upsert {table}"))
 
     def insert(self, table: str, rows: list[dict[str, Any]]) -> bool:
+        if not rows:
+            return True
+
         def _call() -> bool:
             r = requests.post(
                 f"{self.base}/{table}",
@@ -144,6 +157,20 @@ class LocalStore:
                 (row.get("checks") or {}).get("suspect_dates") or []
             )
         return out
+
+    def _read(self, table: str) -> list[dict[str, Any]]:
+        path = self.out / f"{table}.json"
+        return json.loads(path.read_text()) if path.exists() else []
+
+    def load_previous_scores(self) -> dict[tuple[str, str], float | None]:
+        return {(r["user_id"], r["symbol"]): r.get("score") for r in self._read("latest_scores")}
+
+    def load_alert_state(self, day: str) -> set[tuple[str, str, str]]:
+        return {
+            (r["user_id"], r["symbol"], r["kind"])
+            for r in self._read("alert_state")
+            if r["day"] == day
+        }
 
     def upsert(self, table: str, rows: list[dict[str, Any]], on_conflict: str) -> bool:
         keys = on_conflict.split(",")

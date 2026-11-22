@@ -28,14 +28,15 @@ function supabaseApi(cfg) {
     logout: () => sb.auth.signOut(),
 
     async loadAll() {
-      const [watchlist, scores, market, runs, history] = await Promise.all([
+      const [watchlist, scores, market, runs, history, alerts] = await Promise.all([
         q(sb.from("watchlist").select("*").order("symbol")),
         q(sb.from("latest_scores").select("*")),
         q(sb.from("market_snapshot").select("*").eq("id", "latest")),
         q(sb.from("job_runs").select("*").order("started_at", { ascending: false }).limit(20)),
         q(sb.from("score_history").select("symbol,date,score").order("date", { ascending: false }).limit(2000)),
+        q(sb.from("alerts_log").select("id,symbol,kind,title,body,url,delivered,sent_at").order("sent_at", { ascending: false }).limit(100)),
       ]);
-      return { watchlist, scores, market: market[0] || null, runs, history };
+      return { watchlist, scores, market: market[0] || null, runs, history, alerts };
     },
     async detail(symbol) {
       return (await q(sb.from("ticker_detail").select("weekly").eq("symbol", symbol)))[0] || null;
@@ -136,7 +137,8 @@ function demoApi(fixture) {
         sources: { yahoo_prices: { ok: runStatus === "ok", rows: 9000 }, yahoo_vix: { ok: true, rows: 1 }, cnn_fear_greed: { ok: fixture !== "partial", rows: fixture === "partial" ? 0 : 1 } } },
       { job: "daily", started_at: hoursAgo(27), finished_at: hoursAgo(27), status: "ok", counts: { tickers: stocks.length, scored: stocks.length }, sources: {} },
     ];
-    return { watchlist, scores, market: { id: "latest", data: market, updated_at: updated }, runs, history };
+    const alerts = fixture === "empty" || fixture === "new" ? [] : (f.alerts || []).map((a, i) => ({ id: i, ...a, sent_at: hoursAgo(a.hours_ago) }));
+    return { watchlist, scores, market: { id: "latest", data: market, updated_at: updated }, runs, history, alerts };
   }
 
   const delay = (ms) => new Promise((r) => setTimeout(r, ms));

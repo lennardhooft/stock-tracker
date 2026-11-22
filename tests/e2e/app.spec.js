@@ -64,6 +64,7 @@ const SCREENS = [
   ["more", "#/more"],
   ["settings", "#/more/settings"],
   ["health", "#/more/health"],
+  ["alerts", "#/more/alerts"],
 ];
 
 for (const theme of ["dark", "light"]) {
@@ -83,6 +84,7 @@ for (const theme of ["dark", "light"]) {
 const STATES = [
   ["empty", "#/", "empty"],
   ["empty-watchlist", "#/watchlist", "empty"],
+  ["empty-alerts", "#/more/alerts", "empty"],
   ["calm", "#/", "calm"],
   ["partial", "#/", "partial"],
   ["stale", "#/", "stale"],
@@ -265,4 +267,13 @@ test("settings: theme and language apply instantly", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.getByRole("button", { name: "Nederlands" }).click();
   await expect(page.locator("#tabbar")).toContainText("Volglijst");
+});
+
+test("alerts page: grouped by day, kind as word + icon, tap opens the stock", async ({ page }) => {
+  await open(page, "#/more/alerts");
+  await expect(page.locator(".section-title").first()).toHaveText("Today");
+  await expect(page.getByText("Bottom signals", { exact: true })).toBeVisible();
+  await expect(page.getByText("not delivered to Telegram", { exact: false })).toBeVisible();
+  await page.getByText("NRDX: 4/4 bottom signals").click();
+  await expect(page.locator("html")).toHaveAttribute("data-screen", "ticker/NRDX");
 });
