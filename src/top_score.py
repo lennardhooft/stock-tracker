@@ -149,6 +149,30 @@ def top_near_resistance(levels: dict | None, cfg: dict) -> dict:
     )
 
 
+def weekly_top_history(daily_close: pd.Series, scoring_cfg: dict) -> pd.Series:
+    """Reconstructed weekly Top Score from prices only (U1 + U2), for the chart's score panel.
+
+    Valuation, insider, Fear & Greed and ceiling history isn't available for free, so this is a
+    lower bound of the real Top Score and is labelled as such in the UI.
+    """
+    cfg = scoring_cfg.get("top_signals") or {}
+    weekly = ind.to_weekly(daily_close)
+    parts = []
+    c = cfg.get("far_above_trend", {})
+    if c.get("enabled", True):
+        sma = ind.sma(weekly, int(c.get("weeks", 200)))
+        hit = (weekly >= sma * float(c.get("multiple", 1.8))).astype(float)
+        parts.append(hit.where(sma.notna()) * float(c.get("weight", 1)))
+    c = cfg.get("weekly_rsi_high", {})
+    if c.get("enabled", True):
+        rsi = ind.rsi_wilder(weekly, int(c.get("period", 14)))
+        hit = (rsi > float(c.get("above", 70))).astype(float)
+        parts.append(hit.where(rsi.notna()) * float(c.get("weight", 1)))
+    if not parts:
+        return pd.Series(dtype=float)
+    return pd.concat(parts, axis=1).sum(axis=1, min_count=1)
+
+
 def top_label(score: float) -> str:
     return "trim" if score >= 4 else "hot" if score >= 2 else "normal"
 

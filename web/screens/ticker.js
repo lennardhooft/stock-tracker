@@ -11,9 +11,10 @@ import { scoreBadge, changeTag, topBadge, verdictBadge } from "../components/bad
 import { statTile, rangeBar, signalRow, qualityRow } from "../components/cards.js";
 import { banner, emptyState } from "../components/states.js";
 import { toast } from "../components/overlays.js";
-import { priceChart, tradingView } from "../components/chart.js";
+import { priceChart, tradingView, forwardReturn } from "../components/chart.js";
 import { signalList, statusBanners } from "./common.js";
 import { openBuyLevelSheet, removeStock, openAddSheet } from "./watchlist.js";
+import { TAG_SUGGESTIONS, MAX_TAGS, normalizeTag } from "../lib/tags.js";
 
 let activeTab = "overview";
 let lastSymbol = "";
@@ -308,11 +309,15 @@ const SWATCH = {
   markers: '<span aria-hidden="true" style="color:var(--color-positive)">▲</span>',
 };
 
+const PANELS = ["score", "rsi", "volume", "drawdown"];
+
 function chartTab(ctx, panel, row) {
   let mode = "weekly";
   let years = 5;
-  const show = { ...prefsGet().chartShow };
-  const toggle = (key, label) => html`<button type="button" class="chip chip--choice" data-show="${key}" aria-pressed="${show[key]}">${raw(SWATCH[key])}${label}</button>`;
+  // merge with defaults: settings saved by an older version miss the newer keys
+  const show = { zones: true, ma: true, markers: true, range52: false, valuation: true, ...prefsGet().chartShow };
+  const panelsOn = { score: true, rsi: true, volume: false, drawdown: false, ...prefsGet().chartPanels };
+  const toggle = (key, label) => html`<button type="button" class="chip chip--choice" data-show="${key}" aria-pressed="${!!show[key]}">${SWATCH[key] ? raw(SWATCH[key]) : ""}${label}</button>`;
   mount(panel, html`
     <div class="toolbar">
       <div class="segmented" role="group" aria-label="${t("chart.source")}">
@@ -320,57 +325,123 @@ function chartTab(ctx, panel, row) {
         <button type="button" data-mode="live" aria-pressed="false">${t("chart.live")}</button>
       </div>
       <div class="segmented" role="group" aria-label="${t("chart.range")}" id="ranges">
-        ${[[1, "1Y"], [3, "3Y"], [5, "5Y"], [10, "10Y"]].map(([y, l]) => html`<button type="button" data-years="${y}" aria-pressed="${y === years}">${l}</button>`)}
+        ${[[1, "1Y"], [3, "3Y"], [5, "5Y"], [10, "10Y"], [0, t("chart.max")]].map(([y, l]) => html`<button type="button" data-years="${y}" aria-pressed="${y === years}">${l}</button>`)}
       </div>
     </div>
+    <p class="small text-2 num chart-info" id="chart-info">&nbsp;</p>
     <div class="chart-box" id="chart"><div class="skeleton" style="height:100%"></div></div>
-    <div id="score-panel-wrap">
-      <p class="xs muted" style="margin:var(--space-2) 0 2px">${t("chart.scoreHistory")}</p>
-      <div class="chart-box" id="score-panel" style="height:84px"></div>
-      <p class="xs muted" style="margin-top:2px">${t("chart.scoreHistoryNote")}</p>
+    <div id="panels">
+      ${PANELS.map((k) => html`<div class="chart-panel" data-panel-wrap="${k}" ${panelsOn[k] ? "" : raw("hidden")}>
+        <p class="xs muted chart-panel__label">${t(`chart.panel.${k}Title`)}</p>
+        <div class="chart-box chart-box--panel" id="panel-${k}"></div>
+        ${k === "score" ? html`<p class="xs muted">${t("chart.scoreHistoryNote2")}</p>` : ""}
+      </div>`)}
     </div>
-    <div class="chips" id="legend" role="group" aria-label="${t("chart.legend")}" style="margin-top:var(--space-3)">
-      ${toggle("zones", t("chart.zones"))}${toggle("ma", t("chart.ma200short"))}${toggle("markers", t("chart.markers"))}
+    <p class="small text-2" id="chart-note" aria-live="polite" style="margin-top:var(--space-2)"></p>
+    <div id="chart-controls">
+      <p class="xs muted" style="margin:var(--space-3) 0 var(--space-1)">${t("chart.panelsTitle")}</p>
+      <div class="chips" role="group" aria-label="${t("chart.panelsTitle")}" id="panel-chips">
+        ${PANELS.map((k) => html`<button type="button" class="chip chip--choice" data-panel="${k}" aria-pressed="${!!panelsOn[k]}">${t(`chart.panel.${k}`)}</button>`)}
+      </div>
+      <p class="xs muted" style="margin:var(--space-3) 0 var(--space-1)">${t("chart.legend")}</p>
+      <div class="chips" id="legend" role="group" aria-label="${t("chart.legend")}">
+        ${toggle("zones", t("chart.zones"))}${toggle("ma", t("chart.ma200short"))}${toggle("markers", t("chart.markers"))}${toggle("range52", t("chart.range52"))}<span id="val-toggle" hidden>${toggle("valuation", t("chart.valuation"))}</span>
+      </div>
     </div>
     <p class="small text-2" id="chart-summary" style="margin-top:var(--space-3)"></p>`);
 
   const box = $("#chart", panel);
   const summary = $("#chart-summary", panel);
-  const wrap = $("#score-panel-wrap", panel);
+  const info = $("#chart-info", panel);
+  const note = $("#chart-note", panel);
+  const controls = $("#chart-controls", panel);
+  const panelsBox = $("#panels", panel);
+  let detail = null;
+
+  const infoText = (i) => {
+    const w = detail.weekly;
+    if (i == null) i = w.c.length - 1;
+    const parts = [fmt.date(`${w.t[i]}T12:00:00Z`), fmt.money(w.c[i], row.currency)];
+    const dd = chartHandle?.drawdown?.[i];
+    if (dd != null) parts.push(dd > -0.5 ? t("chart.atHigh") : t("chart.belowHigh", { pct: fmt.pct(Math.abs(dd), 0) }));
+    const r = chartHandle?.rsi?.[i];
+    if (r != null) parts.push(`RSI ${fmt.num(r, 0)}`);
+    if (w.score?.[i] != null) parts.push(t("chart.bottomShort", { n: w.score[i] }));
+    if (w.top?.[i] != null) parts.push(t("chart.topShort", { n: w.top[i] }));
+    return parts.join(" · ");
+  };
+  const afterText = (i, kind) => {
+    const c = detail.weekly.c;
+    const f = (wk) => {
+      const r = forwardReturn(c, i, wk);
+      return r == null ? t("chart.notYet") : `${r >= 0 ? "+" : "−"}${fmt.pct(Math.abs(r))}`;
+    };
+    return t(kind === "top" ? "chart.afterTop" : "chart.afterBottom", {
+      date: fmt.date(`${detail.weekly.t[i]}T12:00:00Z`), m3: f(13), m6: f(26), m12: f(52),
+    });
+  };
+
   const drawWeekly = async () => {
     box.innerHTML = '<div class="skeleton" style="height:100%"></div>';
-    $("#score-panel", panel).innerHTML = "";
+    PANELS.forEach((k) => { $(`#panel-${k}`, panel).innerHTML = ""; });
     try {
       const d = await ctx.api.detail(row.symbol);
       if (!d?.weekly?.c?.length) throw new Error("no data");
       if (!panel.isConnected) return; // user switched tab meanwhile
+      detail = d;
       box.innerHTML = "";
-      wrap.hidden = !d.weekly.score?.some((v) => v != null);
-      chartHandle = await priceChart(box, d.weekly, { show, scoreEl: wrap.hidden ? null : $("#score-panel", panel) });
+      const v = d.fundamentals?.valuation;
+      const vOk = v && v.years >= 3 && v.p20 && v.p80 && v.now > 0 && row.price;
+      $("#val-toggle", panel).hidden = !vOk;
+      const metric = v?.metric === "ps" ? "P/S" : "P/E";
+      const hasScore = d.weekly.score?.some((x) => x != null);
+      $('[data-panel="score"]', panel).hidden = !hasScore;
+      $('[data-panel="volume"]', panel).hidden = !d.weekly.v?.some((x) => x);
+      const els = {};
+      for (const k of PANELS) {
+        const on = panelsOn[k] && !$(`[data-panel="${k}"]`, panel).hidden;
+        $(`[data-panel-wrap="${k}"]`, panel).hidden = !on;
+        if (on) els[k] = $(`#panel-${k}`, panel);
+      }
+      chartHandle = await priceChart(box, d.weekly, {
+        show, panelEls: els,
+        lines: {
+          high52: row.high_52w, low52: row.low_52w,
+          cheap: vOk ? row.price * (v.p20 / v.now) : null, expensive: vOk ? row.price * (v.p80 / v.now) : null,
+        },
+        labels: { high52: t("chart.high52"), low52: t("chart.low52"), cheap: t("chart.cheapLine", { metric }), expensive: t("chart.expensiveLine", { metric }) },
+        onHover: (i) => { info.textContent = infoText(i); },
+        onMarker: (i, kind) => { note.textContent = afterText(i, kind); },
+      });
       chartHandle.setRange(years);
-      summary.textContent = chartSummary(d.weekly, row.currency, nearest(d.weekly.levels?.zones || [], "support"));
+      info.textContent = infoText(null);
+      summary.textContent = chartSummary(d.weekly, row.currency, nearest(d.weekly.levels?.zones || [], "support"))
+        + (vOk ? ` ${t("chart.valuationSummary", { metric, cheap: fmt.money(row.price * (v.p20 / v.now), row.currency), expensive: fmt.money(row.price * (v.p80 / v.now), row.currency) })}` : "");
       panel.dataset.chart = "ready";
     } catch {
-      wrap.hidden = true;
       mount(box, html`<div class="state" style="height:100%;border:0">${icon("error", { cls: "state__icon" })}<p class="state__body">${t("chart.failed")}</p>
         <button type="button" class="btn btn--secondary" data-retry-chart>${icon("refresh")}${t("common.retry")}</button></div>`);
+      PANELS.forEach((k) => { $(`[data-panel-wrap="${k}"]`, panel).hidden = true; });
+      info.innerHTML = "&nbsp;";
       panel.dataset.chart = "failed";
     }
   };
+  const redraw = () => { chartHandle?.destroy(); chartHandle = null; drawWeekly(); };
+
   panel.addEventListener("click", (e) => {
     const m = e.target.closest("[data-mode]");
     const y = e.target.closest("[data-years]");
     const sh = e.target.closest("[data-show]");
+    const pn = e.target.closest("[data-panel]");
     if (e.target.closest("[data-retry-chart]")) drawWeekly();
     if (m && m.dataset.mode !== mode) {
       mode = m.dataset.mode;
       $$("[data-mode]", panel).forEach((b) => b.setAttribute("aria-pressed", String(b === m)));
-      for (const id of ["#ranges", "#legend"]) $(id, panel).hidden = mode === "live";
-      wrap.hidden = mode === "live";
-      summary.hidden = mode === "live";
+      const live = mode === "live";
+      for (const x of [$("#ranges", panel), controls, panelsBox, summary, info, note]) x.hidden = live;
       chartHandle?.destroy();
       chartHandle = null;
-      if (mode === "live") tradingView(box, row.symbol, resolvedTheme());
+      if (live) tradingView(box, row.symbol, resolvedTheme());
       else drawWeekly();
     }
     if (y) {
@@ -383,6 +454,12 @@ function chartTab(ctx, panel, row) {
       sh.setAttribute("aria-pressed", String(show[sh.dataset.show]));
       prefsSet({ chartShow: { ...show } });
       chartHandle?.setShow(show);
+    }
+    if (pn) {
+      panelsOn[pn.dataset.panel] = !panelsOn[pn.dataset.panel];
+      pn.setAttribute("aria-pressed", String(panelsOn[pn.dataset.panel]));
+      prefsSet({ chartPanels: { ...panelsOn } });
+      redraw();
     }
   });
   drawWeekly();
@@ -406,7 +483,17 @@ function chartSummary(w, currency, support) {
 
 /* ------------------------------------------------------------------ My notes */
 function notesTab(ctx, panel, row) {
+  let tags = [...(row.tags || [])];
+  const chipsHtml = () => html`${[...new Set([...TAG_SUGGESTIONS, ...tags])].map((x) => html`<button type="button" class="chip chip--choice" data-tag="${x}" aria-pressed="${tags.includes(x)}">#${x}</button>`)}`;
   mount(panel, html`<form class="stack" novalidate>
+    <fieldset class="field" style="border:0;padding:0;margin:0"><legend class="field__label">${t("tags.title")}</legend>
+      <div class="chips" id="tag-chips">${chipsHtml()}</div>
+      <div class="cluster" style="gap:var(--space-2);margin-top:var(--space-2);flex-wrap:nowrap">
+        <input class="input" id="tag-new" name="tagnew" maxlength="20" autocomplete="off" autocapitalize="none" placeholder="${t("tags.new")}" aria-label="${t("tags.new")}" style="flex:1;min-width:0">
+        <button type="button" class="btn btn--secondary" data-add-tag>${icon("plus")}${t("tags.add")}</button>
+      </div>
+      <span class="field__hint" id="tag-msg">${t("tags.hint")}</span>
+    </fieldset>
     <label class="field"><span class="field__label">${t("ticker.notes")}</span>
       <textarea class="input" name="notes" rows="5" maxlength="2000" style="min-height:120px">${row.notes || ""}</textarea>
       <span class="field__hint">${t("ticker.notesHint")}</span></label>
@@ -415,15 +502,40 @@ function notesTab(ctx, panel, row) {
     <button class="btn btn--destructive" type="button" data-remove>${icon("trash")}${t("watchlist.remove")}</button>
   </form>`);
   const form = $("form", panel);
+  const msg = $("#tag-msg", panel);
+  const redraw = () => mount($("#tag-chips", panel), chipsHtml());
+  const addTag = () => {
+    const inp = $("#tag-new", panel);
+    const tag = normalizeTag(inp.value);
+    msg.classList.remove("field__error");
+    if (!tag) { msg.textContent = t("tags.invalid"); msg.classList.add("field__error"); return; }
+    if (!tags.includes(tag) && tags.length >= MAX_TAGS) { msg.textContent = t("tags.max"); msg.classList.add("field__error"); return; }
+    if (!tags.includes(tag)) tags.push(tag);
+    inp.value = "";
+    msg.textContent = t("tags.hint");
+    redraw();
+  };
+  panel.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-tag]");
+    if (c) {
+      const x = c.dataset.tag;
+      if (tags.includes(x)) tags = tags.filter((y) => y !== x);
+      else if (tags.length < MAX_TAGS) tags.push(x);
+      redraw();
+    }
+    if (e.target.closest("[data-add-tag]")) addTag();
+  });
+  $("#tag-new", panel).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } });
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = form.querySelector('[type="submit"]');
     btn.setAttribute("aria-busy", "true");
     try {
       const notes = form.notes.value.trim() || null;
-      await ctx.api.update(row.wid, { notes });
-      Object.assign(ctx.data.watchlist.find((w) => w.id === row.wid), { notes });
+      await ctx.api.update(row.wid, { notes, tags });
+      Object.assign(ctx.data.watchlist.find((w) => w.id === row.wid), { notes, tags: [...tags] });
       row.notes = notes;
+      row.tags = [...tags];
       toast(t("toast.saved"));
     } catch (err) {
       toast(t("errors.saveFailed", { reason: err.message }));

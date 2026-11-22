@@ -1,6 +1,7 @@
 /* Watchlist — docs/screens/watchlist.md. On desktop (≥ 900 px) the list sits left and the
  * selected ticker's detail right; on phones the ticker detail is its own screen. */
 import { html, mount, $, $$ } from "../lib/dom.js";
+import { tagsInUse } from "../lib/tags.js";
 import { t } from "../lib/i18n.js";
 import { prefsGet, prefsSet } from "../lib/settings.js";
 import { ALERT_THRESHOLD } from "../lib/signals.js";
@@ -37,6 +38,7 @@ function filtered(ctx) {
     .filter((r) => !p.minScore || (r.score ?? 0) >= p.minScore)
     .filter((r) => p.market === "all" || r.market === p.market)
     .filter((r) => !p.verdict || p.verdict === "all" || r.verdict === p.verdict)
+    .filter((r) => !p.tags?.length || (r.tags || []).some((x) => p.tags.includes(x)))
     .sort(SORTS[p.sort] || SORTS.score);
 }
 
@@ -46,6 +48,7 @@ function listHtml(ctx, selected) {
   const strong = ctx.rows.filter((r) => (r.score ?? 0) >= ALERT_THRESHOLD).length;
   const chips = [];
   if (p.minScore) chips.push(html`<button type="button" class="chip" data-clear="minScore">${t("watchlist.chipScore", { n: p.minScore })}${icon("close")}<span class="visually-hidden">${t("watchlist.removeFilter")}</span></button>`);
+  for (const tag of p.tags || []) chips.push(html`<button type="button" class="chip" data-clear-tag="${tag}">#${tag}${icon("close")}<span class="visually-hidden">${t("watchlist.removeFilter")}</span></button>`);
   if (p.verdict && p.verdict !== "all") chips.push(html`<button type="button" class="chip" data-clear="verdict">${t(`verdict.${p.verdict}`)}${icon("close")}<span class="visually-hidden">${t("watchlist.removeFilter")}</span></button>`);
   if (p.market !== "all") chips.push(html`<button type="button" class="chip" data-clear="market">${p.market}${icon("close")}<span class="visually-hidden">${t("watchlist.removeFilter")}</span></button>`);
 
@@ -97,6 +100,8 @@ function bind(ctx, main) {
   main.addEventListener("click", (e) => {
     const s = e.target.closest("[data-sort]");
     if (s) { prefsSet({ sort: s.dataset.sort }); rerender(); return; }
+    const ct = e.target.closest("[data-clear-tag]");
+    if (ct) { prefsSet({ tags: (prefsGet().tags || []).filter((x) => x !== ct.dataset.clearTag) }); rerender(); return; }
     const c = e.target.closest("[data-clear]");
     if (c) { prefsSet({ [c.dataset.clear]: c.dataset.clear === "minScore" ? 0 : "all" }); rerender(); return; }
     const q = e.target.closest("[data-quick]");
@@ -104,7 +109,7 @@ function bind(ctx, main) {
     const a = e.target.closest("[data-action]")?.dataset.action;
     if (a === "add-stock") openAddSheet(ctx);
     else if (a === "filters") openFilters(ctx);
-    else if (a === "clear-filters") { prefsSet({ minScore: 0, market: "all", verdict: "all" }); rerender(); }
+    else if (a === "clear-filters") { prefsSet({ minScore: 0, market: "all", verdict: "all", tags: [] }); rerender(); }
   });
   // long-press on a card = quick actions (with the visible ⋯ button as the alternative)
   let timer = null;
@@ -131,6 +136,9 @@ function openFilters(ctx) {
       <div class="segmented" role="group" aria-label="${t("watchlist.market")}">${["all", "US", "EU"].map((m) => html`<button type="button" data-market="${m}" aria-pressed="${p.market === m}">${m === "all" ? t("watchlist.any") : m}</button>`)}</div></div>
     <div class="field"><span class="field__label">${t("verdictFilter.title")}</span>
       <div class="chips" role="group" aria-label="${t("verdictFilter.title")}">${["all", "sale", "check", "trap"].map((v) => html`<button type="button" class="chip chip--choice" data-verdict="${v}" aria-pressed="${(p.verdict || "all") === v}">${v === "all" ? t("verdictFilter.all") : t(`verdict.${v}`)}</button>`)}</div></div>
+    <div class="field"><span class="field__label">${t("tags.filter")}</span>
+      ${tagsInUse(ctx.rows).length ? html`<div class="chips" role="group" aria-label="${t("tags.filter")}">${tagsInUse(ctx.rows).map((x) => html`<button type="button" class="chip chip--choice" data-tag="${x}" aria-pressed="${(p.tags || []).includes(x)}">#${x}</button>`)}</div>`
+        : html`<p class="small text-2">${t("tags.none")}</p>`}</div>
     <button type="button" class="btn btn--primary btn--block" data-done>${t("watchlist.showResults")}</button>
   </div>` });
   el.addEventListener("click", (e) => {
@@ -140,6 +148,13 @@ function openFilters(ctx) {
     if (m) prefsSet({ minScore: Number(m.dataset.min) });
     if (k) prefsSet({ market: k.dataset.market });
     if (v) prefsSet({ verdict: v.dataset.verdict });
+    const tg = e.target.closest("[data-tag]");
+    if (tg) {
+      const cur = new Set(prefsGet().tags || []);
+      cur.has(tg.dataset.tag) ? cur.delete(tg.dataset.tag) : cur.add(tg.dataset.tag);
+      prefsSet({ tags: [...cur] });
+      tg.setAttribute("aria-pressed", String(cur.has(tg.dataset.tag)));
+    }
     const hit = m || k || v;
     if (hit) $$("button", hit.parentElement).forEach((b) => b.setAttribute("aria-pressed", String(b === hit)));
     if (e.target.closest("[data-done]")) { close(); ctx.render(); }

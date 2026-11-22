@@ -377,7 +377,34 @@
     "legend": "Show on chart",
     "zones": "Levels",
     "markers": "Markers",
-    "ma200short": "200-week avg"
+    "ma200short": "200-week avg",
+    "max": "Max",
+    "panelsTitle": "Panels under the chart",
+    "panel": {
+      "score": "Score",
+      "rsi": "RSI",
+      "volume": "Volume",
+      "drawdown": "Drawdown",
+      "scoreTitle": "Bottom Score (up) and Top Score (down) over time",
+      "rsiTitle": "Weekly RSI (30 oversold · 70 overbought)",
+      "volumeTitle": "Weekly volume (orange: 2× its 52-week average or more)",
+      "drawdownTitle": "Drawdown: % below the highest price so far"
+    },
+    "scoreHistoryNote2": "Reconstructed from prices and the VIX. The Top Score history uses prices only (trend + RSI).",
+    "range52": "52-week high/low",
+    "valuation": "Cheap/expensive levels",
+    "high52": "52w high",
+    "low52": "52w low",
+    "cheapLine": "cheap {metric}",
+    "expensiveLine": "expensive {metric}",
+    "valuationSummary": "At today's earnings the {metric} would be cheap vs its own history below {cheap} and expensive above {expensive}.",
+    "atHigh": "at its high",
+    "belowHigh": "{pct} below its high",
+    "bottomShort": "Bottom {n}",
+    "topShort": "Top {n}",
+    "notYet": "not yet",
+    "afterBottom": "After this bottom signal ({date}): 3 months {m3} · 6 months {m6} · 12 months {m12}.",
+    "afterTop": "After this overheating signal ({date}): 3 months {m3} · 6 months {m6} · 12 months {m12}."
   },
   "more": {
     "settings": "Settings",
@@ -717,5 +744,15 @@
   "verdictFilter": {
     "title": "Verdict",
     "all": "All"
+  },
+  "tags": {
+    "title": "Tags",
+    "hint": "Group your stocks, e.g. core or wait-for-dip. Saved with your notes.",
+    "add": "Add tag",
+    "new": "New tag",
+    "invalid": "Use letters, digits and - (max 20 characters).",
+    "max": "Up to 8 tags per stock.",
+    "filter": "Tags",
+    "none": "No tags yet. Add them on a stock's My notes tab."
   }
 }

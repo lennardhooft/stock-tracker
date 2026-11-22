@@ -377,7 +377,34 @@
     "legend": "Tonen op grafiek",
     "zones": "Niveaus",
     "markers": "Markeringen",
-    "ma200short": "200-weken gem."
+    "ma200short": "200-weken gem.",
+    "max": "Max",
+    "panelsTitle": "Panelen onder de grafiek",
+    "panel": {
+      "score": "Score",
+      "rsi": "RSI",
+      "volume": "Volume",
+      "drawdown": "Daling",
+      "scoreTitle": "Bodemscore (omhoog) en Top Score (omlaag) door de tijd",
+      "rsiTitle": "Wekelijkse RSI (30 oversold · 70 overkocht)",
+      "volumeTitle": "Weekvolume (oranje: 2× het 52-weekse gemiddelde of meer)",
+      "drawdownTitle": "Daling: % onder de hoogste koers tot dan"
+    },
+    "scoreHistoryNote2": "Gereconstrueerd uit koersen en de VIX. De Top Score-historiek gebruikt enkel koersen (trend + RSI).",
+    "range52": "52-weken hoog/laag",
+    "valuation": "Goedkoop/duur-niveaus",
+    "high52": "52w hoog",
+    "low52": "52w laag",
+    "cheapLine": "goedkoop {metric}",
+    "expensiveLine": "duur {metric}",
+    "valuationSummary": "Met de winst van vandaag is de {metric} goedkoop tegenover zijn historiek onder {cheap} en duur boven {expensive}.",
+    "atHigh": "op zijn top",
+    "belowHigh": "{pct} onder zijn top",
+    "bottomShort": "Bodem {n}",
+    "topShort": "Top {n}",
+    "notYet": "nog niet",
+    "afterBottom": "Na dit bodemsignaal ({date}): 3 maanden {m3} · 6 maanden {m6} · 12 maanden {m12}.",
+    "afterTop": "Na dit oververhittingssignaal ({date}): 3 maanden {m3} · 6 maanden {m6} · 12 maanden {m12}."
   },
   "more": {
     "settings": "Instellingen",
@@ -717,5 +744,15 @@
   "verdictFilter": {
     "title": "Oordeel",
     "all": "Alle"
+  },
+  "tags": {
+    "title": "Labels",
+    "hint": "Groepeer je aandelen, bv. core of wait-for-dip. Wordt bewaard met je notities.",
+    "add": "Label toevoegen",
+    "new": "Nieuw label",
+    "invalid": "Gebruik letters, cijfers en - (max. 20 tekens).",
+    "max": "Maximaal 8 labels per aandeel.",
+    "filter": "Labels",
+    "none": "Nog geen labels. Voeg ze toe bij Mijn notities van een aandeel."
   }
 }

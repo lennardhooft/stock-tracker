@@ -30,3 +30,10 @@
 - [ ] Remove → Undo restores the stock with its notes and buy level.
 - [ ] Sort and filter choices are remembered on this device.
 - [ ] Desktop: list left, selected ticker detail right.
+
+## Tags (Phase 2F, CLAUDE.md 13.6)
+- Each stock can have up to 8 tags. Suggested: **core**, **speculative**, **wait-for-dip**; plus your own (letters, digits, `-`, max 20 characters).
+- **Where to set them:** ticker page → *My notes* tab → "Tags": tap a suggested chip to toggle it, or type a new one and tap **Add tag**. Saved together with the notes (one **Save**).
+- **On the card:** tags as small muted text under the price line ("core · wait-for-dip"). Nothing shown when there are none.
+- **Filter:** the filter sheet gets a "Tags" row with one chip per tag in use (any of the chosen tags matches). Active tag filter shows as a removable chip.
+- Data: `watchlist.tags text[]` (owner-edited, RLS like the rest of the watchlist).

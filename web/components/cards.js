@@ -34,6 +34,7 @@ export function stockCard(s, { href = "" } = {}) {
   const body = scored
     ? html`<div class="stock__price num"><strong>${fmt.money(s.price, s.currency)}</strong>${changeTag(s.change_pct, 1)}</div>
       <div class="stock__meta num">${t("stock.fromHigh", { value: fmt.pct(s.pct_from_52w_high) })}</div>
+      ${s.tags?.length ? html`<div class="stock__tags">${s.tags.join(" · ")}</div>` : ""}
       <div class="stock__spark">${sparkline(s.sparkline, { w: 72 })}</div>`
     : html`<div class="stock__note">${s.error ? t("stock.error") : t("stock.pending")}</div>`;
   return html`<${raw(Tag)} class="stock" ${href ? raw(`href="${href}"`) : ""}>

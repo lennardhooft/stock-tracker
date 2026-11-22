@@ -27,7 +27,7 @@ async function quality(page, label) {
   const rawKeys = await page.evaluate(() => {
     const txt = document.body.innerText;
     return (txt.match(/\b[a-z]+\.[a-zA-Z]+(\.[a-zA-Z0-9]+)*\b/g) || [])
-      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels)\./.test(k));
+      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags)\./.test(k));
   });
   expect(rawKeys, `${label}: untranslated i18n keys`).toEqual([]);
 
@@ -233,7 +233,7 @@ test("chart tab: candles, levels, score panel, text summary, remembered toggles"
   await page.getByRole("tab", { name: "Chart" }).click();
   await expect(page.locator("#panel")).toHaveAttribute("data-chart", "ready", { timeout: 15000 });
   await expect(page.locator("#chart canvas").first()).toBeVisible();
-  await expect(page.locator("#score-panel canvas").first()).toBeVisible();
+  await expect(page.locator("#panel-score canvas").first()).toBeVisible();
   await expect(page.locator("#chart-summary")).toContainText("200-week average");
   await expect(page.locator("#chart-summary")).toContainText("Support at");
   await page.getByRole("button", { name: "10Y" }).click();
@@ -435,4 +435,83 @@ test("quality texts in Dutch", async ({ page }) => {
   await page.getByRole("tab", { name: "Cijfers" }).click();
   await expect(page.locator("#quality-card")).toContainText("Kwaliteit van het bedrijf");
   await quality(page, "quality nl");
+});
+
+/* ------------------------------------------------------------ Phase 2F: tags + chart upgrades */
+test("tags: add on the notes tab, show on the card, filter by tag", async ({ page }) => {
+  await open(page, "#/ticker/NEWCO");
+  await page.getByRole("tab", { name: "Notes" }).click();
+  await page.locator('[data-tag="speculative"]').click();
+  await page.fill("#tag-new", "bad tag!!");
+  await page.getByRole("button", { name: "Add tag" }).click();
+  await expect(page.locator("#tag-msg")).toHaveClass(/field__error/);
+  await page.fill("#tag-new", "Turnaround");
+  await page.keyboard.press("Enter");
+  await expect(page.locator('[data-tag="turnaround"]')).toHaveAttribute("aria-pressed", "true");
+  await quality(page, "tags editor");
+  await shot(page, "ticker-tags-dark-375");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".toast").first()).toBeVisible();
+  await page.evaluate(() => { location.hash = "#/watchlist"; });
+  await expect(page.locator(".stock", { hasText: "NEWCO" }).locator(".stock__tags")).toHaveText("speculative · turnaround");
+  await page.getByRole("button", { name: "Filter" }).click();
+  await page.locator('[data-tag="wait-for-dip"]').click();
+  await page.locator("[data-done]").click();
+  await expect(page.locator(".stock__ticker")).toHaveText(["HALD", "BLMT.BR"]);
+  await expect(page.locator('[data-clear-tag="wait-for-dip"]')).toBeVisible();
+  await page.locator('[data-clear-tag="wait-for-dip"]').click();
+  await expect(page.locator('[data-clear-tag]')).toHaveCount(0);
+});
+
+test("chart: info line, panels on/off (remembered), cheap/expensive levels", async ({ page }) => {
+  await open(page, "#/ticker/NRDX");
+  await page.getByRole("tab", { name: "Chart" }).click();
+  await expect(page.locator("#panel")).toHaveAttribute("data-chart", "ready");
+  await expect(page.locator("#chart-info")).toContainText("below its high");
+  await expect(page.locator("#chart-info")).toContainText("RSI");
+  await expect(page.locator('[data-panel-wrap="score"]')).toBeVisible();
+  await expect(page.locator('[data-panel-wrap="rsi"]')).toBeVisible();
+  await expect(page.locator('[data-panel-wrap="volume"]')).toBeHidden();
+  await page.locator('[data-panel="drawdown"]').click();
+  await expect(page.locator('[data-panel-wrap="drawdown"]')).toBeVisible();
+  await expect(page.locator("#chart-summary")).toContainText("cheap vs its own history below");
+  await expect(page.locator("#val-toggle")).toBeVisible();
+  await quality(page, "chart panels");
+  await shot(page, "ticker-chart-panels-dark-375");
+  await page.locator('[data-years="0"]').click();
+  await expect(page.locator('[data-years="0"]')).toHaveAttribute("aria-pressed", "true");
+  // remembered on this device
+  await page.reload();
+  await page.waitForFunction(() => document.documentElement.dataset.screen);
+  await page.getByRole("tab", { name: "Chart" }).click();
+  await expect(page.locator('[data-panel-wrap="drawdown"]')).toBeVisible();
+});
+
+test("chart: EU stock without valuation history hides the cheap/expensive toggle", async ({ page }) => {
+  await open(page, "#/ticker/WORLD.AS");
+  await page.getByRole("tab", { name: "Chart" }).click();
+  await expect(page.locator("#panel")).toHaveAttribute("data-chart", "ready");
+  await expect(page.locator("#val-toggle")).toBeHidden();
+});
+
+test("chart math: RSI, drawdown and forward returns", async ({ page }) => {
+  await open(page, "#/");
+  const r = await page.evaluate(async () => {
+    const m = await import("/components/chart.js");
+    const up = Array.from({ length: 20 }, (_, i) => 100 + i);
+    return {
+      rsiUp: m.rsiWilder(up)[19],
+      rsiFirst: m.rsiWilder(up)[13],
+      dd: m.drawdownSeries([10, 12, 11, 9], [10, 12, 11, 9]).map((x) => Math.round(x)),
+      fwd: m.forwardReturn([100, 110, 121], 0, 2),
+      future: m.forwardReturn([100, 110], 0, 5),
+      starts: m.runStarts([1, 4, 5, 2, 4], 4),
+    };
+  });
+  expect(r.rsiUp).toBe(100);
+  expect(r.rsiFirst).toBeNull(); // needs 14 changes
+  expect(r.dd).toEqual([0, 0, -8, -25]);
+  expect(r.fwd).toBeCloseTo(21, 5);
+  expect(r.future).toBeNull();
+  expect(r.starts).toEqual([1, 4]);
 });

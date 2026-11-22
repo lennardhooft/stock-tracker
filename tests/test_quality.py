@@ -303,3 +303,11 @@ def test_compute_top_labels():
     )
     assert out["score"] >= 3 and out["label"] in {"hot", "trim"} and out["max_score"] == 6
     assert top.top_label(1) == "normal" and top.top_label(2) == "hot" and top.top_label(4) == "trim"
+
+
+def test_weekly_top_history_marks_hot_weeks():
+    w = weekly_up(n=300, end=4.0)
+    daily = w.resample("D").ffill()
+    h = top.weekly_top_history(daily, {"top_signals": {}})
+    assert h.iloc[:14].isna().all()  # RSI(14) needs 14 weeks first; U1 needs 200
+    assert h.iloc[-1] == 1  # straight line up: RSI 100 fires (U2); 4x over 300 weeks < 1.8x SMA

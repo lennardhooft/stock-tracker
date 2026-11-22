@@ -46,8 +46,9 @@ def valuation_from_points(
 ) -> dict[str, Any] | None:
     """Percentile of `now` within its own history of (date, value) points over `years`.
 
-    Returns {now, pct, min, max, n, years} or None when there's nothing usable.
+    Returns {now, pct, min, max, p20, p80, n, years} or None when there's nothing usable.
     pct = % of historical values at or below `now` (low = cheap vs its own history).
+    p20 / p80 = its own 20th / 80th percentile (the chart's cheap / expensive levels).
     """
     today = today or date.today()
     cutoff = (today - timedelta(days=365 * years)).isoformat()
@@ -61,6 +62,8 @@ def valuation_from_points(
         "pct": round(float(sum(1 for v in vals if v <= now) / len(vals) * 100), 1),
         "min": round(float(min(vals)), 2),
         "max": round(float(max(vals)), 2),
+        "p20": round(float(np.percentile(vals, 20)), 2),
+        "p80": round(float(np.percentile(vals, 80)), 2),
         "n": len(vals),
         "years": span,
     }

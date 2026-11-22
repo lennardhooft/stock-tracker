@@ -98,7 +98,10 @@
         "na": null,
         "weak": []
       },
-      "verdict": "sale"
+      "verdict": "sale",
+      "tags": [
+        "core"
+      ]
     },
     {
       "symbol": "BLMT.BR",
@@ -146,7 +149,11 @@
           "debt"
         ]
       },
-      "verdict": "none"
+      "verdict": "none",
+      "tags": [
+        "wait-for-dip",
+        "dividend"
+      ]
     },
     {
       "symbol": "HALD",
@@ -196,7 +203,10 @@
           "debt"
         ]
       },
-      "verdict": "trap"
+      "verdict": "trap",
+      "tags": [
+        "wait-for-dip"
+      ]
     },
     {
       "symbol": "ORCA",
@@ -245,7 +255,10 @@
         "na": null,
         "weak": []
       },
-      "verdict": "none"
+      "verdict": "none",
+      "tags": [
+        "core"
+      ]
     },
     {
       "symbol": "VLTA.AS",

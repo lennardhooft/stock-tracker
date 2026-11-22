@@ -158,7 +158,7 @@ function demoApi(fixture) {
 
     const watchlist = stocks.map((s, i) => ({
       id: `w${i}`, user_id: UID, symbol: s.symbol, name: s.name, market: s.symbol.includes(".") ? "EU" : "US",
-      buy_below: s.buy_below ?? null, notes: s.notes ?? null, created_at: hoursAgo(400),
+      buy_below: s.buy_below ?? null, notes: s.notes ?? null, tags: s.tags || [], created_at: hoursAgo(400),
     }));
     const scores = stocks
       .filter((s) => s.score !== undefined || s.error)

@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src import indicators as ind  # noqa: E402
-from src import levels, quality, score  # noqa: E402
+from src import levels, quality, score, top_score  # noqa: E402
 
 WEEKS = 520
 EMPTY = {"source": None, "valuation": None, "insiders": None, "news": [], "earnings": None}
@@ -34,6 +34,8 @@ FUNDAMENTALS = {  # FAKE: invented numbers and headlines for fictional companies
             "pct": 12.0,
             "min": 14.1,
             "max": 41.7,
+            "p20": 17.9,
+            "p80": 31.5,
             "n": 10,
             "years": 9.8,
         },
@@ -103,6 +105,8 @@ FUNDAMENTALS = {  # FAKE: invented numbers and headlines for fictional companies
             "pct": 45.0,
             "min": 10.2,
             "max": 22.9,
+            "p20": 12.1,
+            "p80": 19.4,
             "n": 44,
             "years": 3.6,
         },
@@ -171,6 +175,9 @@ def synthetic_daily(seed: int, last: float, from_high_pct: float) -> pd.DataFram
     )
     df["High"] = df[["Open", "High", "Close"]].max(axis=1)
     df["Low"] = df[["Open", "Low", "Close"]].min(axis=1)
+    vol = rng.lognormal(13, 0.25, n)
+    vol[rng.choice(n, 25, replace=False)] *= 3.5  # a few volume spikes
+    df["Volume"] = vol.round()
     return df
 
 
@@ -287,6 +294,8 @@ def main() -> None:
         wk = levels.resample_ohlc(daily, "W-FRI").iloc[-WEEKS:]
         sma = ind.sma(ind.to_weekly(daily["Close"]), 200).reindex(wk.index)
         hist = score.weekly_score_history(daily["Close"], vix, cfg).reindex(wk.index)
+        top_hist = top_score.weekly_top_history(daily["Close"], cfg).reindex(wk.index)
+        vol = daily["Volume"].resample("W-FRI").sum().reindex(wk.index)
 
         def r(x, nd=2):
             return [None if pd.isna(v) else round(float(v), nd) for v in x]
@@ -300,6 +309,8 @@ def main() -> None:
                 "c": r(wk["Close"]),
                 "sma200": r(sma),
                 "score": r(hist, 0),
+                "top": r(top_hist, 0),
+                "v": r(vol, 0),
                 "levels": levels.detect_levels(daily, cfg["levels"]),
             },
             "fundamentals": {**FUNDAMENTALS.get(s["symbol"], EMPTY), "quality": q},

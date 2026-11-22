@@ -211,3 +211,11 @@ alter table public.latest_scores add column if not exists next_earnings jsonb;  
 alter table public.latest_scores add column if not exists quality jsonb;   -- {score, label, moat, na, weak}
 alter table public.latest_scores add column if not exists top jsonb;       -- {score, max_score, label, signals}
 alter table public.latest_scores add column if not exists verdict text;    -- sale | check | trap | none
+
+-- ---------------------------------------------------------------------------
+-- Phase 2F: watchlist tags (CLAUDE.md 13.6), edited by the owner in the app.
+-- ---------------------------------------------------------------------------
+alter table public.watchlist add column if not exists tags text[] not null default '{}';
+alter table public.watchlist drop constraint if exists watchlist_tags_check;
+alter table public.watchlist add constraint watchlist_tags_check
+  check (cardinality(tags) <= 8 and char_length(array_to_string(tags, ',')) <= 200);

@@ -72,3 +72,19 @@ Buy level (decimal keyboard), notes (multi-line), Save. **Remove from watchlist*
 - [ ] Every signal row has a glossary ⓘ.
 - [ ] Chart readable at 375 px, has a text summary and passes axe.
 - [ ] Back returns to the exact list position.
+
+### Chart upgrades (Phase 2F, CLAUDE.md 13.17)
+Calm by default: price + one lower panel; everything else is a toggle that's remembered on the device.
+- **Info line above the chart** (the "tooltip", readable on a phone): date · close · % below the all-time high · weekly RSI · Bottom Score · Top Score.
+  Shows the latest week by default and follows the crosshair (long-press + drag on mobile, hover on desktop).
+- **Markers:** ▲/▼ major previous bottoms/ceilings (as before), ● Bottom Score ≥ 4 (start of each period), ▼ violet "T" Top Score ≥ 2 (prices-only history: trend + RSI, so max 2).
+  **Tap a ●/T marker** → the info line says what happened next: "After this signal: +3 m +8,2 % · +6 m +15,1 % · +12 m +31,0 %".
+- **Lines (toggles):** support/resistance zones · 200-week average · 52-week high/low · **cheap/expensive levels** — the price where today's earnings would put the P/E at its own 20th / 80th percentile ("cheap below $ 96", "expensive above $ 142"). Hidden when there's no valuation history.
+- **Lower panels (chips, multi-select, default Score + RSI):**
+  - **Score**: Bottom Score bars upward (grey→red) and Top Score bars downward (violet), so they're never confused.
+  - **RSI**: weekly RSI with the 30 and 70 lines.
+  - **Volume**: weekly volume; weeks ≥ 2× the 52-week average are highlighted.
+  - **Drawdown**: % below the highest price so far (underwater chart).
+  All panels share the time axis and the crosshair with the price chart.
+- **Zoom:** 1Y · 3Y · 5Y · 10Y · **Max**; log scale on 5Y+; **double-tap** resets to the chosen zoom.
+- Text summary for screen readers stays, plus the info line is `aria-live="polite"` only for marker taps (not for every crosshair move).

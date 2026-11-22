@@ -10,9 +10,11 @@ export const DEFAULTS = {
   sort: "score",        // score | change | high | name
   minScore: 0,
   market: "all",
-  verdict: "all",       // all | sale | check | trap        // all | US | EU
+  verdict: "all",       // all | sale | check | trap
+  tags: [],             // show stocks with any of these tags        // all | US | EU
   onboarded: false,
-  chartShow: { zones: true, ma: true, markers: true },
+  chartShow: { zones: true, ma: true, markers: true, range52: false, valuation: true },
+  chartPanels: { score: true, rsi: true, volume: false, drawdown: false },
 };
 
 let prefs = { ...DEFAULTS };

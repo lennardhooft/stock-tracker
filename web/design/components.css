@@ -290,6 +290,7 @@ a.stock[aria-current="page"] { border-color: var(--color-accent); box-shadow: in
 .stock__spark { grid-area: spark; justify-self: end; color: var(--color-muted); }
 .stock__note { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); }
 .stock__verdict { grid-column: 1 / -1; margin-top: var(--space-2); }
+.stock__tags { grid-column: 1 / -1; font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stock__verdict .verdict { padding: 2px var(--space-2); font-size: var(--text-xs); }
 
 /* change indicator */
@@ -602,6 +603,9 @@ button.badge::after { content: ""; position: absolute; inset: -8px -4px; }
 /* chart */
 .chart-box { height: 320px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-border); background: var(--color-surface); }
 @media (min-width: 768px) { .chart-box { height: 420px; } }
+.chart-info { min-height: 1.5em; margin: var(--space-2) 0 var(--space-1); }
+.chart-box--panel { height: 84px; }
+.chart-panel__label { margin: var(--space-2) 0 2px; }
 .chart-legend { display: flex; flex-wrap: wrap; gap: var(--space-3); font-size: var(--text-sm); color: var(--color-text-2); margin-top: var(--space-2); }
 .chart-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: var(--space-1); }
 

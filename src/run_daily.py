@@ -110,6 +110,12 @@ def process_symbol(
     sma200 = ind.sma(weekly, 200)
     wk = levels.resample_ohlc(ohlc, "W-FRI").iloc[-DETAIL_WEEKS:]
     hist = sc.weekly_score_history(close, vix_hist, cfg).reindex(wk.index)
+    top_hist = top_score.weekly_top_history(close, cfg).reindex(wk.index)
+    vol = (
+        clean["Volume"].resample("W-FRI").sum().reindex(wk.index)
+        if "Volume" in clean
+        else pd.Series(index=wk.index, dtype=float)
+    )
 
     def _clean_list(s: pd.Series, nd: int = 4) -> list[float | None]:
         return [None if pd.isna(v) else round(float(v), nd) for v in s]
@@ -142,6 +148,8 @@ def process_symbol(
             "c": _clean_list(wk["Close"]),
             "sma200": _clean_list(sma200.reindex(wk.index)),
             "score": _clean_list(hist, 0),  # reconstructed weekly Bottom Score (S1 = VIX only)
+            "top": _clean_list(top_hist, 0),  # reconstructed weekly Top Score (U1 + U2 only)
+            "v": _clean_list(vol, 0),  # weekly volume
             "levels": zones,  # support / resistance zones + major swings (6.5)
         },
         "fundamentals": fund,

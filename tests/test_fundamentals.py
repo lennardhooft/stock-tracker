@@ -130,3 +130,14 @@ def test_next_earnings_and_recent_headline():
     ]
     assert fu.recent_headline(news, now)["headline"] == "fresh"
     assert fu.recent_headline(news[1:], now) is None
+
+
+def test_valuation_percentile_levels():
+    from datetime import date
+
+    from src.fundamentals import valuation_from_points
+
+    pts = [(f"{2016 + i}-12-31", float(v)) for i, v in enumerate(range(10, 20))]
+    v = valuation_from_points(pts, 15.0, today=date(2026, 6, 1))
+    # numpy linear percentile of 10..19: p20 = 11.8, p80 = 17.2
+    assert v["p20"] == 11.8 and v["p80"] == 17.2
