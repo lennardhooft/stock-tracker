@@ -72,13 +72,16 @@ function supabaseApi(cfg) {
 
     /* ---- portfolio (readable only at aal2: row-level security) ---- */
     async loadPortfolio() {
-      const [tx, ps, rs, perf] = await Promise.all([
+      const [tx, ps, rs, perf, th, pend, rev] = await Promise.all([
         q(sb.from("transactions").select("*").order("date")),
         q(sb.from("portfolio_settings").select("*")),
         q(sb.from("risk_settings").select("*")),
         q(sb.from("portfolio_perf").select("data,updated_at")).catch(() => []), // table added in 3C
+        q(sb.from("thesis").select("*")).catch(() => []), // tables added in 3D
+        q(sb.from("pending_decisions").select("*").order("created_at")).catch(() => []),
+        q(sb.from("reviews").select("*")).catch(() => []),
       ]);
-      return { transactions: tx, settings: ps[0] || null, risk: rs[0] || null, perf: perf[0] || null };
+      return { transactions: tx, settings: ps[0] || null, risk: rs[0] || null, perf: perf[0] || null, thesis: th, pending: pend, reviews: rev };
     },
     addTransaction: (row) => q(sb.from("transactions").insert(row).select().single()),
     addTransactions: (rows) => q(sb.from("transactions").insert(rows).select()),
@@ -88,6 +91,11 @@ function supabaseApi(cfg) {
     /** Broker rows → Yahoo tickers (lookup-symbols function): [{best, candidates}] */
     lookupSymbols: async (items) => (await invoke("lookup-symbols", { items }))?.results || [],
     deleteTransaction: (id) => q(sb.from("transactions").delete().eq("id", id)),
+    /* Phase 3D: thesis, cooling-off decisions, post-trade reviews */
+    saveThesis: async (row) => (await q(sb.from("thesis").upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "user_id,symbol" }).select()))[0],
+    addPending: async (row) => (await q(sb.from("pending_decisions").insert(row).select()))[0],
+    updatePending: (id, patch) => q(sb.from("pending_decisions").update(patch).eq("id", id)),
+    addReview: async (row) => (await q(sb.from("reviews").insert(row).select()))[0],
     savePortfolioSettings: (row) => q(sb.from("portfolio_settings").upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "user_id" })),
     async saveRisk(profile, settings) {
       await q(sb.from("risk_settings").upsert({ profile, settings, updated_at: new Date().toISOString() }, { onConflict: "user_id" }));
@@ -254,6 +262,7 @@ function demoApi(fixture) {
           next_earnings: s.next_earnings || null,
           signals: demoSignals(s, market), top: demoTop(s, market), quality: s.quality || null, verdict: s.verdict || null,
           risk: s.risk || null,
+          metrics: s.metrics || null,
           dividends: s.dividends ? { ...s.dividends, history: (s.dividends.history_days_ago || []).map(([d, a]) => [inDays(-d), a]) } : null,
           next_dividend: s.dividend ? { ...s.dividend, ex_date: inDays(s.dividend.ex_in_days), pay_date: s.dividend.pay_in_days != null ? inDays(s.dividend.pay_in_days) : null } : null,
           sparkline: weeklySeries(s.symbol, s.price, s.pct_from_52w_high).c.slice(-52),
@@ -302,7 +311,11 @@ function demoApi(fixture) {
         const empty = fixture === "empty" || fixture === "new" || fixture === "noportfolio";
         demoPf = { transactions: empty ? [] : (f.portfolio?.transactions || []).map((t, i) => ({ id: `t${i}`, ...t })),
           settings: empty ? null : f.portfolio?.settings || null, risk: null,
-          perf: empty || fixture === "noperf" ? null : { data: f.portfolio?.perf, updated_at: new Date(Date.now() - 3 * 3600e3).toISOString() } };
+          perf: empty || fixture === "noperf" ? null : { data: f.portfolio?.perf, updated_at: new Date(Date.now() - 3 * 3600e3).toISOString() },
+          thesis: empty ? [] : structuredClone(f.portfolio?.thesis || []),
+          pending: empty ? [] : (f.portfolio?.pending || []).map((p) => ({ ...p, created_at: new Date(Date.now() - p.hours_ago * 3600e3).toISOString(),
+            decide_after: new Date(Date.now() - (p.hours_ago - 24) * 3600e3).toISOString() })),
+          reviews: [] };
         if (fixture === "earlyperf" && demoPf.perf) demoPf.perf.data = { ...demoPf.perf.data, trading_days: 4, since: demoPf.perf.data.as_of };
       }
       return structuredClone(demoPf);
@@ -321,6 +334,15 @@ function demoApi(fixture) {
       return items.map((it) => f.lookup?.[it.isin] || f.lookup?.[it.name] || { best: null, candidates: [] });
     },
     async deleteTransaction(id) { demoPf.transactions = demoPf.transactions.filter((x) => x.id !== id); },
+    async saveThesis(row) {
+      const i = demoPf.thesis.findIndex((x) => x.symbol === row.symbol);
+      const next = { ...(i >= 0 ? demoPf.thesis[i] : {}), ...row, updated_at: new Date().toISOString() };
+      if (i >= 0) demoPf.thesis[i] = next; else demoPf.thesis.push(next);
+      return next;
+    },
+    async addPending(row) { const r = { id: `p${Date.now()}`, status: "waiting", created_at: new Date().toISOString(), ...row }; demoPf.pending.push(r); return r; },
+    async updatePending(id, patch) { Object.assign(demoPf.pending.find((x) => x.id === id) || {}, patch); },
+    async addReview(row) { const r = { id: `r${Date.now()}`, created_at: new Date().toISOString(), ...row }; demoPf.reviews.push(r); return r; },
     async savePortfolioSettings(row) { demoPf.settings = { ...(demoPf.settings || {}), ...row }; },
     async saveRisk(profile, settings) { demoPf.risk = { profile, settings }; },
     runUpdate: async () => { await delay(300); return "started"; },

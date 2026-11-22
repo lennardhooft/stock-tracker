@@ -15,6 +15,7 @@ import { openSheet, toast } from "../components/overlays.js";
 import { statusBanners } from "./common.js";
 import { openMfaSetup } from "./more.js";
 import { moneyCards } from "./money.js";
+import { decisionFields, wireDecision, readDecision, tradeSnapshot, guardCards, preTradeTop, preTradeBody, wirePreTrade, thesisLine } from "./guard.js";
 
 const TYPES = ["broad_etf", "sector_etf", "bond_etf", "stock", "speculative", "crypto", "other"];
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "CAD", "DKK", "SEK", "NOK", "JPY"];
@@ -109,6 +110,7 @@ export function renderPortfolio(ctx, main) {
 
     ${riskCard(ctx, pf)}
 
+    ${guardCards(ctx)}
     ${moneyCards(ctx, pf)}
 
     <div class="cluster" style="justify-content:space-between;align-items:baseline"><h2 class="section-title">${t("pf.holdings", { n: pf.holdings.length })}</h2>
@@ -120,6 +122,7 @@ export function renderPortfolio(ctx, main) {
         valueText: `${eur(h.value)} · ${fmt.pct(h.weight, 1)}`,
         plText: h.pl == null ? "" : `${t("pf.sinceBought")} ${signedEur(h.pl)} (${signedPct(h.plPct)})${h.priced ? "" : ` · ${t("pf.atCost")}`}`,
         capText: cap != null ? t("pf.capLine", { cap: fmt.pct(cap, 0) }) : t(`pf.type.${h.type}`),
+        noteText: h.row?.symbol ? thesisLine(ctx, h.row) : "",
         over: cap != null && h.weight > cap + 0.05,
       })}</li>`;
     })}</ul>
@@ -194,7 +197,7 @@ async function refreshPortfolio(ctx, { watchlistChanged = false } = {}) {
 /* ------------------------------------------------------------------ add trade */
 const PRICE_LABEL = { buy: "trade.price", sell: "trade.price", start: "trade.avgPrice", dividend: "trade.dividendPerShare" };
 
-export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
+export function openTradeSheet(ctx, { symbol = "", kind = "buy", quantity = "", price = "", reason = "", pendingId = null } = {}) {
   const today = new Date().toISOString().slice(0, 10);
   const row = ctx.rows.find((r) => r.symbol === symbol);
   const { el, close } = openSheet({ title: t("pf.addTrade"), body: html`<form class="stack" id="trade-form" novalidate>
@@ -205,11 +208,11 @@ export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
       <datalist id="trade-symbols">${ctx.rows.map((r) => html`<option value="${r.symbol}">${r.name || ""}</option>`)}</datalist>
       <span class="field__hint">${t("trade.symbolHint")}</span></label>
     <div class="cluster" style="gap:var(--space-3);align-items:flex-start">
-      <label class="field" style="flex:1;min-width:130px"><span class="field__label">${t("trade.quantity")}</span><input class="input num" name="quantity" inputmode="decimal" required></label>
+      <label class="field" style="flex:1;min-width:130px"><span class="field__label">${t("trade.quantity")}</span><input class="input num" name="quantity" inputmode="decimal" required value="${quantity !== "" ? fmt.num(quantity, Number.isInteger(quantity) ? 0 : 3) : ""}"></label>
       <label class="field" style="flex:1;min-width:130px"><span class="field__label">${t("trade.date")}</span><input class="input" type="date" name="date" value="${today}" max="${today}" required></label>
     </div>
     <div class="cluster" style="gap:var(--space-3);align-items:flex-start">
-      <label class="field" style="flex:2;min-width:150px"><span class="field__label" id="price-label">${t(PRICE_LABEL[kind])}</span><input class="input num" name="price" inputmode="decimal" required></label>
+      <label class="field" style="flex:2;min-width:150px"><span class="field__label" id="price-label">${t(PRICE_LABEL[kind])}</span><input class="input num" name="price" inputmode="decimal" required value="${price !== "" ? fmt.num(price, 2) : ""}"></label>
       <label class="field" style="flex:1;min-width:100px"><span class="field__label">${t("trade.currency")}</span>
         <select class="input" name="currency">${CURRENCIES.map((c) => html`<option ${c === (row?.currency || "EUR") ? "selected" : ""}>${c}</option>`)}</select></label>
     </div>
@@ -220,10 +223,18 @@ export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
     <label class="field"><span class="field__label">${t("trade.type")}</span>
       <select class="input" name="asset_type">${TYPES.map((k) => html`<option value="${k}" ${k === (row?.asset_type || row?.risk?.suggested_type || "stock") ? "selected" : ""}>${t(`pf.type.${k}`)}</option>`)}</select>
       <span class="field__hint">${t("trade.typeHint")}</span></label>
+    <div class="stack" id="decision-box" style="gap:var(--space-3)">${decisionFields(ctx, kind, symbol)}</div>
     <p id="trade-msg" class="small" role="status" aria-live="polite"></p>
     <button class="btn btn--primary btn--block" type="submit">${t("trade.save")}</button>
   </form>` });
   const form = $("#trade-form", el);
+  const box = $("#decision-box", el);
+  const drawDecision = () => {
+    mount(box, html`${decisionFields(ctx, kind, form.symbol.value.trim().toUpperCase())}`);
+    if (reason && box.querySelector("[name=reason]")) box.querySelector("[name=reason]").value = reason;
+  };
+  drawDecision();
+  wireDecision(box);
   const msg = $("#trade-msg", el);
   const prefillShares = () => { // a dividend is paid on the shares you own
     const sym = form.symbol.value.trim().toUpperCase();
@@ -236,6 +247,7 @@ export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
     const r = ctx.rows.find((x) => x.symbol === form.symbol.value.trim().toUpperCase());
     if (r?.currency) form.currency.value = r.currency;
     if (r) form.asset_type.value = r.asset_type || r.risk?.suggested_type || "stock";
+    drawDecision();
   });
   el.addEventListener("click", (e) => {
     const k = e.target.closest("[data-kind]");
@@ -246,6 +258,7 @@ export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
     $("#price-label", el).textContent = t(PRICE_LABEL[kind]);
     $("#taxes-label", el).textContent = t(kind === "dividend" ? "trade.withholding" : "trade.taxes");
     if (kind === "dividend" && !form.quantity.value) prefillShares();
+    drawDecision();
   });
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -266,6 +279,8 @@ export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
       const owned = valuePortfolio(ctx.pf?.transactions || [], ctx.rows, {}, fx(ctx)).holdings.find((h) => h.symbol === sym)?.qty || 0;
       if (qty > owned + 1e-9) return fail(form.quantity, "trade.sellTooMuch", { owned: fmt.num(owned, Number.isInteger(owned) ? 0 : 4) });
     }
+    const dec = readDecision(box);
+    if (dec.missing) return fail(box.querySelector(dec.missing === "guard.needWhy" ? "[name=reason]" : "button"), dec.missing);
     const btn = form.querySelector('[type="submit"]');
     btn.setAttribute("aria-busy", "true");
     try {
@@ -284,7 +299,12 @@ export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
       const tx = await ctx.api.addTransaction({
         date: form.date.value, symbol: sym, kind, quantity: qty, price, currency: cur, fees, taxes,
         fx_rate: cur !== "EUR" && form.date.value === today ? fx(ctx)[cur] || null : null,
+        ...(kind === "buy" || kind === "sell" ? { reason: dec.reason || null, emotion: dec.emotion || null, thesis_broken: dec.thesis_broken ?? null, snapshot: tradeSnapshot(ctx, sym) } : {}),
       });
+      if (pendingId && kind === "buy") { // the cooled-off idea became a trade
+        await ctx.api.updatePending(pendingId, { status: "bought" });
+        Object.assign((ctx.pf?.pending || []).find((p) => p.id === pendingId) || {}, { status: "bought" });
+      }
       close();
       toast(t("trade.saved", { symbol: sym }), { undo: async () => { await ctx.api.deleteTransaction(tx.id); await refreshPortfolio(ctx); } });
       await refreshPortfolio(ctx, { watchlistChanged });
@@ -372,6 +392,7 @@ export function renderCanIBuy(ctx, main, symbol) {
       <p class="small muted">${row.symbol} · ${t(`pf.type.${type}`)}${c.vol ? ` · ${t("cib.volLine", { vol: fmt.pct(c.vol * 100, 0) })}` : ""}${row.quality?.score != null ? ` · ${t("quality.score")} ${row.quality.score}` : ""}</p>
     </div>${["sale", "check", "trap"].includes(row.verdict) ? html`<div>${verdictBadge(row.verdict)}</div>` : ""}</div>
 
+    ${preTradeTop(ctx, row)}
     <section class="card stack" aria-live="polite" id="cib-answer">
       ${res.room > 0 ? html`<p class="answer">${t("cib.upTo", { amount: eur(res.maxPosition) })}</p>
       <p>${res.owned > 0 ? t("cib.ownRoom", { owned: eur(res.owned), room: eur(res.room) }) : t("cib.room", { room: eur(res.room) })}
@@ -387,6 +408,8 @@ export function renderCanIBuy(ctx, main, symbol) {
     </section>
 
     ${res.notes.length ? html`<div class="stack" style="gap:var(--space-2);margin-top:var(--space-3)">${res.notes.map((n) => banner({ tone: n === "earningsSoon" ? "warning" : "info", title: t(`cib.note.${n}`, { days }), body: "" }))}</div>` : ""}
+
+    ${preTradeBody()}
 
     <h3 class="section-title">${t("cib.rulesTitle")}</h3>
     <ul class="signals card">${res.rules.map((r) => html`<li class="signal rule-row" data-state="${r.key === res.limiting ? "passed" : "na"}" data-limiting="${r.key === res.limiting}">
@@ -406,7 +429,6 @@ export function renderCanIBuy(ctx, main, symbol) {
     <h3 class="section-title">${t("cib.planTitle")}</h3>
     <div class="card" id="cib-plan"><span class="skeleton skeleton--text"></span></div>
 
-    <button type="button" class="btn btn--secondary btn--block" data-action="add-trade" style="margin-top:var(--space-4)">${icon("plus")}${t("cib.afterBuying")}</button>
     <p class="xs muted" style="margin-top:var(--space-3)">${t("cib.disclaimer")}</p>`);
 
   const amount = $("#cib-amount", main);
@@ -418,7 +440,7 @@ export function renderCanIBuy(ctx, main, symbol) {
     out.textContent = r.fits ? `✅ ${t("cib.fits", { amount: eur(parseNum(amount.value)) })}` : `⚠️ ${t("cib.tooMuch", { amount: eur(parseNum(amount.value)), over: eur(r.over) })}`;
     out.style.color = r.fits ? "var(--color-positive)" : "var(--color-warning)";
   });
-  $('[data-action="add-trade"]', main).addEventListener("click", () => openTradeSheet(ctx, { symbol: row.symbol }));
+  const pt = wirePreTrade(ctx, main, { row, pf, res, type, cand: { ...cand, currency: row.currency } });
 
   // staged plan needs the levels + 200-week average from the detail data
   const planEl = $("#cib-plan", main);
@@ -428,6 +450,7 @@ export function renderCanIBuy(ctx, main, symbol) {
     const sma = (w.sma200 || []).filter((x) => x != null).pop() || null;
     const sup = (w.levels?.zones || []).filter((z) => z.role === "support").sort((a, b) => Math.abs(a.distance_pct) - Math.abs(b.distance_pct))[0];
     const plan = stagedPlan(res.room, row.price, { support: sup ? (sup.low + sup.high) / 2 : null, sma200: sma });
+    pt.setIdeas(sup ? (sup.low + sup.high) / 2 : null, sma);
     mount(planEl, plan.length ? html`<ul class="signals">${plan.map((p) => html`<li class="signal" data-state="na">
         <span class="signal__icon">${icon(p.why === "now" ? "check" : "trendDown")}</span>
         <span class="signal__name num">${eur(p.amount)} ${p.why === "now" ? t("cib.planNow") : t("cib.planAt", { price: fmt.money(p.at, row.currency) })}</span>

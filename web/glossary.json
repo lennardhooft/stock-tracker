@@ -292,5 +292,19 @@
     "why": "It's the difference between the gross dividend and what lands on your account.",
     "how": "Part of the foreign tax can sometimes be reclaimed; check your broker's documents.",
     "limits": "The app's rates are estimates; your broker's statement is the reference."
+  },
+  "thesis_rules": {
+    "title": "Thesis rules",
+    "what": "Numbers that must stay true for your reason to own a stock to hold, like 'sales growth at least 10 %'.",
+    "why": "Writing them down before problems start stops you from explaining bad news away later.",
+    "how": "✅ all rules hold · ⚠️ one broke · ❌ several broke. A broken rule means: re-read your thesis, not automatically sell.",
+    "limits": "Figures come from yearly reports (via Yahoo), so they change a few times a year and can be missing for some stocks."
+  },
+  "decision_log": {
+    "title": "Decision log",
+    "what": "Every buy and sell with one line of why and how you felt (calm, following your plan, FOMO, fear).",
+    "why": "Over months it shows which kind of decision works for you. FOMO buys often do worse than planned ones.",
+    "how": "Compare the average result per feeling. Rate each decision's process at the 3 and 12-month review.",
+    "limits": "A few trades say little: luck dominates small samples."
   }
 }

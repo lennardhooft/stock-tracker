@@ -32,6 +32,10 @@ TABLES = [
     "risk_snapshot",
     "calendar_tokens",
     "portfolio_perf",
+    "thesis",
+    "pending_decisions",
+    "reviews",
+    "reminders_sent",
 ]
 
 pytestmark = pytest.mark.skipif(not (URL and ANON), reason="needs SUPABASE_URL + SUPABASE_ANON_KEY")

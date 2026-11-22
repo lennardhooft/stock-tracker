@@ -27,7 +27,7 @@ async function quality(page, label) {
   const rawKeys = await page.evaluate(() => {
     const txt = document.body.innerText;
     return (txt.match(/\b[a-z]+\.[a-zA-Z]+(\.[a-zA-Z0-9]+)*\b/g) || [])
-      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal|pf|cib|risk|trade|mfa|imp|risk3|ret|div|txl|tax)\./.test(k));
+      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal|pf|cib|risk|trade|mfa|imp|risk3|ret|div|txl|tax|guard|thesis|dec)\./.test(k));
   });
   expect(rawKeys, `${label}: untranslated i18n keys`).toEqual([]);
 
@@ -79,6 +79,8 @@ const SCREENS = [
   ["dividends", "#/portfolio/dividends"],
   ["transactions", "#/portfolio/transactions"],
   ["tax", "#/portfolio/tax"],
+  ["thesis", "#/thesis/ORCA"],
+  ["decisions", "#/portfolio/decisions"],
   ["more", "#/more"],
   ["settings", "#/more/settings"],
   ["health", "#/more/health"],
@@ -112,6 +114,8 @@ const STATES = [
   ["dividends-none", "#/portfolio/dividends", "noportfolio"],
   ["tax-empty", "#/portfolio/tax", "noportfolio"],
   ["returns-no-mfa", "#/portfolio/returns", "nomfa"],
+  ["decisions-empty", "#/portfolio/decisions", "noportfolio"],
+  ["thesis-no-mfa", "#/thesis/ORCA", "nomfa"],
   ["mfa-code", "#/", "mfa"],
   ["calm", "#/", "calm"],
   ["partial", "#/", "partial"],
@@ -863,6 +867,124 @@ test("tax overview: year chips, FIFO sale, dividends, costs, CSV", async ({ page
 
 test("Dutch: 3C screens fully translated", async ({ page }) => {
   for (const path of ["#/portfolio/returns", "#/portfolio/dividends", "#/portfolio/transactions", "#/portfolio/tax"]) {
+    await open(page, path, { lang: "nl" });
+    await quality(page, `nl ${path}`);
+  }
+});
+
+/* ------------------------------------------------------------ Phase 3D: guardrails, thesis, decisions */
+test("can I buy: FOMO warning first, checklist, costs, impact", async ({ page }) => {
+  await open(page, "#/canibuy/ORCA");
+  const fomoBanner = page.locator(".banner").filter({ hasText: "ORCA is up 42 % in 3 months" });
+  await expect(fomoBanner).toBeVisible();
+  // the warning comes before the answer
+  const [b, a] = await Promise.all([fomoBanner.boundingBox(), page.locator("#cib-answer").boundingBox()]);
+  expect(b.y).toBeLessThan(a.y);
+  await expect(page.locator('[data-check="fomo"]')).toContainText("Check");
+  await expect(page.locator('[data-check="plan"]')).toContainText("In your plan");
+  await expect(page.locator("#pt-costs")).toContainText("Type an amount");
+  await page.locator("#cib-amount").fill("1000");
+  await expect(page.locator("#pt-costs")).toContainText("Costs about");
+  await expect(page.locator("#pt-costs")).toContainText("stock exchange tax € 3,50");
+  await expect(page.locator("#pt-impact")).toContainText("ORCA");
+  await expect(page.locator('[data-check="sizing"]')).not.toContainText("Type an amount");
+  await quality(page, "canibuy checklist");
+});
+
+test("cooling-off: decide tomorrow for a stock that isn't in your plan", async ({ page }) => {
+  await open(page, "#/canibuy/NEWCO");
+  await expect(page.locator('[data-check="plan"]')).toContainText("Not in your plan");
+  await page.getByRole("button", { name: "Decide tomorrow" }).click();
+  await page.locator("#wait-form [name=reason]").fill("New listing, curious");
+  await page.getByRole("button", { name: "Wait 24 hours" }).click();
+  await expect(page.locator(".toast").first()).toContainText("NEWCO: decide from");
+  await expect(page.locator(".banner").filter({ hasText: "You chose to wait" })).toBeVisible();
+});
+
+test("ready decision: log this trade prefills the sheet and needs a reason and a feeling", async ({ page }) => {
+  await open(page, "#/portfolio");
+  await expect(page.locator("[data-pending]")).toContainText("Ready to decide: VLTA.AS € 1.500");
+  await page.locator("[data-pending]").click();
+  await expect(page.locator(".banner").filter({ hasText: "You waited a day" })).toBeVisible();
+  await page.locator("#cib-amount").fill("1500");
+  await page.getByRole("button", { name: "Log this trade" }).click();
+  const sheet = page.locator("#trade-form");
+  await expect(sheet.locator("[name=quantity]")).toHaveValue("1,164");
+  await expect(sheet.locator("[name=price]")).toHaveValue("1.288,20");
+  await expect(sheet.locator("[name=reason]")).toHaveValue("Down 30 %, looks cheap");
+  await sheet.getByRole("button", { name: "Save trade" }).click();
+  await expect(page.locator("#trade-msg")).toContainText("Pick how you feel");
+  await sheet.getByRole("button", { name: "Following my plan" }).click();
+  await quality(page, "trade sheet with decision log");
+  await sheet.getByRole("button", { name: "Save trade" }).click();
+  await expect(page.locator(".toast").first()).toContainText("VLTA.AS saved");
+  await page.goto(page.url().replace(/#.*$/, "#/portfolio"));
+  await expect(page.locator("[data-pending]")).toHaveCount(0);
+});
+
+test("panic-sell check: selling far below the high asks about your sell reasons", async ({ page }) => {
+  await open(page, "#/portfolio");
+  await page.getByRole("button", { name: "Add trade" }).click();
+  const sheet = page.locator("#trade-form");
+  await sheet.getByRole("button", { name: "Sell" }).click();
+  await sheet.locator("[name=symbol]").fill("HALD");
+  await sheet.locator("[name=symbol]").dispatchEvent("change");
+  await expect(sheet.locator("[data-panic]")).toContainText("Has one of your sell reasons actually happened?");
+  await sheet.locator("[name=quantity]").fill("10");
+  await sheet.locator("[name=price]").fill("8,40");
+  await sheet.locator("[name=reason]").fill("Scared");
+  await sheet.getByRole("button", { name: "Fear" }).click();
+  await sheet.getByRole("button", { name: "Save trade" }).click();
+  await expect(page.locator("#trade-msg")).toContainText("Answer the question about your sell reasons");
+  await sheet.getByRole("button", { name: "No, I'm nervous" }).click();
+  await sheet.getByRole("button", { name: "Save trade" }).click();
+  await expect(page.locator(".toast").first()).toContainText("HALD saved");
+});
+
+test("portfolio page: trade counter, reviews due, thesis status on holdings", async ({ page }) => {
+  await open(page, "#/portfolio");
+  await expect(page.locator("[data-trade-count]")).toContainText(/Trades this month: \d+ of 4/);
+  await expect(page.getByRole("link", { name: /decisions to review/ })).toBeVisible();
+  await expect(page.locator(".stock").filter({ hasText: "ORCA" })).toContainText("1 thesis rule broken");
+  await expect(page.locator(".stock").filter({ hasText: "NRDX" })).toContainText("Thesis intact");
+});
+
+test("thesis: rules show the current value, status updates live, save", async ({ page }) => {
+  await open(page, "#/thesis/ORCA");
+  await expect(page.locator("#th-status")).toContainText("1 thesis rule broken");
+  await expect(page.locator(".th-rule")).toHaveCount(3);
+  await expect(page.locator(".th-rule").first()).toContainText("Now 6,3 %");
+  await page.locator(".th-rule").first().locator("[data-f=value]").fill("5");
+  await page.locator(".th-rule").first().locator("[data-f=value]").dispatchEvent("change");
+  await expect(page.locator("#th-status")).toContainText("Thesis intact");
+  await page.getByRole("button", { name: "Add a check" }).click();
+  await expect(page.locator(".th-rule")).toHaveCount(4);
+  await page.getByRole("button", { name: "Save thesis" }).click();
+  await expect(page.locator(".toast").first()).toContainText("ORCA thesis saved");
+});
+
+test("decisions: review a decision, results by feeling", async ({ page }) => {
+  await open(page, "#/portfolio/decisions");
+  await expect(page.locator(".summary")).toContainText(/\d+ decisions are ready for a review/);
+  await expect(page.locator("[data-review]")).toHaveCount(3);
+  await page.getByRole("button", { name: /Show all \d+/ }).click();
+  const before = await page.locator("[data-review]").count();
+  expect(before).toBeGreaterThan(3);
+  await expect(page.locator("table")).toContainText("FOMO");
+  await page.locator("[data-review]").first().click();
+  const form = page.locator("#rev-form");
+  await expect(form).toContainText("Price");
+  await form.getByRole("button", { name: "Save review" }).click();
+  await expect(page.locator("#rev-msg")).toContainText("Pick good or bad process");
+  await form.getByRole("button", { name: "good process" }).click();
+  await form.locator("[name=lesson]").fill("Stick to the plan");
+  await form.getByRole("button", { name: "Save review" }).click();
+  await expect(page.locator(".toast").first()).toContainText("Review saved");
+  await expect(page.locator("[data-review]")).toHaveCount(before - 1);
+});
+
+test("Dutch: 3D screens fully translated", async ({ page }) => {
+  for (const path of ["#/canibuy/ORCA", "#/thesis/ORCA", "#/portfolio/decisions"]) {
     await open(page, path, { lang: "nl" });
     await quality(page, `nl ${path}`);
   }

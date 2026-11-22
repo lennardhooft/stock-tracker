@@ -1,0 +1,12 @@
+{
+  "_note": "Shared test cases for src/thesis.py and web/lib/thesis.js (FAKE values).",
+  "metrics": { "quality_score": 82, "sales_growth": 6.2, "net_debt_ebitda": 1.4, "roic": null, "from_high": -31.5 },
+  "cases": [
+    { "rules": [], "status": "none" },
+    { "rules": [{ "metric": "quality_score", "op": ">=", "value": 60 }], "oks": [true], "status": "intact" },
+    { "rules": [{ "metric": "sales_growth", "op": ">=", "value": 10 }, { "metric": "net_debt_ebitda", "op": "<=", "value": 3 }], "oks": [false, true], "status": "broken1" },
+    { "rules": [{ "metric": "sales_growth", "op": ">=", "value": 10 }, { "metric": "quality_score", "op": ">=", "value": 90 }], "oks": [false, false], "status": "broken" },
+    { "rules": [{ "metric": "roic", "op": ">=", "value": 12 }], "oks": [null], "status": "unknown" },
+    { "rules": [{ "metric": "from_high", "op": ">=", "value": -31.5 }], "oks": [true], "status": "intact" }
+  ]
+}

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import asdict, dataclass
-from datetime import datetime, time
+from datetime import date, datetime, time
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -377,6 +377,10 @@ def apply_quiet_hours(alerts: list[Alert], now_utc: datetime, cfg: dict[str, Any
 
 def brussels_day(now_utc: datetime) -> str:
     return now_utc.astimezone(ZoneInfo("Europe/Brussels")).strftime("%Y-%m-%d")
+
+
+def brussels_date(now_utc: datetime) -> date:
+    return date.fromisoformat(brussels_day(now_utc))
 
 
 def to_log_row(a: Alert, delivered: bool, sent_at: str) -> dict[str, Any]:

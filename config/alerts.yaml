@@ -13,6 +13,9 @@ kinds:
   earnings_1d:   { enabled: true }                   # earnings on the next trading day
   earnings_result: { enabled: true }                 # beat/miss + next-day move after a report
   data_problem:  { enabled: true }                   # one summary per day when something is red (13.14 E)
+  decision_ready: { enabled: true }                  # a "Decide tomorrow" idea whose 24 hours are over (13.14 C)
+  review_due:    { enabled: true }                   # 3 and 12 months after a buy/sell (13.18 B)
+  thesis_broken: { enabled: true }                   # a holding's thesis rules go from intact to broken (13.14 D)
 
 # Owner decision: no quiet hours. The feature stays available: set enabled: true to use it.
 quiet_hours:

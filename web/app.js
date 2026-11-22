@@ -14,6 +14,7 @@ import { renderLogin, renderMfaCode } from "./screens/login.js";
 import { renderPortfolio, renderCanIBuy, renderRiskSettings } from "./screens/portfolio.js";
 import { renderImport } from "./screens/import.js";
 import { renderReturns, renderDividends, renderTransactions, renderTax } from "./screens/money.js";
+import { renderThesis, renderDecisions } from "./screens/guard.js";
 import { renderToday } from "./screens/today.js";
 import { renderWatchlist, openAddSheet } from "./screens/watchlist.js";
 import { renderCalendar } from "./screens/calendar.js";
@@ -221,11 +222,12 @@ async function route() {
     case "watchlist": head = renderWatchlist(ctx, view, {}); renderNav("watchlist"); break;
     case "calendar": head = renderCalendar(ctx, view); renderNav("calendar"); break;
     case "portfolio":
-      head = ({ returns: renderReturns, dividends: renderDividends, transactions: renderTransactions, tax: renderTax }[r.arg] || renderPortfolio)(ctx, view);
+      head = ({ returns: renderReturns, dividends: renderDividends, transactions: renderTransactions, tax: renderTax, decisions: renderDecisions }[r.arg] || renderPortfolio)(ctx, view);
       renderNav("portfolio");
       break;
     case "canibuy": head = renderCanIBuy(ctx, view, r.arg.toUpperCase()); renderNav("portfolio"); break;
     case "import": head = renderImport(ctx, view); renderNav("portfolio"); break;
+    case "thesis": head = renderThesis(ctx, view, r.arg.toUpperCase()); renderNav("portfolio"); break;
     case "ticker": head = renderWatchlist(ctx, view, { selected: r.arg.toUpperCase() }); renderNav("watchlist"); break;
     case "more":
       renderNav("more");

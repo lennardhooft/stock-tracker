@@ -61,8 +61,9 @@ export function moneyCards(ctx, pf) {
       ${icon("chevron", { cls: "icon card__chevron" })}
     </a>
     <div class="cluster" style="gap:var(--space-2);margin-bottom:var(--space-4)">
-      <a class="btn btn--secondary" href="#/portfolio/transactions" style="flex:1">${t("txl.title")}</a>
-      <a class="btn btn--secondary" href="#/portfolio/tax" style="flex:1">${t("tax.title")}</a>
+      <a class="btn btn--secondary" href="#/portfolio/transactions" style="flex:1 1 40%">${t("txl.title")}</a>
+      <a class="btn btn--secondary" href="#/portfolio/decisions" style="flex:1 1 40%">${t("dec.title")}</a>
+      <a class="btn btn--secondary" href="#/portfolio/tax" style="flex:1 1 40%">${t("tax.title")}</a>
     </div>`;
 }
 

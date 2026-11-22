@@ -30,6 +30,7 @@ class Store(Protocol):
     def load_alert_state(self, day: str) -> set[tuple[str, str, str]]: ...
     def load_latest_scores(self) -> dict[tuple[str, str], dict[str, Any]]: ...
     def load_transactions(self) -> list[dict[str, Any]]: ...
+    def load_table(self, table: str, select: str) -> list[dict[str, Any]]: ...
     def upsert(self, table: str, rows: list[dict[str, Any]], on_conflict: str) -> bool: ...
     def insert(self, table: str, rows: list[dict[str, Any]]) -> bool: ...
 
@@ -96,9 +97,13 @@ class SupabaseStore:
 
     def load_transactions(self) -> list[dict[str, Any]]:
         """All owners' transactions (service key; only used to compute returns, never logged)."""
-        sel = "user_id,date,symbol,kind,quantity,price,currency,fx_rate,fees,taxes,created_at"
+        sel = "id,user_id,date,symbol,kind,quantity,price,currency,fx_rate,fees,taxes,created_at"
         rows = self._get("transactions", {"select": sel, "order": "date"})
         return rows or []
+
+    def load_table(self, table: str, select: str) -> list[dict[str, Any]]:
+        """Rows of an owner table (service key). Never logged."""
+        return self._get(table, {"select": select}) or []
 
     def load_alert_state(self, day: str) -> set[tuple[str, str, str]]:
         rows = self._get("alert_state", {"select": "user_id,symbol,kind", "day": f"eq.{day}"}) or []
@@ -196,6 +201,9 @@ class LocalStore:
 
     def load_transactions(self) -> list[dict[str, Any]]:
         return self._read("transactions_seed")  # out/transactions_seed.json, local tests only
+
+    def load_table(self, table: str, select: str) -> list[dict[str, Any]]:
+        return self._read(f"{table}_seed")  # out/<table>_seed.json, local tests only
 
     def load_alert_state(self, day: str) -> set[tuple[str, str, str]]:
         return {

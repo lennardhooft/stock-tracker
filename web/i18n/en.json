@@ -1285,5 +1285,219 @@
     "disclaimer": "Sales are matched to purchases {method}, with costs included. No tax amount is calculated: rules and rates change, so verify with an advisor or the tax authorities.",
     "emptyTitle": "Nothing to report yet",
     "emptyBody": "Sales, dividends and costs appear here once you've logged them."
+  },
+  "guard": {
+    "panicTitle": "You're selling {pct} below the high. Before you do:",
+    "panicNoThesis": "You didn't write down why you bought it.",
+    "panicQ": "Has one of your sell reasons actually happened?",
+    "panic": {
+      "yes": "Yes, it happened",
+      "no": "No, I'm nervous"
+    },
+    "why": "Why? (one line)",
+    "whyBuyPh": "e.g. Quality on sale at the 200-week average",
+    "whySellPh": "e.g. Sales growth fell below my 10 % rule",
+    "feel": "How do you feel about it?",
+    "feelHint": "Honest answers make your monthly results by feeling useful.",
+    "emotion": {
+      "calm": "Calm",
+      "plan": "Following my plan",
+      "fomo": "FOMO",
+      "fear": "Fear"
+    },
+    "needWhy": "Add one line about why.",
+    "needFeel": "Pick how you feel about it.",
+    "needPanic": "Answer the question about your sell reasons first.",
+    "tradesLine": "Trades this month: {n} of {max}",
+    "limitTitle": "You've reached your {max} trades for {month}.",
+    "limitBody": "Waiting costs nothing. New ideas can go on your watchlist with a buy level.",
+    "readyTitle": "Ready to decide: {symbol} {amount}",
+    "readyBody": "Your 24 hours are over. Look again with fresh eyes.",
+    "waitTitle": "Waiting: {symbol} {amount}",
+    "waitBody": "You can decide from {when}.",
+    "reviewsDue": "{n} decisions to review",
+    "reviewsDueBody": "3 and 12 months later: how did they work out?",
+    "cibReady": "You waited a day. Still in your plan?",
+    "cibWaiting": "You chose to wait. You can decide from {when}.",
+    "yourReason": "Your reason: {reason}",
+    "fomoRise": "{symbol} is up {pct} in 3 months.",
+    "fomoTop": "{symbol} shows signs of overheating (Top Score {top}).",
+    "fomoBody": "Buying after a big run is often FOMO. Is this in your plan, or could it wait a day?",
+    "checkTitle": "Before you buy",
+    "state": {
+      "ok": "OK",
+      "warn": "Check",
+      "na": "—"
+    },
+    "check": {
+      "plan": {
+        "ok": "In your plan (you own it, set a buy level, wrote a thesis or waited a day).",
+        "warn": "Not in your plan yet: no buy level, no thesis, not owned."
+      },
+      "quality": {
+        "ok": "Quality {q}: at least {min}.",
+        "warn": "Quality {q}: below {min}. Check the fundamentals first.",
+        "na": "No Quality Score for this one."
+      },
+      "thesis": {
+        "ok": "Thesis written: you know why you'd own it.",
+        "warn": "No thesis yet: write down why, and what would make you sell."
+      },
+      "earnings": {
+        "ok": "No earnings report in the next week.",
+        "warn": "Earnings in {days} days: the price can jump either way."
+      },
+      "fomo": {
+        "ok": "No sign of chasing a rally.",
+        "warn": "Big rise lately: check it isn't FOMO."
+      },
+      "trades": {
+        "ok": "Trades this month: {n} of {max}.",
+        "warn": "Trades this month: {n} of {max}, your limit is reached."
+      },
+      "sizing": {
+        "ok": "{amount} fits your room ({room}).",
+        "warn": "{amount} is more than your room ({room}).",
+        "na": "Type an amount to check it against your room."
+      },
+      "sector": {
+        "ok": "Room left in its sector.",
+        "warn": "Its sector is already at your maximum."
+      },
+      "region": {
+        "ok": "Room left in its region.",
+        "warn": "Its region is already at your maximum."
+      }
+    },
+    "plannerTitle": "Order planner",
+    "ideasLabel": "Limit price ideas",
+    "idea": {
+      "now": "Now",
+      "support": "Support",
+      "sma200": "200-week avg"
+    },
+    "costs": "Costs about {total} ({pct} of the order).",
+    "costsFee": "Bolero fee {fee}",
+    "costsFeeUnknown": "Bolero fee not known for this market",
+    "costsTob": "stock exchange tax {tob}",
+    "costsNoFx": "currency exchange not included",
+    "costsNeedAmount": "Type an amount above to see costs and the impact on your portfolio.",
+    "impactTitle": "After this buy",
+    "impact": {
+      "position": "{symbol}",
+      "sector": "Sector {name}",
+      "region": "Region {name}",
+      "currency": "In {name}",
+      "satellite": "Satellite part"
+    },
+    "notEnoughCash": "That's {short} more than your cash.",
+    "logTrade": "Log this trade",
+    "decideTomorrow": "Decide tomorrow",
+    "waitWhy": "It's not in your plan yet: waiting {h} hours takes the emotion out. You'll get a reminder.",
+    "dropIt": "Drop the idea",
+    "dropped": "{symbol}: idea dropped",
+    "waitIntro": "{symbol} is saved for {h} hours. Then the app shows the same data again, and you decide with fresh eyes.",
+    "waitReason": "Why do you want it? (optional)",
+    "waitSave": "Wait 24 hours",
+    "waitSaved": "{symbol}: decide from {when}"
+  },
+  "thesis": {
+    "title": "Thesis {symbol}",
+    "link": "Thesis & sell rules",
+    "notOnList": "{symbol} isn't on your watchlist",
+    "lead": "Why you own {symbol}, and what would make you sell. The app checks the rules every night.",
+    "why": "Why I own it",
+    "whyPh": "e.g. Market leader, growing margins, no debt",
+    "sellIf": "What would make me sell",
+    "sellIfPh": "e.g. Sales growth below 10 % for a year",
+    "target": "Target price ({cur})",
+    "review": "Review date",
+    "rulesTitle": "Automatic checks",
+    "rulesHint": "Each rule is checked after every report and nightly. You get a Telegram message when one breaks.",
+    "noRules": "No automatic checks yet.",
+    "metric": "Metric",
+    "op": "Rule",
+    "value": "Value",
+    "atLeast": "at least",
+    "atMost": "at most",
+    "m": {
+      "quality_score": "Quality Score",
+      "sales_growth": "Sales growth (per year, %)",
+      "operating_margin": "Operating margin (%)",
+      "net_debt_ebitda": "Net debt / EBITDA (×)",
+      "interest_cover": "Interest cover (×)",
+      "roic": "Return on capital, ROIC (%)",
+      "fcf_years": "Years with positive free cash flow (of 4)",
+      "share_change": "Share count change (per year, %)",
+      "bottom_score": "Bottom Score",
+      "from_high": "Distance from 52-week high (%)"
+    },
+    "removeRule": "Remove rule {n}",
+    "addRule": "Add a check",
+    "now": "Now {value}",
+    "ok": "holds",
+    "broken": "broken",
+    "unknown": "no data yet",
+    "save": "Save thesis",
+    "saved": "{symbol} thesis saved",
+    "badValue": "Every check needs a number.",
+    "badTarget": "The target price must be more than 0.",
+    "status": {
+      "intact": "✅ Thesis intact",
+      "broken1": "⚠️ 1 thesis rule broken",
+      "broken": "❌ Several thesis rules broken",
+      "unknown": "Thesis: no data yet",
+      "none": "No thesis rules"
+    },
+    "statusShort": {
+      "intact": "intact",
+      "broken1": "1 rule broken",
+      "broken": "several rules broken",
+      "unknown": "no data yet",
+      "none": "no rules"
+    }
+  },
+  "dec": {
+    "title": "Decisions & reviews",
+    "emptyTitle": "No decisions yet",
+    "emptyBody": "Buys and sells you log appear here, with your reason and how you felt, so you can learn from them.",
+    "leadDue": "{n} decisions are ready for a review.",
+    "leadNone": "No reviews due. Your decisions and what happened since:",
+    "dueTitle": "To review",
+    "reviewOf": {
+      "buy": "Review: you bought {symbol} {m} months ago",
+      "sell": "Review: you sold {symbol} {m} months ago"
+    },
+    "dueSince": "due since {date}",
+    "byFeeling": "Results by feeling",
+    "feeling": "Feeling",
+    "count": "Decisions",
+    "avgSince": "Avg. since",
+    "byFeelingNote": "Buys: price now vs your price. Sales: what you avoided (a fall after selling counts as positive). In the stock's own currency.",
+    "allTitle": "All decisions",
+    "sinceBuy": "since:",
+    "sinceSell": "since selling:",
+    "noReason": "no reason logged",
+    "panicYes": "sold because a sell reason happened",
+    "panicNo": "sold while nervous",
+    "reviewed": "Reviewed after {due} months: {process}",
+    "process": {
+      "good": "good process",
+      "bad": "bad process"
+    },
+    "priceThenNow": "Price {then} on {date} → {now} now",
+    "benchSame": "MSCI World over the same period: {pct}",
+    "benchNa": "MSCI World comparison: available after the nightly update.",
+    "signalsThen": "Then: Bottom Score {score}, Quality {quality}, {verdict}",
+    "youSaid": "You said: “{reason}”",
+    "thesisNow": "Thesis now: {status}",
+    "rateProcess": "Was it a good decision process?",
+    "rateHint": "Judge how you decided (plan, research, calm), not only how the price went.",
+    "lesson": "Lesson (optional)",
+    "saveReview": "Save review",
+    "reviewSaved": "Review saved",
+    "needProcess": "Pick good or bad process.",
+    "footer": "Your own decisions and results, for learning. Not financial advice.",
+    "showAll": "Show all {n}"
   }
 }

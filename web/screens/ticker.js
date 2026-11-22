@@ -532,6 +532,7 @@ function notesTab(ctx, panel, row) {
       <textarea class="input" name="notes" rows="5" maxlength="2000" style="min-height:120px">${row.notes || ""}</textarea>
       <span class="field__hint">${t("ticker.notesHint")}</span></label>
     <button class="btn btn--primary" type="submit">${t("common.save")}</button>
+    <a class="btn btn--secondary" href="#/thesis/${encodeURIComponent(row.symbol)}">${t("thesis.link")}${icon("chevron")}</a>
     <hr style="border:0;border-top:1px solid var(--color-border);margin:var(--space-4) 0">
     <button class="btn btn--destructive" type="button" data-remove>${icon("trash")}${t("watchlist.remove")}</button>
   </form>`);

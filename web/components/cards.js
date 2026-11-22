@@ -128,7 +128,7 @@ export function budgetBar({ label, pct, limit, kind = "max", text = "", note = "
 }
 
 /** Holding card: stock card layout + value, weight vs cap, P/L. h from valuePortfolio(). */
-export function holdingCard(h, { href = "", capText = "", over = false, valueText = "", plText = "" } = {}) {
+export function holdingCard(h, { href = "", capText = "", over = false, valueText = "", plText = "", noteText = "" } = {}) {
   return html`<a class="stock" href="${href}">
     <div class="stock__head">
       <div class="stock__id"><span class="stock__ticker">${h.symbol}</span><span class="stock__name truncate">${h.name || ""}</span></div>
@@ -136,5 +136,6 @@ export function holdingCard(h, { href = "", capText = "", over = false, valueTex
     </div>
     <div class="stock__price num"><strong>${valueText}</strong>${h.change_pct != null ? changeTag(h.change_pct, 1) : ""}</div>
     <div class="holding__line"><span>${plText}</span><span class="${over ? "holding__over" : ""}">${over ? "⚠️ " : ""}${capText}</span></div>
+    ${noteText ? html`<div class="holding__line"><span>${noteText}</span></div>` : ""}
   </a>`;
 }

@@ -28,6 +28,8 @@ from src import (
     log,
     performance,
     quality,
+    reminders,
+    thesis,
     top_score,
 )
 from src import indicators as ind
@@ -192,6 +194,10 @@ def process_symbol(
         "next_earnings": fund.get("earnings"),
         "next_dividend": fund.get("dividend"),
         "dividends": ev.get("dividends"),  # Phase 3C: dividend income tracker
+        # Phase 3D: values the owner's thesis rules are checked against (+ 3-month change for FOMO)
+        "metrics": thesis.metrics_from(
+            qual, total["score"], round((last / float(year.max()) - 1) * 100, 2), close
+        ),
         "rows": len(raw),
         "_close": _close_for_corr,  # in memory only (correlation), never written
     }
@@ -273,6 +279,58 @@ def build_performance(
     return rows, {
         "yahoo_benchmark": {"ok": bench is not None, "rows": 0 if bench is None else len(bench)},
     }
+
+
+# ---------------------------------------------------------------------------
+# Personal reminders: cooling-off, post-trade reviews, thesis checks (Phase 3D)
+# ---------------------------------------------------------------------------
+
+
+def send_reminders(store: Store, results: dict[str, dict[str, Any]]) -> tuple[int, int]:
+    """Decision ready / review due / thesis broken → owner's Telegram. Logs counts only."""
+    acfg = load_alert_config()
+    kinds = acfg.get("kinds", {})
+    on = lambda k: bool(kinds.get(k, {}).get("enabled"))  # noqa: E731
+    gcfg_path = ROOT / "config" / "guardrails.yaml"
+    gcfg = yaml.safe_load(gcfg_path.read_text()) if gcfg_path.exists() else {}
+    url = acfg.get("app_url", "")
+    now = datetime.now(timezone.utc)
+    sent_rows = store.load_table("reminders_sent", "user_id,key")
+    sent = {(r["user_id"], r["key"]) for r in sent_rows}
+
+    todo: list[tuple[alerts.Alert, str | None]] = []
+    if on("decision_ready") and gcfg.get("cooling_off", {}).get("enabled", True):
+        pending = store.load_table(
+            "pending_decisions", "id,user_id,symbol,amount,status,decide_after"
+        )
+        todo += reminders.decision_alerts(pending, now, sent, url)
+    if on("review_due") and gcfg.get("reviews", {}).get("enabled", True):
+        txs = store.load_transactions()
+        done = store.load_table("reviews", "transaction_id,due")
+        todo += reminders.review_alerts(
+            txs, done, alerts.brussels_date(now), sent, gcfg.get("reviews", {}), url
+        )
+    theses = store.load_table("thesis", "user_id,symbol,rules,last_status")
+    metrics = {s: r.get("metrics") or {} for s, r in results.items() if "error" not in r}
+    t_alerts, updates = reminders.thesis_alerts(theses, metrics, url)
+    if on("thesis_broken"):
+        todo += [(a, None) for a in t_alerts]
+    store.upsert("thesis", updates, "user_id,symbol")
+
+    can_send = alerts.telegram_configured()
+    sent_n = failed = 0
+    log_rows, keys = [], []
+    for a, key in todo:
+        ok = can_send and alerts.send_telegram(alerts.format_message(a))
+        sent_n += int(ok)
+        failed += int(not ok)
+        log_rows.append(alerts.to_log_row(a, ok, now.isoformat()))
+        if ok and key:
+            keys.append({"user_id": a.user_id, "key": key, "sent_at": now.isoformat()})
+    store.insert("alerts_log", log_rows)
+    store.upsert("reminders_sent", keys, "user_id,key")
+    log.info(f"reminders: {sent_n} sent, {failed} failed, {len(updates)} thesis statuses changed")
+    return sent_n, failed
 
 
 # ---------------------------------------------------------------------------
@@ -459,6 +517,7 @@ def run(store: Store) -> int:
                         "next_dividend",
                         "risk",
                         "dividends",
+                        "metrics",
                     )
                 },
                 "error": None,
@@ -516,6 +575,9 @@ def run(store: Store) -> int:
     alerts_sent, alerts_failed = send_alerts(
         store, watchlist, results, prev_scores, cfg, writes_ok=writes_ok
     )
+    r_sent, r_failed = send_reminders(store, results)
+    alerts_sent += r_sent
+    alerts_failed += r_failed
 
     if not writes_ok or (symbols and not ok):
         status = "failed"

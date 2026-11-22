@@ -1285,5 +1285,219 @@
     "disclaimer": "Verkopen worden gekoppeld aan aankopen volgens {method}, kosten inbegrepen. Er wordt geen belastingbedrag berekend: regels en tarieven veranderen, dus controleer bij een adviseur of de fiscus.",
     "emptyTitle": "Nog niets te rapporteren",
     "emptyBody": "Verkopen, dividenden en kosten verschijnen hier zodra je ze registreert."
+  },
+  "guard": {
+    "panicTitle": "Je verkoopt {pct} onder de top. Voor je dat doet:",
+    "panicNoThesis": "Je schreef niet op waarom je het kocht.",
+    "panicQ": "Is een van je verkoopredenen echt gebeurd?",
+    "panic": {
+      "yes": "Ja, het is gebeurd",
+      "no": "Nee, ik ben nerveus"
+    },
+    "why": "Waarom? (één regel)",
+    "whyBuyPh": "bv. Kwaliteit in de aanbieding op het 200-weken-gemiddelde",
+    "whySellPh": "bv. Omzetgroei zakte onder mijn regel van 10 %",
+    "feel": "Hoe voel je je erbij?",
+    "feelHint": "Eerlijke antwoorden maken je maandresultaten per gevoel bruikbaar.",
+    "emotion": {
+      "calm": "Rustig",
+      "plan": "Volgens plan",
+      "fomo": "FOMO",
+      "fear": "Angst"
+    },
+    "needWhy": "Voeg één regel toe over waarom.",
+    "needFeel": "Kies hoe je je erbij voelt.",
+    "needPanic": "Beantwoord eerst de vraag over je verkoopredenen.",
+    "tradesLine": "Transacties deze maand: {n} van {max}",
+    "limitTitle": "Je hebt je {max} transacties voor {month} bereikt.",
+    "limitBody": "Wachten kost niets. Nieuwe ideeën kunnen op je volglijst met een aankoopniveau.",
+    "readyTitle": "Klaar om te beslissen: {symbol} {amount}",
+    "readyBody": "Je 24 uur zijn om. Bekijk het opnieuw met een frisse blik.",
+    "waitTitle": "Even wachten: {symbol} {amount}",
+    "waitBody": "Je kunt beslissen vanaf {when}.",
+    "reviewsDue": "{n} beslissingen om te evalueren",
+    "reviewsDueBody": "3 en 12 maanden later: hoe pakten ze uit?",
+    "cibReady": "Je wachtte een dag. Nog steeds in je plan?",
+    "cibWaiting": "Je koos om te wachten. Je kunt beslissen vanaf {when}.",
+    "yourReason": "Jouw reden: {reason}",
+    "fomoRise": "{symbol} steeg {pct} in 3 maanden.",
+    "fomoTop": "{symbol} toont tekenen van oververhitting (Topscore {top}).",
+    "fomoBody": "Kopen na een sterke stijging is vaak FOMO. Staat dit in je plan, of kan het een dag wachten?",
+    "checkTitle": "Voor je koopt",
+    "state": {
+      "ok": "OK",
+      "warn": "Check",
+      "na": "—"
+    },
+    "check": {
+      "plan": {
+        "ok": "In je plan (je bezit het, zette een aankoopniveau, schreef een thesis of wachtte een dag).",
+        "warn": "Nog niet in je plan: geen aankoopniveau, geen thesis, niet in bezit."
+      },
+      "quality": {
+        "ok": "Kwaliteit {q}: minstens {min}.",
+        "warn": "Kwaliteit {q}: onder {min}. Bekijk eerst de fundamenten.",
+        "na": "Geen Kwaliteitsscore voor dit aandeel."
+      },
+      "thesis": {
+        "ok": "Thesis geschreven: je weet waarom je het zou bezitten.",
+        "warn": "Nog geen thesis: schrijf op waarom, en wat je zou doen verkopen."
+      },
+      "earnings": {
+        "ok": "Geen kwartaalcijfers de komende week.",
+        "warn": "Kwartaalcijfers over {days} dagen: de koers kan alle kanten op."
+      },
+      "fomo": {
+        "ok": "Geen teken dat je een stijging najaagt.",
+        "warn": "Sterke stijging de laatste tijd: check dat het geen FOMO is."
+      },
+      "trades": {
+        "ok": "Transacties deze maand: {n} van {max}.",
+        "warn": "Transacties deze maand: {n} van {max}, je limiet is bereikt."
+      },
+      "sizing": {
+        "ok": "{amount} past binnen je ruimte ({room}).",
+        "warn": "{amount} is meer dan je ruimte ({room}).",
+        "na": "Typ een bedrag om het te toetsen aan je ruimte."
+      },
+      "sector": {
+        "ok": "Nog ruimte in de sector.",
+        "warn": "De sector zit al aan je maximum."
+      },
+      "region": {
+        "ok": "Nog ruimte in de regio.",
+        "warn": "De regio zit al aan je maximum."
+      }
+    },
+    "plannerTitle": "Orderplanner",
+    "ideasLabel": "Ideeën voor een limietkoers",
+    "idea": {
+      "now": "Nu",
+      "support": "Steun",
+      "sma200": "200-weken-gem."
+    },
+    "costs": "Kosten ongeveer {total} ({pct} van de order).",
+    "costsFee": "Bolero-makelaarsloon {fee}",
+    "costsFeeUnknown": "Makelaarsloon onbekend voor deze markt",
+    "costsTob": "beurstaks {tob}",
+    "costsNoFx": "wisselkosten niet inbegrepen",
+    "costsNeedAmount": "Typ hierboven een bedrag om de kosten en de impact op je portefeuille te zien.",
+    "impactTitle": "Na deze aankoop",
+    "impact": {
+      "position": "{symbol}",
+      "sector": "Sector {name}",
+      "region": "Regio {name}",
+      "currency": "In {name}",
+      "satellite": "Satellietdeel"
+    },
+    "notEnoughCash": "Dat is {short} meer dan je cash.",
+    "logTrade": "Transactie registreren",
+    "decideTomorrow": "Morgen beslissen",
+    "waitWhy": "Het staat nog niet in je plan: {h} uur wachten haalt de emotie eruit. Je krijgt een herinnering.",
+    "dropIt": "Idee laten vallen",
+    "dropped": "{symbol}: idee geschrapt",
+    "waitIntro": "{symbol} wordt {h} uur bewaard. Daarna toont de app dezelfde gegevens opnieuw en beslis je met een frisse blik.",
+    "waitReason": "Waarom wil je het? (optioneel)",
+    "waitSave": "24 uur wachten",
+    "waitSaved": "{symbol}: beslis vanaf {when}"
+  },
+  "thesis": {
+    "title": "Thesis {symbol}",
+    "link": "Thesis & verkoopregels",
+    "notOnList": "{symbol} staat niet op je volglijst",
+    "lead": "Waarom je {symbol} bezit, en wat je zou doen verkopen. De app controleert de regels elke nacht.",
+    "why": "Waarom ik het bezit",
+    "whyPh": "bv. Marktleider, groeiende marges, geen schulden",
+    "sellIf": "Wat me zou doen verkopen",
+    "sellIfPh": "bv. Omzetgroei een jaar onder 10 %",
+    "target": "Koersdoel ({cur})",
+    "review": "Evaluatiedatum",
+    "rulesTitle": "Automatische checks",
+    "rulesHint": "Elke regel wordt na elke publicatie en elke nacht gecontroleerd. Je krijgt een Telegram-bericht als er een breekt.",
+    "noRules": "Nog geen automatische checks.",
+    "metric": "Maatstaf",
+    "op": "Regel",
+    "value": "Waarde",
+    "atLeast": "minstens",
+    "atMost": "hoogstens",
+    "m": {
+      "quality_score": "Kwaliteitsscore",
+      "sales_growth": "Omzetgroei (per jaar, %)",
+      "operating_margin": "Operationele marge (%)",
+      "net_debt_ebitda": "Nettoschuld / EBITDA (×)",
+      "interest_cover": "Rentedekking (×)",
+      "roic": "Rendement op kapitaal, ROIC (%)",
+      "fcf_years": "Jaren met positieve vrije kasstroom (van 4)",
+      "share_change": "Wijziging aantal aandelen (per jaar, %)",
+      "bottom_score": "Bodemscore",
+      "from_high": "Afstand tot 52-weken-top (%)"
+    },
+    "removeRule": "Regel {n} verwijderen",
+    "addRule": "Check toevoegen",
+    "now": "Nu {value}",
+    "ok": "klopt",
+    "broken": "gebroken",
+    "unknown": "nog geen gegevens",
+    "save": "Thesis bewaren",
+    "saved": "Thesis {symbol} bewaard",
+    "badValue": "Elke check heeft een getal nodig.",
+    "badTarget": "Het koersdoel moet meer dan 0 zijn.",
+    "status": {
+      "intact": "✅ Thesis klopt nog",
+      "broken1": "⚠️ 1 thesisregel gebroken",
+      "broken": "❌ Meerdere thesisregels gebroken",
+      "unknown": "Thesis: nog geen gegevens",
+      "none": "Geen thesisregels"
+    },
+    "statusShort": {
+      "intact": "klopt",
+      "broken1": "1 regel gebroken",
+      "broken": "meerdere regels gebroken",
+      "unknown": "nog geen gegevens",
+      "none": "geen regels"
+    }
+  },
+  "dec": {
+    "title": "Beslissingen & evaluaties",
+    "emptyTitle": "Nog geen beslissingen",
+    "emptyBody": "Aan- en verkopen die je registreert verschijnen hier, met je reden en hoe je je voelde, zodat je ervan leert.",
+    "leadDue": "{n} beslissingen zijn klaar voor evaluatie.",
+    "leadNone": "Geen evaluaties te doen. Je beslissingen en wat er sindsdien gebeurde:",
+    "dueTitle": "Te evalueren",
+    "reviewOf": {
+      "buy": "Evaluatie: je kocht {symbol} {m} maanden geleden",
+      "sell": "Evaluatie: je verkocht {symbol} {m} maanden geleden"
+    },
+    "dueSince": "te doen sinds {date}",
+    "byFeeling": "Resultaten per gevoel",
+    "feeling": "Gevoel",
+    "count": "Beslissingen",
+    "avgSince": "Gem. sindsdien",
+    "byFeelingNote": "Aankopen: koers nu vs jouw prijs. Verkopen: wat je vermeed (een daling na verkoop telt als positief). In de munt van het aandeel.",
+    "allTitle": "Alle beslissingen",
+    "sinceBuy": "sindsdien:",
+    "sinceSell": "sinds verkoop:",
+    "noReason": "geen reden geregistreerd",
+    "panicYes": "verkocht omdat een verkoopreden gebeurde",
+    "panicNo": "verkocht uit nervositeit",
+    "reviewed": "Geëvalueerd na {due} maanden: {process}",
+    "process": {
+      "good": "goed proces",
+      "bad": "slecht proces"
+    },
+    "priceThenNow": "Koers {then} op {date} → {now} nu",
+    "benchSame": "MSCI World over dezelfde periode: {pct}",
+    "benchNa": "Vergelijking met MSCI World: beschikbaar na de nachtelijke update.",
+    "signalsThen": "Toen: Bodemscore {score}, Kwaliteit {quality}, {verdict}",
+    "youSaid": "Je zei: “{reason}”",
+    "thesisNow": "Thesis nu: {status}",
+    "rateProcess": "Was het een goed beslissingsproces?",
+    "rateHint": "Beoordeel hoe je besliste (plan, onderzoek, rust), niet enkel hoe de koers liep.",
+    "lesson": "Les (optioneel)",
+    "saveReview": "Evaluatie bewaren",
+    "reviewSaved": "Evaluatie bewaard",
+    "needProcess": "Kies goed of slecht proces.",
+    "footer": "Je eigen beslissingen en resultaten, om van te leren. Geen financieel advies.",
+    "showAll": "Toon alle {n}"
   }
 }

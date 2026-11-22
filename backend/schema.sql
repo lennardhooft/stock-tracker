@@ -378,3 +378,78 @@ create policy portfolio_perf_owner_mfa_read on public.portfolio_perf
 grant select on public.portfolio_perf to authenticated;
 grant all on public.portfolio_perf to service_role;
 revoke all on public.portfolio_perf from anon;
+
+-- ===========================================================================
+-- Phase 3D: guardrails, decision log, thesis checks, reviews (CLAUDE.md 13.14 C + D, 13.18)
+-- ===========================================================================
+-- decision log on every buy / sell
+alter table public.transactions add column if not exists reason text check (reason is null or char_length(reason) <= 200);
+alter table public.transactions add column if not exists emotion text check (emotion is null or emotion in ('calm', 'plan', 'fomo', 'fear'));
+alter table public.transactions add column if not exists thesis_broken boolean;   -- panic-sell check answer
+alter table public.transactions add column if not exists snapshot jsonb;          -- scores + price when logged
+
+-- current values for thesis rules + FOMO (per ticker, not personal)
+alter table public.latest_scores add column if not exists metrics jsonb;
+
+create table if not exists public.thesis (
+  user_id       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  symbol        text not null check (symbol ~ '^[A-Za-z0-9.\-^=]{1,20}$'),
+  why           text check (char_length(why) <= 1000),
+  sell_if       text check (char_length(sell_if) <= 1000),
+  target_price  numeric check (target_price is null or target_price > 0),
+  review_date   date,
+  rules         jsonb not null default '[]'::jsonb
+                check (jsonb_typeof(rules) = 'array' and jsonb_array_length(rules) <= 10),
+  last_status   text,   -- written by the daily job, to alert only when it changes
+  updated_at    timestamptz not null default now(),
+  primary key (user_id, symbol)
+);
+
+create table if not exists public.pending_decisions (   -- "Decide tomorrow" (24-hour cooling-off)
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  symbol        text not null check (symbol ~ '^[A-Za-z0-9.\-^=]{1,20}$'),
+  amount        numeric check (amount is null or amount > 0),
+  reason        text check (char_length(reason) <= 200),
+  snapshot      jsonb,
+  status        text not null default 'waiting' check (status in ('waiting', 'bought', 'dropped')),
+  created_at    timestamptz not null default now(),
+  decide_after  timestamptz not null
+);
+
+create table if not exists public.reviews (   -- post-trade reviews at +3 and +12 months
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  transaction_id  uuid not null references public.transactions (id) on delete cascade,
+  due             text not null check (due in ('3m', '12m')),
+  process         text not null check (process in ('good', 'bad')),
+  lesson          text check (char_length(lesson) <= 300),
+  created_at      timestamptz not null default now(),
+  unique (transaction_id, due)
+);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['thesis', 'pending_decisions', 'reviews'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists %I on public.%I', t || '_owner_mfa', t);
+    execute format($p$create policy %I on public.%I for all to authenticated
+      using (user_id = (select auth.uid()) and (select auth.jwt() ->> 'aal') = 'aal2')
+      with check (user_id = (select auth.uid()) and (select auth.jwt() ->> 'aal') = 'aal2')$p$, t || '_owner_mfa', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    execute format('grant all on public.%I to service_role', t);
+    execute format('revoke all on public.%I from anon', t);
+  end loop;
+end $$;
+
+-- which reminders the daily job already sent (job only; nobody reads it from the app)
+create table if not exists public.reminders_sent (
+  user_id  uuid not null references auth.users (id) on delete cascade,
+  key      text not null check (char_length(key) <= 120),
+  sent_at  timestamptz not null default now(),
+  primary key (user_id, key)
+);
+alter table public.reminders_sent enable row level security;
+grant all on public.reminders_sent to service_role;
+revoke all on public.reminders_sent from anon, authenticated;

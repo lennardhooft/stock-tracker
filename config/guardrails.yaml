@@ -1,0 +1,27 @@
+# Guardrails against emotional decisions (CLAUDE.md 13.14 C) and trade tools (13.18). Owner decision:
+# all on, max 4 trades a month. Each rule can be switched off here. The browser has a copy in
+# web/lib/guardrails-config.js (tests/test_guardrails_config.py checks they're identical).
+cooling_off:
+  enabled: true
+  hours: 24            # a buy that isn't in your plan gets "Decide tomorrow"
+fomo:
+  enabled: true
+  rise_3m_pct: 30      # up at least this much in 3 months …
+  top_score_min: 3     # … or a Top Score of at least this
+panic_sell:
+  enabled: true
+  drawdown_pct: 20     # selling while ≥ 20 % below the 52-week high, or your position ≥ 20 % down
+trade_limit:
+  enabled: true
+  per_month: 4         # buys + sells (starting positions and dividends don't count)
+decision_log:
+  enabled: true
+  emotions: [calm, plan, fomo, fear]
+checklist:
+  quality_min: 70
+  earnings_days: 7
+  costs_warn_pct: 1.0  # warn when fees + taxes are more than 1 % of the order
+reviews:
+  enabled: true
+  after_months: [3, 12]
+  remind_window_days: 14

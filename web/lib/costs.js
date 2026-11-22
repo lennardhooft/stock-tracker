@@ -49,6 +49,180 @@ export const COSTS = /*JSON*/ {
   },
   "capital_gains": {
     "method": "fifo"
+  },
+  "tob": {
+    "stock": {
+      "rate": 0.0035,
+      "max": 1600
+    },
+    "etf": {
+      "rate": 0.0012,
+      "max": 1300
+    },
+    "etf_be_accumulating": {
+      "rate": 0.0132,
+      "max": 4000
+    }
+  },
+  "broker": {
+    "name": "Bolero",
+    "markets": {
+      "euronext": {
+        "suffixes": [
+          ".BR",
+          ".PA",
+          ".AS",
+          ".LS",
+          ".IR",
+          ".MI",
+          ".OL"
+        ],
+        "currency": "EUR",
+        "tiers": [
+          [
+            250,
+            2.5
+          ],
+          [
+            1000,
+            5.0
+          ],
+          [
+            2500,
+            7.5
+          ]
+        ],
+        "mid": {
+          "up_to": 70000,
+          "block": 10000,
+          "fee": 15,
+          "max": 50
+        },
+        "high": {
+          "base": 50,
+          "block": 10000,
+          "fee": 15
+        }
+      },
+      "germany": {
+        "suffixes": [
+          ".DE",
+          ".F"
+        ],
+        "currency": "EUR",
+        "tiers": [
+          [
+            250,
+            2.5
+          ],
+          [
+            1000,
+            5.0
+          ],
+          [
+            2500,
+            15.0
+          ]
+        ],
+        "mid": {
+          "up_to": 70000,
+          "block": 10000,
+          "fee": 30,
+          "max": 60
+        },
+        "high": {
+          "pct": 0.0015
+        }
+      },
+      "europe": {
+        "suffixes": [
+          ".ST",
+          ".SW",
+          ".L",
+          ".MC",
+          ".CO",
+          ".HE",
+          ".VI"
+        ],
+        "currency": "EUR",
+        "tiers": [
+          [
+            250,
+            2.5
+          ],
+          [
+            1000,
+            5.0
+          ],
+          [
+            2500,
+            15.0
+          ]
+        ],
+        "rest": {
+          "pct": 0.005,
+          "min": 30
+        }
+      },
+      "toronto": {
+        "suffixes": [
+          ".TO",
+          ".V",
+          ".NE"
+        ],
+        "currency": "EUR",
+        "tiers": [
+          [
+            250,
+            2.5
+          ],
+          [
+            1000,
+            5.0
+          ],
+          [
+            2500,
+            15.0
+          ]
+        ],
+        "rest": {
+          "pct": 0.005,
+          "min": 20
+        }
+      },
+      "us": {
+        "suffixes": [
+          ""
+        ],
+        "currency": "USD",
+        "tiers": [
+          [
+            250,
+            2.5
+          ],
+          [
+            1000,
+            5.0
+          ],
+          [
+            2500,
+            15.0
+          ]
+        ],
+        "mid": {
+          "up_to": 70000,
+          "block": 10000,
+          "fee": 20,
+          "max": 50
+        },
+        "high": {
+          "base": 50,
+          "block": 10000,
+          "fee": 20
+        }
+      }
+    },
+    "fx_pct": null
   }
 } /*END*/;
 

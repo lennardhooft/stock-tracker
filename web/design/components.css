@@ -707,3 +707,5 @@ details.explain > summary { cursor: pointer; min-height: 44px; display: flex; al
   #topbar, #tabbar, #rail, .chips, [data-action], .toast-region { display: none !important; }
   body { background: #fff; color: #000; }
 }
+button.card--link { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.signal[data-state="warn"] .signal__icon { color: var(--color-warning); }
