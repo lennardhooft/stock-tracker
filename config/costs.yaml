@@ -1,0 +1,54 @@
+# Taxes and costs for a Belgian investor, used only for ESTIMATES (dividend forecast, tax overview).
+# VERIFY these against the current Belgian rules (FOD Financiën) and your broker before relying on them.
+# The browser has a copy in web/lib/costs.js (tests/test_costs.py checks they're identical).
+dividend_tax:
+  # roerende voorheffing, charged on what's left after the foreign withholding
+  belgium: 0.30
+  # foreign withholding by country (approximated from the listing exchange of the stock)
+  foreign:
+    US: 0.15  # with a W-8BEN form at your broker; otherwise 0.30
+    CA: 0.25
+    NL: 0.15
+    DE: 0.26375
+    FR: 0.25
+    CH: 0.35
+    GB: 0.0
+    IE: 0.25
+    DK: 0.27
+    SE: 0.30
+    "NO": 0.25  # quoted: plain NO means "false" in YAML
+    FI: 0.35
+    ES: 0.19
+    IT: 0.26
+    PT: 0.25
+    AT: 0.275
+    BE: 0.0
+  # UCITS ETFs (Ireland / Luxembourg) usually pay out without withholding at fund level
+  etf_foreign: 0.0
+  # Yahoo ticker suffix → country ("" = no suffix = US)
+  suffix_country:
+    "": US
+    .TO: CA
+    .V: CA
+    .NE: CA
+    .AS: NL
+    .DE: DE
+    .F: DE
+    .PA: FR
+    .SW: CH
+    .L: GB
+    .IR: IE
+    .CO: DK
+    .ST: SE
+    .OL: "NO"
+    .HE: FI
+    .MC: ES
+    .MI: IT
+    .LS: PT
+    .VI: AT
+    .BR: BE
+  # pay date when Yahoo only knows the ex-dividend date
+  pay_days_after_ex: 21
+capital_gains:
+  # which purchase a sale comes from: fifo (first in, first out) or average
+  method: fifo

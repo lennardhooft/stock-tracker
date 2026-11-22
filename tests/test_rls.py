@@ -24,6 +24,14 @@ TABLES = [
     "score_history",
     "market_snapshot",
     "job_runs",
+    "alerts_log",
+    "transactions",
+    "portfolio_settings",
+    "risk_settings",
+    "risk_settings_log",
+    "risk_snapshot",
+    "calendar_tokens",
+    "portfolio_perf",
 ]
 
 pytestmark = pytest.mark.skipif(not (URL and ANON), reason="needs SUPABASE_URL + SUPABASE_ANON_KEY")

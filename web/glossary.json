@@ -243,5 +243,54 @@
     "why": "Owning many stocks doesn't spread risk if they all fall on the same days. The stress test turns 'risk' into euros you can picture.",
     "how": "Above 0,8 means they move almost in step. The stress test uses each holding's real move in that period; without that history, the S&P 500 (stocks/ETFs) or a bond ETF stands in.",
     "limits": "Correlations change, often rising in a crisis. History doesn't repeat exactly."
+  },
+  "twr": {
+    "title": "Time-weighted return",
+    "what": "How your investments did, with the effect of when you put money in or took it out removed. Each day's return is chained to the next.",
+    "why": "It's the fair way to compare your picks with an index or ETF: a big deposit right before a rise doesn't flatter you.",
+    "how": "Above the MSCI World line means your choices did better than the broad market over that period.",
+    "limits": "It doesn't show how much money you made: that's the XIRR and the 'what if' amount. Short periods are noisy."
+  },
+  "xirr": {
+    "title": "Money-weighted return (XIRR)",
+    "what": "The yearly return of your actual money: every buy, sale and dividend on its date, plus what it's worth today.",
+    "why": "It answers 'how did MY money do', including the timing of your buys and sales.",
+    "how": "Compare it with the ETF's XIRR for the same money: higher is better.",
+    "limits": "Over a few weeks it swings a lot. Taxes you'll owe later aren't included."
+  },
+  "what_if": {
+    "title": "What if you'd bought the ETF?",
+    "what": "The same euros on the same days, put into the MSCI World ETF (IWDA.AS) instead, and what that would be worth now.",
+    "why": "The honest test of stock picking: is all the effort better than the simplest alternative?",
+    "how": "'Ahead' means your choices beat the ETF in euros.",
+    "limits": "Ignores the ETF's own small costs and the taxes of switching. Cash isn't counted."
+  },
+  "yield_on_cost": {
+    "title": "Yield on cost",
+    "what": "Yearly dividend divided by what you paid for the shares (your average price).",
+    "why": "Shows what your investment pays you on the money you put in; it grows when a company raises its dividend.",
+    "how": "Higher than the current yield means the dividend grew (or the price rose) since you bought.",
+    "limits": "Says nothing about whether the stock is a good buy today: compare with the current yield."
+  },
+  "dividend_forecast": {
+    "title": "Dividend forecast",
+    "what": "Each holding's payments of the last 12 months, repeated one year later, times the shares you own now, after estimated taxes.",
+    "why": "Gives an idea of the income your portfolio produces and when it arrives.",
+    "how": "Bars show the month the money is expected in your account.",
+    "limits": "Companies can raise, cut or skip dividends. Taxes are estimates from config/costs.yaml."
+  },
+  "realised_gain": {
+    "title": "Realised gain or loss",
+    "what": "What you got for a sale minus what you paid for those shares, both including costs.",
+    "why": "Only sold positions count as realised: this is what tax rules usually look at.",
+    "how": "Sales are matched to your oldest purchases first (FIFO), unless config/costs.yaml says otherwise.",
+    "limits": "Starting positions use your average price as cost. No tax amount is calculated: verify the rules."
+  },
+  "dividend_withholding": {
+    "title": "Tax withheld on dividends",
+    "what": "Tax taken off a dividend before it reaches you: first by the company's country, then the Belgian roerende voorheffing.",
+    "why": "It's the difference between the gross dividend and what lands on your account.",
+    "how": "Part of the foreign tax can sometimes be reclaimed; check your broker's documents.",
+    "limits": "The app's rates are estimates; your broker's statement is the reference."
   }
 }

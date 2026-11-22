@@ -1,0 +1,5 @@
+# Returns vs benchmark (CLAUDE.md 13.14 B). Not personal: the owner's choice of benchmark.
+# MSCI World in EUR: iShares Core MSCI World on Euronext Amsterdam (accumulating, so its price
+# includes reinvested dividends, like a total-return index).
+benchmark: IWDA.AS
+benchmark_name: MSCI World (EUR)

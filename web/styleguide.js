@@ -208,9 +208,16 @@ const states = section("states", "Screen states", "Every screen builds all of th
     <div>${label("error")}${errorState({ detail: "HTTP 503 from database" })}</div>
   </div>`);
 
+const money = section("money", "Portfolio 3C: link cards, month bars, transaction rows", "A whole card links to a detail screen. Month bars always show the amount in text. Transaction rows: kind (icon + word), ticker, quantity × price, amount, date, delete.", html`
+  <div class="sg-two">
+    <div>${label("link card")}<a class="card card--link" href="#money"><span class="card__title">Returns vs MSCI World</span><span class="small text-2">Since 1 Mar 2024: <b class="num">▲ +24,7 %</b> · MSCI World ▲ +21,0 %</span>${icon("chevron", { cls: "icon card__chevron" })}</a></div>
+    <div>${label("month bars")}<ul class="mbars">${[["nov 26", 0], ["dec 26", 62], ["jan 27", 0], ["feb 27", 14]].map(([m, v]) => html`<li class="mbars__row"><span class="mbars__label">${m}</span><span class="mbars__track" aria-hidden="true"><span class="mbars__fill" style="width:${(v / 62) * 100}%"></span></span><span class="mbars__value num">${v ? fmt.money(v, "EUR", { decimals: 0 }) : "—"}</span></li>`)}</ul></div>
+    <div>${label("transaction row")}<ul class="list"><li class="card tx"><span class="tx__kind">${icon("plus")} Buy</span><span class="tx__main"><b>NRDX</b><span class="small text-2 num">22 × $ 131,20</span></span><span class="tx__amount num">$ 2.886,40</span><span class="tx__meta small text-2">12 Jun 2025 · costs $ 18,50</span><button type="button" class="icon-btn" aria-label="Delete buy NRDX">${icon("trash")}</button></li></ul></div>
+  </div>`);
+
 mount($("#sg"), html`
   <p class="text-2" style="margin-bottom:var(--space-8)">${t("styleguide.intro")} <span class="muted">(${theme} · ${lang()} · ${fmt.getNumberLocale()})</span></p>
-  ${colours}${type}${spacing}${icons}${shell}${buttons}${forms}${badges}${cards}${sigs}${quality}${tiles}${banners}${overlays}${states}`);
+  ${colours}${type}${spacing}${icons}${shell}${buttons}${forms}${badges}${cards}${sigs}${quality}${tiles}${banners}${overlays}${states}${money}`);
 
 // ---------------------------------------------------------------- interactions
 $$("[data-toggle]").forEach((b) => b.addEventListener("click", () => b.setAttribute("aria-checked", String(b.getAttribute("aria-checked") !== "true"))));

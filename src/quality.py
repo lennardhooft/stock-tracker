@@ -556,7 +556,15 @@ def collect(symbol: str, price: float | None, cfg: dict | None = None) -> dict:
         info = with_retries(lambda: t.info or {}, "yahoo info") or {}
         profile = {
             k: info.get(k)
-            for k in ("sector", "industry", "country", "quoteType", "longName", "shortName")
+            for k in (
+                "sector",
+                "industry",
+                "country",
+                "quoteType",
+                "longName",
+                "shortName",
+                "payoutRatio",
+            )
         }
         if (info.get("quoteType") or "").upper() in {"ETF", "MUTUALFUND", "INDEX"}:
             return {"score": None, "label": None, "na": "etf", "parts": [], "profile": profile}

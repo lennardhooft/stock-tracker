@@ -27,7 +27,7 @@ async function quality(page, label) {
   const rawKeys = await page.evaluate(() => {
     const txt = document.body.innerText;
     return (txt.match(/\b[a-z]+\.[a-zA-Z]+(\.[a-zA-Z0-9]+)*\b/g) || [])
-      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal|pf|cib|risk|trade|mfa|imp|risk3)\./.test(k));
+      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal|pf|cib|risk|trade|mfa|imp|risk3|ret|div|txl|tax)\./.test(k));
   });
   expect(rawKeys, `${label}: untranslated i18n keys`).toEqual([]);
 
@@ -75,6 +75,10 @@ const SCREENS = [
   ["canibuy", "#/canibuy/VLTA.AS"],
   ["risk", "#/more/risk"],
   ["import", "#/import"],
+  ["returns", "#/portfolio/returns"],
+  ["dividends", "#/portfolio/dividends"],
+  ["transactions", "#/portfolio/transactions"],
+  ["tax", "#/portfolio/tax"],
   ["more", "#/more"],
   ["settings", "#/more/settings"],
   ["health", "#/more/health"],
@@ -102,6 +106,12 @@ const STATES = [
   ["empty-calendar", "#/calendar", "empty"],
   ["portfolio-no-mfa", "#/portfolio", "nomfa"],
   ["portfolio-empty", "#/portfolio", "noportfolio"],
+  ["returns-pending", "#/portfolio/returns", "noperf"],
+  ["returns-early", "#/portfolio/returns", "earlyperf"],
+  ["returns-empty", "#/portfolio/returns", "noportfolio"],
+  ["dividends-none", "#/portfolio/dividends", "noportfolio"],
+  ["tax-empty", "#/portfolio/tax", "noportfolio"],
+  ["returns-no-mfa", "#/portfolio/returns", "nomfa"],
   ["mfa-code", "#/", "mfa"],
   ["calm", "#/", "calm"],
   ["partial", "#/", "partial"],
@@ -767,4 +777,93 @@ test("empty portfolio: import from Bolero is the main action", async ({ page }) 
   await imp.click();
   await expect(page).toHaveURL(/#\/import$/);
   await expect(page.getByRole("button", { name: "Choose the Excel file" })).toBeVisible();
+});
+
+/* ------------------------------------------------------------ Phase 3C: returns, dividends, transactions, tax */
+test("portfolio page links to returns and dividends with a one-line answer", async ({ page }) => {
+  await open(page, "#/portfolio");
+  const ret = page.getByRole("link", { name: /Returns vs MSCI World/ });
+  await expect(ret).toContainText("Since 1 mrt 2024");
+  await expect(page.getByRole("link", { name: /Dividend income/ })).toContainText("after tax");
+  await ret.click();
+  await expect(page.locator("html")).toHaveAttribute("data-screen", "portfolio/returns");
+});
+
+test("returns: answer first, periods, what-if, parts, chart", async ({ page }) => {
+  await open(page, "#/portfolio/returns");
+  await expect(page.locator("#ret-answer .summary")).toContainText("Since 1 mrt 2024 your investments returned ▲ +24,7 %");
+  await expect(page.locator("#ret-answer")).toContainText("You're ahead by 3,7 points.");
+  await expect(page.getByRole("button", { name: "3 years" })).toBeDisabled();
+  await page.getByRole("button", { name: "This year" }).click();
+  await expect(page.locator("#ret-answer .summary")).toContainText("This year: your investments ▲ +4,1 %");
+  await expect(page.locator("main")).toContainText("you're € 2.508 ahead.");
+  await expect(page.locator("main")).toContainText("8,6 % a year");
+  await expect(page.locator("section[aria-labelledby=parts-h] table")).toContainText("Satellite");
+  await expect(page.locator("#ret-chart canvas").first()).toBeVisible({ timeout: 10000 });
+});
+
+test("returns: early days and pending states explain themselves", async ({ page }) => {
+  await open(page, "#/portfolio/returns", { fixture: "earlyperf" });
+  await expect(page.locator("main")).toContainText("Early days");
+  await open(page, "#/portfolio/returns", { fixture: "noperf" });
+  await expect(page.locator("main")).toContainText("Calculated tonight");
+});
+
+test("dividends: 12-month forecast, per holding, payout warning, received this year", async ({ page }) => {
+  await open(page, "#/portfolio/dividends");
+  await expect(page.locator(".summary").first()).toContainText("Next 12 months ≈");
+  await expect(page.locator(".mbars__row")).toHaveCount(12);
+  await expect(page.locator("main")).toContainText("BLMT.BR");
+  await expect(page.locator("main")).toContainText("Pays out 92 % of its profit");
+  await expect(page.locator("main")).toContainText(/Received in 20\d\d/);
+});
+
+test("dividends: log a dividend prefills the shares you own", async ({ page }) => {
+  await open(page, "#/portfolio/dividends");
+  await page.getByRole("button", { name: "Log a dividend" }).click();
+  const sheet = page.locator("#trade-form");
+  await expect(sheet.getByRole("button", { name: "Dividend" })).toHaveAttribute("aria-pressed", "true");
+  await expect(sheet.locator("[name=quantity]")).toHaveValue("40");
+  await expect(sheet).toContainText("Gross dividend per share");
+  await expect(sheet).toContainText("Tax withheld");
+  await quality(page, "dividend sheet");
+  await sheet.locator("[name=price]").fill("2,10");
+  await sheet.locator("[name=taxes]").fill("25,20");
+  await sheet.getByRole("button", { name: "Save trade" }).click();
+  await expect(page.locator(".toast").first()).toContainText("BLMT.BR saved");
+});
+
+test("transactions: filter, delete with undo", async ({ page }) => {
+  await open(page, "#/portfolio/transactions");
+  await expect(page.locator(".summary")).toContainText("8 transactions");
+  await page.getByRole("button", { name: "Dividends" }).click();
+  await expect(page.locator(".tx")).toHaveCount(1);
+  await expect(page.locator(".tx")).toContainText("ORCA");
+  await page.getByRole("button", { name: "All", exact: true }).click();
+  await expect(page.locator(".tx")).toHaveCount(8);
+  await page.locator(".tx").filter({ hasText: "OLDX" }).first().getByRole("button", { name: /Delete/ }).click();
+  await expect(page.locator(".tx")).toHaveCount(7);
+  await page.locator(".toast").getByRole("button", { name: /Undo/ }).click();
+  await expect(page.locator(".tx")).toHaveCount(8);
+});
+
+test("tax overview: year chips, FIFO sale, dividends, costs, CSV", async ({ page }) => {
+  await open(page, "#/portfolio/tax");
+  await expect(page.locator("[data-year]")).toHaveText(["2026", "2025", "2024"]);
+  await page.getByRole("button", { name: "2025" }).click();
+  await expect(page.locator("#tax-body table")).toContainText("OLDX");
+  await expect(page.locator("#tax-body")).toContainText("bought 14 mei 2024");
+  // (30 × 36,5 − 18,9) / 1,15 = 935,74 proceeds; (30 × 52 + 20,5) / 1,08 = 1.463,43 cost → −527,69
+  await expect(page.locator("#tax-body table")).toContainText("−€ 527,69");
+  await page.getByRole("button", { name: "2026" }).click();
+  await expect(page.locator("#tax-body")).toContainText("Dividends after tax");
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Export CSV" }).click()]);
+  expect(dl.suggestedFilename()).toBe("tax-overview-2026.csv");
+});
+
+test("Dutch: 3C screens fully translated", async ({ page }) => {
+  for (const path of ["#/portfolio/returns", "#/portfolio/dividends", "#/portfolio/transactions", "#/portfolio/tax"]) {
+    await open(page, path, { lang: "nl" });
+    await quality(page, `nl ${path}`);
+  }
 });

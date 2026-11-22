@@ -20,6 +20,7 @@ export function positions(transactions) {
   const by = new Map();
   const sorted = [...(transactions || [])].sort((a, b) => a.date.localeCompare(b.date) || String(a.created_at || "").localeCompare(String(b.created_at || "")));
   for (const t of sorted) {
+    if (t.kind === "dividend") continue; // income, not a change in what you own (see lib/dividends.js)
     const sym = t.symbol.toUpperCase();
     const p = by.get(sym) || { symbol: sym, qty: 0, cost: 0, costEur: 0, currency: t.currency, realised: 0, realisedEur: 0, firstDate: t.date, trades: 0 };
     const rate = t.fx_rate || null; // units per EUR at the trade, if known

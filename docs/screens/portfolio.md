@@ -5,7 +5,7 @@
 |---|---|
 | **3A** (this) | Two-step login (authenticator app) · holdings from transactions (buy / sell / starting position) · cash · Portfolio page (value, P/L, allocation, risk budget gauge, warnings) · sizing engine + **Can I buy this?** · Settings → Risk |
 | 3B | Live quotes function (60 s refresh) · concentration, correlation, stress test · trade markers + average-cost line on the chart |
-| 3C | Transactions list · benchmark TWR / XIRR + "what if ETF" · dividend income tracker · realised gains & tax-year report |
+| **3C** (built, spec: portfolio-3c.md) | Transactions list · benchmark TWR / XIRR + "what if ETF" · dividend income tracker · realised gains & tax-year report |
 | 3D | Guardrails (cooling-off, FOMO, panic-sell, trade limit) · decision log · thesis checks · pre-trade checklist · post-trade reviews |
 | 3E | Bolero importer (needs an anonymised sample export from the owner) · encrypted weekly backups · Telegram commands |
 | later | Optional VPS + WebSocket worker |

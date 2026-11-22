@@ -326,6 +326,28 @@ function compact(x) {
   return String(Math.round(x));
 }
 
+/**
+ * Two lines indexed to 100 (Returns screen, 13.17 #13): yours vs the benchmark, with a legend.
+ * series: {t: [dates], you: [..], bench: [..]}. Returns {destroy}.
+ */
+export async function compareChart(el, series, { youLabel, benchLabel } = {}) {
+  const LWC = await loadLib();
+  const chart = LWC.createChart(el, {
+    ...baseOptions(LWC), handleScale: false, handleScroll: false,
+    localization: { priceFormatter: (x) => (Math.round(x * 10) / 10).toLocaleString(undefined, { maximumFractionDigits: 1 }) },
+  });
+  const pts = (k) => series.t.map((time, i) => ({ time, value: series[k][i] })).filter((p) => p.value != null);
+  const you = chart.addLineSeries({ color: token("--chart-1"), lineWidth: 2, priceLineVisible: false, title: youLabel || "" });
+  you.setData(pts("you"));
+  if (series.bench?.some((v) => v != null)) {
+    const b = chart.addLineSeries({ color: token("--chart-2"), lineWidth: 2, lineStyle: 2, priceLineVisible: false, title: benchLabel || "" });
+    b.setData(pts("bench"));
+  }
+  you.createPriceLine({ price: 100, color: token("--color-border"), lineWidth: 1, lineStyle: 1, axisLabelVisible: false });
+  chart.timeScale().fitContent();
+  return { destroy() { chart.remove(); } };
+}
+
 /** Live TradingView widget (secondary tab). Yahoo suffix → TradingView exchange. */
 export function tradingView(el, yahooSymbol, theme) {
   const map = { AS: "EURONEXT", BR: "EURONEXT", PA: "EURONEXT", LS: "EURONEXT", DE: "XETR", F: "FWB", L: "LSE",

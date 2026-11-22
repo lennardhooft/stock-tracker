@@ -161,3 +161,35 @@ def test_earnings_result_alert():
     out = [a for a in alerts.evaluate([row], cfg, 4, {}) if a.kind == "earnings_result"]
     assert len(out) == 1
     assert "EPS 2,68 vs 2,47 expected (beat)" in out[0].body and "−3,1" in out[0].body
+
+
+def test_dividend_summary_quarterly_payer():
+    from src.events import dividend_summary
+
+    idx = pd.to_datetime(
+        [
+            "2025-02-10",
+            "2025-05-10",
+            "2025-08-10",
+            "2025-11-10",
+            "2026-02-10",
+            "2026-05-10",
+            "2026-08-10",
+            "2026-11-10",
+        ]
+    )
+    h = pd.Series([0.20, 0.20, 0.20, 0.20, 0.25, 0.25, 0.25, 0.25], index=idx)
+    d = dividend_summary(h, 50.0, date(2026, 11, 22), "USD")
+    assert d["ttm"] == pytest.approx(1.0) and d["per_year"] == 4
+    assert d["yield_pct"] == pytest.approx(2.0)
+    assert d["growth_pct"] == pytest.approx(25.0)
+    assert d["history"][-1] == ["2026-11-10", 0.25]
+    assert all(x[0] > "2025-08" for x in d["history"])  # last 15 months only
+
+
+def test_dividend_summary_stopped_paying():
+    from src.events import dividend_summary
+
+    h = pd.Series([0.5], index=pd.to_datetime(["2024-03-01"]))
+    assert dividend_summary(h, 10.0, date(2026, 11, 22), "EUR") is None
+    assert dividend_summary(None, 10.0, date(2026, 11, 22), "EUR") is None

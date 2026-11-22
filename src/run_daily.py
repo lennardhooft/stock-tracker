@@ -18,7 +18,18 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from src import alerts, data_checks, events, fetch, fundamentals, levels, log, quality, top_score
+from src import (
+    alerts,
+    data_checks,
+    events,
+    fetch,
+    fundamentals,
+    levels,
+    log,
+    performance,
+    quality,
+    top_score,
+)
 from src import indicators as ind
 from src import score as sc
 from src.risk import stress, volatility
@@ -122,7 +133,9 @@ def process_symbol(
     )
     fund["quality"] = qual
     # Phase 2G: earnings reactions, next earnings (Yahoo fallback), next dividend (13.1, 13.3)
-    ev = events.collect(symbol, close, date.today(), currency, fundamentals.is_us(symbol))
+    ev = events.collect(symbol, close, date.today(), currency, fundamentals.is_us(symbol), divisor)
+    if ev.get("dividends") and profile:
+        ev["dividends"]["payout"] = profile.get("payoutRatio")
     fund["earnings_history"] = ev["earnings_history"]
     fund["dividend"] = ev["dividend"]
     if fund.get("source") != "Finnhub" or not fund.get("earnings"):
@@ -178,8 +191,87 @@ def process_symbol(
         "fundamentals": fund,
         "next_earnings": fund.get("earnings"),
         "next_dividend": fund.get("dividend"),
+        "dividends": ev.get("dividends"),  # Phase 3C: dividend income tracker
         "rows": len(raw),
         "_close": _close_for_corr,  # in memory only (correlation), never written
+    }
+
+
+# ---------------------------------------------------------------------------
+# Returns vs benchmark (Phase 3C)
+# ---------------------------------------------------------------------------
+
+
+def load_performance_config() -> dict[str, Any]:
+    path = ROOT / "config" / "performance.yaml"
+    return yaml.safe_load(path.read_text()) if path.exists() else {"benchmark": "IWDA.AS"}
+
+
+def _closes(df: pd.DataFrame | None, divisor: float = 1.0) -> pd.Series | None:
+    if df is None or df.empty:
+        return None
+    s = df["Close"] / divisor
+    s.index = pd.DatetimeIndex(s.index).tz_localize(None).normalize() if s.index.tz else s.index
+    return s
+
+
+def build_performance(
+    store: Store,
+    watchlist: list[dict[str, Any]],
+    results: dict[str, dict[str, Any]],
+    now: str,
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    """One portfolio_perf row per owner with transactions. Logs counts only."""
+    txs = store.load_transactions()
+    if not txs:
+        return [], {}
+    today = date.today()
+    cfg = load_performance_config()
+    bench_symbol = cfg.get("benchmark", "IWDA.AS")
+    since = performance.earliest(txs)
+    period = performance.history_period(since, today)
+
+    # daily closes: from tonight's results when the ticker is on the watchlist, else fetched
+    closes: dict[str, pd.Series | None] = {}
+    for sym in sorted({t["symbol"].upper() for t in txs}):
+        r = results.get(sym) or {}
+        if "_close" in r:
+            closes[sym] = r["_close"]
+        else:
+            cur_raw = fetch.get_currency(sym)
+            _, div, _ = data_checks.normalize_currency(cur_raw)
+            closes[sym] = _closes(fetch.get_daily_history(sym, period=period), div)
+    bench = _closes(fetch.get_daily_history(bench_symbol, period=period))
+    fx: dict[str, pd.Series] = {}
+    for cur in sorted({t.get("currency") or "EUR" for t in txs} - {"EUR"}):
+        s = _closes(fetch.get_daily_history(f"EUR{cur}=X", period=period))
+        if s is not None:
+            fx[cur] = s
+
+    types: dict[tuple[str, str], str] = {}
+    for w in watchlist:
+        sym = w["symbol"].upper()
+        t = w.get("asset_type") or ((results.get(sym) or {}).get("risk") or {}).get(
+            "suggested_type"
+        )
+        types[(w["user_id"], sym)] = t or "stock"
+
+    rows, failed = [], 0
+    for uid in sorted({t["user_id"] for t in txs}):
+        mine = [t for t in txs if t["user_id"] == uid]
+        my_types = {sym: ty for (u, sym), ty in types.items() if u == uid}
+        try:
+            data = performance.build(mine, closes, fx, bench, my_types, bench_symbol)
+        except Exception as exc:  # noqa: BLE001 — one owner must never crash the run
+            log.error(f"performance: failed ({log.exc_kind(exc)})")
+            failed += 1
+            continue
+        if data is not None:
+            rows.append({"user_id": uid, "data": data, "updated_at": now})
+    missing = sum(1 for v in closes.values() if v is None)
+    log.info(f"returns: {len(rows)} portfolios, {missing} tickers without prices, {failed} failed")
+    return rows, {
+        "yahoo_benchmark": {"ok": bench is not None, "rows": 0 if bench is None else len(bench)},
     }
 
 
@@ -366,6 +458,7 @@ def run(store: Store) -> int:
                         "verdict",
                         "next_dividend",
                         "risk",
+                        "dividends",
                     )
                 },
                 "error": None,
@@ -394,9 +487,14 @@ def run(store: Store) -> int:
         }
         corr_rows.append({"user_id": uid, "data": stress.correlation(closes), "updated_at": now})
 
+    # Phase 3C: returns vs the benchmark per owner (13.14 B), from their transactions
+    perf_rows, perf_sources = build_performance(store, watchlist, results, now)
+    sources.update(perf_sources)
+
     writes_ok = all(
         [
             store.upsert("risk_snapshot", corr_rows, "user_id"),
+            store.upsert("portfolio_perf", perf_rows, "user_id"),
             store.upsert(
                 "market_snapshot",
                 [

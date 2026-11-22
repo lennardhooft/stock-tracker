@@ -5,6 +5,8 @@
 * Next earnings date with time (before the open / after the close) from Yahoo's earnings dates.
 * Next dividend (ex-date, pay date, amount); when Yahoo only knows a past ex-date, the next one is
   estimated from the usual gap between payments.
+* Dividend summary (Phase 3C): payments of the last 15 months, last-12-month total, frequency,
+  yield and growth vs the 12 months before (13.15 A).
 * Fed and ECB rate decisions from config/macro_events.yaml (copied from the official calendars).
 
 Pure functions (tested in tests/test_events.py) + one fetcher that never raises.
@@ -160,6 +162,35 @@ def next_dividend(
     return None
 
 
+def dividend_summary(
+    history: pd.Series | None, price: float | None, today: date, currency: str | None
+) -> dict[str, Any] | None:
+    """{ttm, per_year, yield_pct, growth_pct, currency, history: [[ex_date, amount]]} or None."""
+    if history is None or len(history) == 0:
+        return None
+    h = history.dropna()
+    h = h[h > 0]
+    if h.empty:
+        return None
+    idx = pd.DatetimeIndex(h.index)
+    h.index = (idx.tz_localize(None) if idx.tz is not None else idx).normalize()
+    t = pd.Timestamp(today)
+    last12 = h[h.index > t - pd.Timedelta(days=365)]
+    prev12 = h[(h.index > t - pd.Timedelta(days=730)) & (h.index <= t - pd.Timedelta(days=365))]
+    if last12.empty:
+        return None  # stopped paying (or pays less than once a year)
+    ttm = float(last12.sum())
+    recent = h[h.index > t - pd.Timedelta(days=456)]
+    return {
+        "ttm": round(ttm, 6),
+        "per_year": int(len(last12)),
+        "yield_pct": round(ttm / price * 100, 2) if price else None,
+        "growth_pct": round((ttm / float(prev12.sum()) - 1) * 100, 1) if len(prev12) else None,
+        "currency": currency,
+        "history": [[d.strftime("%Y-%m-%d"), round(float(v), 6)] for d, v in recent.items()],
+    }
+
+
 def yahoo_earnings_rows(df: pd.DataFrame | None, us: bool) -> list[dict[str, Any]]:
     """Yahoo get_earnings_dates frame → [{date, hour, eps_est, eps_actual}]."""
     if df is None or df.empty:
@@ -223,10 +254,23 @@ def earnings_result_due(history: dict[str, Any] | None, as_of: str | None) -> di
 
 
 def collect(
-    symbol: str, close: pd.Series, today: date, currency: str | None, us: bool
+    symbol: str,
+    close: pd.Series,
+    today: date,
+    currency: str | None,
+    us: bool,
+    divisor: float = 1.0,
 ) -> dict[str, Any]:
-    """{earnings_history, next_earnings (Yahoo), dividend} for one ticker."""
-    out: dict[str, Any] = {"earnings_history": None, "next_earnings": None, "dividend": None}
+    """{earnings_history, next_earnings (Yahoo), dividend, dividends} for one ticker.
+
+    divisor: Yahoo quotes some markets in minor units (pence); dividends come in the same unit.
+    """
+    out: dict[str, Any] = {
+        "earnings_history": None,
+        "next_earnings": None,
+        "dividend": None,
+        "dividends": None,
+    }
     try:
         import yfinance as yf
 
@@ -247,7 +291,11 @@ def collect(
             out["next_earnings"] = next_from_rows(rows, today)
         cal = with_retries(lambda: t.calendar or {}, "yahoo calendar") or {}
         divs = with_retries(lambda: t.dividends, "yahoo dividends")
+        if divs is not None and divisor != 1:
+            divs = divs / divisor
         out["dividend"] = next_dividend(cal, divs, today, currency)
+        last = float(close.iloc[-1]) if len(close) else None
+        out["dividends"] = dividend_summary(divs, last, today, currency)
     except Exception as exc:  # noqa: BLE001 — one ticker must never crash the run
         log.error(f"events: failed ({log.exc_kind(exc)})")
     return out

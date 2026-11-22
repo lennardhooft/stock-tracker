@@ -29,6 +29,7 @@ class Store(Protocol):
     def load_previous_scores(self) -> dict[tuple[str, str], float | None]: ...
     def load_alert_state(self, day: str) -> set[tuple[str, str, str]]: ...
     def load_latest_scores(self) -> dict[tuple[str, str], dict[str, Any]]: ...
+    def load_transactions(self) -> list[dict[str, Any]]: ...
     def upsert(self, table: str, rows: list[dict[str, Any]], on_conflict: str) -> bool: ...
     def insert(self, table: str, rows: list[dict[str, Any]]) -> bool: ...
 
@@ -71,7 +72,7 @@ class SupabaseStore:
         return with_retries(_call, f"supabase read {table}")
 
     def load_watchlist(self) -> list[dict[str, Any]]:
-        rows = self._get("watchlist", {"select": "user_id,symbol,name,market,buy_below"})
+        rows = self._get("watchlist", {"select": "user_id,symbol,name,market,buy_below,asset_type"})
         if rows is None:
             raise RuntimeError("could not read watchlist from Supabase")
         return rows
@@ -92,6 +93,12 @@ class SupabaseStore:
         sel = "user_id,symbol,currency,score,max_score,label"
         rows = self._get("latest_scores", {"select": sel}) or []
         return {(r["user_id"], r["symbol"]): r for r in rows}
+
+    def load_transactions(self) -> list[dict[str, Any]]:
+        """All owners' transactions (service key; only used to compute returns, never logged)."""
+        sel = "user_id,date,symbol,kind,quantity,price,currency,fx_rate,fees,taxes,created_at"
+        rows = self._get("transactions", {"select": sel, "order": "date"})
+        return rows or []
 
     def load_alert_state(self, day: str) -> set[tuple[str, str, str]]:
         rows = self._get("alert_state", {"select": "user_id,symbol,kind", "day": f"eq.{day}"}) or []
@@ -186,6 +193,9 @@ class LocalStore:
 
     def load_previous_scores(self) -> dict[tuple[str, str], float | None]:
         return {(r["user_id"], r["symbol"]): r.get("score") for r in self._read("latest_scores")}
+
+    def load_transactions(self) -> list[dict[str, Any]]:
+        return self._read("transactions_seed")  # out/transactions_seed.json, local tests only
 
     def load_alert_state(self, day: str) -> set[tuple[str, str, str]]:
         return {

@@ -437,7 +437,7 @@ function chartTab(ctx, panel, row) {
       const held = mine.length ? positions(mine)[0] : null;
       chartHandle = await priceChart(box, d.weekly, {
         show, panelEls: els,
-        trades: mine.filter((x) => x.kind !== "start").map((x) => ({ date: x.date, kind: x.kind })),
+        trades: mine.filter((x) => x.kind === "buy" || x.kind === "sell").map((x) => ({ date: x.date, kind: x.kind })),
         avgCost: held?.qty > 0 && held.currency === row.currency ? held.avgCost : null,
         lines: {
           high52: row.high_52w, low52: row.low_52w,

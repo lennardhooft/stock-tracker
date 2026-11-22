@@ -14,6 +14,7 @@ import { banner, emptyState } from "../components/states.js";
 import { openSheet, toast } from "../components/overlays.js";
 import { statusBanners } from "./common.js";
 import { openMfaSetup } from "./more.js";
+import { moneyCards } from "./money.js";
 
 const TYPES = ["broad_etf", "sector_etf", "bond_etf", "stock", "speculative", "crypto", "other"];
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "CAD", "DKK", "SEK", "NOK", "JPY"];
@@ -108,6 +109,8 @@ export function renderPortfolio(ctx, main) {
 
     ${riskCard(ctx, pf)}
 
+    ${moneyCards(ctx, pf)}
+
     <div class="cluster" style="justify-content:space-between;align-items:baseline"><h2 class="section-title">${t("pf.holdings", { n: pf.holdings.length })}</h2>
       <a class="btn btn--ghost" href="#/import">${t("imp.link")}${icon("chevron")}</a></div>
     <ul class="list">${pf.holdings.map((h) => {
@@ -189,11 +192,13 @@ async function refreshPortfolio(ctx, { watchlistChanged = false } = {}) {
 }
 
 /* ------------------------------------------------------------------ add trade */
+const PRICE_LABEL = { buy: "trade.price", sell: "trade.price", start: "trade.avgPrice", dividend: "trade.dividendPerShare" };
+
 export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
   const today = new Date().toISOString().slice(0, 10);
   const row = ctx.rows.find((r) => r.symbol === symbol);
   const { el, close } = openSheet({ title: t("pf.addTrade"), body: html`<form class="stack" id="trade-form" novalidate>
-    <div class="segmented" role="group" aria-label="${t("trade.kind")}">${["buy", "sell", "start"].map((k) => html`<button type="button" data-kind="${k}" aria-pressed="${k === kind}">${t(`trade.${k}`)}</button>`)}</div>
+    <div class="segmented" role="group" aria-label="${t("trade.kind")}">${["buy", "sell", "start", "dividend"].map((k) => html`<button type="button" data-kind="${k}" aria-pressed="${k === kind}">${t(`trade.${k}Short`)}</button>`)}</div>
     <p class="small text-2" id="kind-hint">${t(`trade.${kind}Hint`)}</p>
     <label class="field"><span class="field__label">${t("trade.symbol")}</span>
       <input class="input" name="symbol" list="trade-symbols" autocapitalize="characters" autocomplete="off" value="${symbol}" required>
@@ -204,13 +209,13 @@ export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
       <label class="field" style="flex:1;min-width:130px"><span class="field__label">${t("trade.date")}</span><input class="input" type="date" name="date" value="${today}" max="${today}" required></label>
     </div>
     <div class="cluster" style="gap:var(--space-3);align-items:flex-start">
-      <label class="field" style="flex:2;min-width:150px"><span class="field__label" id="price-label">${t(kind === "start" ? "trade.avgPrice" : "trade.price")}</span><input class="input num" name="price" inputmode="decimal" required></label>
+      <label class="field" style="flex:2;min-width:150px"><span class="field__label" id="price-label">${t(PRICE_LABEL[kind])}</span><input class="input num" name="price" inputmode="decimal" required></label>
       <label class="field" style="flex:1;min-width:100px"><span class="field__label">${t("trade.currency")}</span>
         <select class="input" name="currency">${CURRENCIES.map((c) => html`<option ${c === (row?.currency || "EUR") ? "selected" : ""}>${c}</option>`)}</select></label>
     </div>
     <div class="cluster" style="gap:var(--space-3);align-items:flex-start">
       <label class="field" style="flex:1;min-width:130px"><span class="field__label">${t("trade.fees")}</span><input class="input num" name="fees" inputmode="decimal" placeholder="0"></label>
-      <label class="field" style="flex:1;min-width:130px"><span class="field__label">${t("trade.taxes")}</span><input class="input num" name="taxes" inputmode="decimal" placeholder="0"></label>
+      <label class="field" style="flex:1;min-width:130px"><span class="field__label" id="taxes-label">${t(kind === "dividend" ? "trade.withholding" : "trade.taxes")}</span><input class="input num" name="taxes" inputmode="decimal" placeholder="0"></label>
     </div>
     <label class="field"><span class="field__label">${t("trade.type")}</span>
       <select class="input" name="asset_type">${TYPES.map((k) => html`<option value="${k}" ${k === (row?.asset_type || row?.risk?.suggested_type || "stock") ? "selected" : ""}>${t(`pf.type.${k}`)}</option>`)}</select>
@@ -220,7 +225,14 @@ export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
   </form>` });
   const form = $("#trade-form", el);
   const msg = $("#trade-msg", el);
+  const prefillShares = () => { // a dividend is paid on the shares you own
+    const sym = form.symbol.value.trim().toUpperCase();
+    const owned = valuePortfolio(ctx.pf?.transactions || [], ctx.rows, {}, fx(ctx)).holdings.find((h) => h.symbol === sym)?.qty;
+    if (owned) form.quantity.value = fmt.num(owned, Number.isInteger(owned) ? 0 : 4);
+  };
+  if (kind === "dividend") prefillShares();
   form.symbol.addEventListener("change", () => {
+    if (kind === "dividend") prefillShares();
     const r = ctx.rows.find((x) => x.symbol === form.symbol.value.trim().toUpperCase());
     if (r?.currency) form.currency.value = r.currency;
     if (r) form.asset_type.value = r.asset_type || r.risk?.suggested_type || "stock";
@@ -231,7 +243,9 @@ export function openTradeSheet(ctx, { symbol = "", kind = "buy" } = {}) {
     kind = k.dataset.kind;
     $$("[data-kind]", el).forEach((b) => b.setAttribute("aria-pressed", String(b === k)));
     $("#kind-hint", el).textContent = t(`trade.${kind}Hint`);
-    $("#price-label", el).textContent = t(kind === "start" ? "trade.avgPrice" : "trade.price");
+    $("#price-label", el).textContent = t(PRICE_LABEL[kind]);
+    $("#taxes-label", el).textContent = t(kind === "dividend" ? "trade.withholding" : "trade.taxes");
+    if (kind === "dividend" && !form.quantity.value) prefillShares();
   });
   form.addEventListener("submit", async (e) => {
     e.preventDefault();

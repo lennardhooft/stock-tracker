@@ -352,3 +352,29 @@ create policy risk_snapshot_owner_read on public.risk_snapshot
 grant select on public.risk_snapshot to authenticated;
 grant all on public.risk_snapshot to service_role;
 revoke all on public.risk_snapshot from anon;
+
+-- ===========================================================================
+-- Phase 3C: returns vs benchmark, dividends, tax overview (CLAUDE.md 13.14 B, 13.15 A + C)
+-- ===========================================================================
+-- dividends received: quantity = shares, price = gross dividend per share, taxes = withholding
+alter table public.transactions drop constraint if exists transactions_kind_check;
+alter table public.transactions add constraint transactions_kind_check
+  check (kind in ('buy', 'sell', 'start', 'dividend'));
+
+-- per ticker dividend history summary (not personal: same for everyone holding it)
+alter table public.latest_scores add column if not exists dividends jsonb;  -- {ttm, per_year, yield_pct, growth_pct, payout, history}
+
+-- returns of the owner's investments, written by the daily job; money data → owner + two-step login only
+create table if not exists public.portfolio_perf (
+  user_id     uuid primary key references auth.users (id) on delete cascade,
+  data        jsonb not null,   -- {since, periods, xirr, what_if, parts, series}
+  updated_at  timestamptz not null default now()
+);
+alter table public.portfolio_perf enable row level security;
+drop policy if exists portfolio_perf_owner_mfa_read on public.portfolio_perf;
+create policy portfolio_perf_owner_mfa_read on public.portfolio_perf
+  for select to authenticated
+  using (user_id = (select auth.uid()) and (select auth.jwt() ->> 'aal') = 'aal2');
+grant select on public.portfolio_perf to authenticated;
+grant all on public.portfolio_perf to service_role;
+revoke all on public.portfolio_perf from anon;

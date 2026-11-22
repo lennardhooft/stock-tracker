@@ -72,12 +72,13 @@ function supabaseApi(cfg) {
 
     /* ---- portfolio (readable only at aal2: row-level security) ---- */
     async loadPortfolio() {
-      const [tx, ps, rs] = await Promise.all([
+      const [tx, ps, rs, perf] = await Promise.all([
         q(sb.from("transactions").select("*").order("date")),
         q(sb.from("portfolio_settings").select("*")),
         q(sb.from("risk_settings").select("*")),
+        q(sb.from("portfolio_perf").select("data,updated_at")).catch(() => []), // table added in 3C
       ]);
-      return { transactions: tx, settings: ps[0] || null, risk: rs[0] || null };
+      return { transactions: tx, settings: ps[0] || null, risk: rs[0] || null, perf: perf[0] || null };
     },
     addTransaction: (row) => q(sb.from("transactions").insert(row).select().single()),
     addTransactions: (rows) => q(sb.from("transactions").insert(rows).select()),
@@ -253,6 +254,7 @@ function demoApi(fixture) {
           next_earnings: s.next_earnings || null,
           signals: demoSignals(s, market), top: demoTop(s, market), quality: s.quality || null, verdict: s.verdict || null,
           risk: s.risk || null,
+          dividends: s.dividends ? { ...s.dividends, history: (s.dividends.history_days_ago || []).map(([d, a]) => [inDays(-d), a]) } : null,
           next_dividend: s.dividend ? { ...s.dividend, ex_date: inDays(s.dividend.ex_in_days), pay_date: s.dividend.pay_in_days != null ? inDays(s.dividend.pay_in_days) : null } : null,
           sparkline: weeklySeries(s.symbol, s.price, s.pct_from_52w_high).c.slice(-52),
           checks: s.suspect ? { status: "red", issues: [{ code: "suspect_move", level: "red", detail: "unexplained move > 40%" }], suspect_dates: [] } : { status: "green", issues: [] },
@@ -299,7 +301,9 @@ function demoApi(fixture) {
         const f = await (await fetch("fixtures/app.json", { cache: "no-cache" })).json();
         const empty = fixture === "empty" || fixture === "new" || fixture === "noportfolio";
         demoPf = { transactions: empty ? [] : (f.portfolio?.transactions || []).map((t, i) => ({ id: `t${i}`, ...t })),
-          settings: empty ? null : f.portfolio?.settings || null, risk: null };
+          settings: empty ? null : f.portfolio?.settings || null, risk: null,
+          perf: empty || fixture === "noperf" ? null : { data: f.portfolio?.perf, updated_at: new Date(Date.now() - 3 * 3600e3).toISOString() } };
+        if (fixture === "earlyperf" && demoPf.perf) demoPf.perf.data = { ...demoPf.perf.data, trading_days: 4, since: demoPf.perf.data.as_of };
       }
       return structuredClone(demoPf);
     },
