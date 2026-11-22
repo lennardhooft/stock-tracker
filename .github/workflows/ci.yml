@@ -22,7 +22,7 @@ jobs:
       - run: pytest -q
 
   ui:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # Playwright 1.56 doesn't support ubuntu-26.04 (ubuntu-latest) yet
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
