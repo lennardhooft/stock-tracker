@@ -103,5 +103,124 @@
     "why": "Insiders sell for many reasons, but they usually buy for one: they think the shares are cheap.",
     "how": "Fires when insiders bought more than they sold (in value). Several insiders buying at once is the strongest sign.",
     "limits": "Only available for US stocks on free data. Planned sales and small purchases can be noise."
+  },
+  "quality_score": {
+    "title": "Quality Score",
+    "what": "A 0–100 score for how healthy the business is, from its annual reports: financial health (Piotroski), bankruptcy risk (Altman Z), debt, free cash flow, sales growth, margins, share dilution and return on capital (ROIC).",
+    "why": "A low price alone isn't enough. A stock can be cheap because the business is failing. Quality tells a bargain apart from a value trap.",
+    "how": "70 or more is High, 40–70 Medium, below 40 Low. Debt and ROIC count 1,5× (your choice). Each part shows the numbers behind it.",
+    "limits": "Based on free data: usually 4–5 years of annual reports. It looks backwards; a business can change fast. Not meaningful for ETFs."
+  },
+  "verdict": {
+    "title": "Verdict",
+    "what": "Combines the Bottom Score with the Quality Score into one word.",
+    "why": "Bottom signals say the price is low; quality says whether the business deserves a second look.",
+    "how": "Bottom Score 4+ and Quality 70+: Quality on sale. Quality 40–70: Check fundamentals. Quality under 40: Possible value trap. Bottom Score under 4: Not at a bottom.",
+    "limits": "A shortcut to decide what to research first, not a buy signal."
+  },
+  "moat": {
+    "title": "Moat (ROIC)",
+    "what": "Whether the company earns high returns on the money invested in it, year after year. ROIC = operating profit after tax ÷ (debt + equity − cash).",
+    "why": "Companies that keep earning well above their cost of capital usually have something competitors can't copy: a moat.",
+    "how": "Wide: average ROIC 15 %+, above the cost of capital (8,5 %) almost every year, and steady. Narrow: some of that. None: little of it.",
+    "limits": "Only 4–5 years of free data. Companies with lots of net cash can show odd ROIC values. Banks and insurers use return on equity instead."
+  },
+  "piotroski": {
+    "title": "Piotroski F-score",
+    "what": "Nine simple yes/no checks comparing the last two annual reports: profit, cash flow, earnings quality, debt, liquidity, new shares, gross margin and asset turnover.",
+    "why": "Cheap stocks with improving fundamentals tend to do better than cheap stocks with worsening ones.",
+    "how": "8–9 is strong, 0–3 is weak.",
+    "limits": "Only looks at the last two years, and a single big one-off item can flip a check."
+  },
+  "altman_z": {
+    "title": "Altman Z-score",
+    "what": "A formula that combines working capital, retained earnings, operating profit, market value and sales to estimate bankruptcy risk.",
+    "why": "Avoids buying a 'bottom' that turns out to be the start of a collapse.",
+    "how": "Above 3 is the safe zone, 1,8–3 grey, below 1,8 distress.",
+    "limits": "Designed for industrial companies; not meaningful for banks and insurers (shown as n/a)."
+  },
+  "debt_quality": {
+    "title": "Debt",
+    "what": "Net debt divided by a year of EBITDA (operating profit before depreciation), and how many times operating profit covers the interest.",
+    "why": "High debt is the most common reason a cheap company doesn't recover.",
+    "how": "Net debt under 1× EBITDA is comfortable, above 3–4× is a warning. Interest covered 8× or more is safe, under 3× a warning.",
+    "limits": "Leases and off-balance items may be missing in free data."
+  },
+  "fcf_quality": {
+    "title": "Free cash flow",
+    "what": "Cash from operations minus investments in equipment: the money left for owners.",
+    "why": "Profits can be bent by accounting; cash is harder to fake.",
+    "how": "Good when positive in at least 3 of the last 4 years.",
+    "limits": "Fast-growing companies may invest heavily on purpose."
+  },
+  "growth_quality": {
+    "title": "Sales growth",
+    "what": "How fast revenue grew per year over the last 3 years.",
+    "why": "Shrinking sales are a classic sign of a value trap.",
+    "how": "+10 % per year or more scores fully, −5 % or worse scores zero.",
+    "limits": "Acquisitions and currency moves can flatter or hide growth."
+  },
+  "margins_quality": {
+    "title": "Profit margins",
+    "what": "Operating margin (operating profit ÷ sales) this year compared with its own average of the years before.",
+    "why": "Falling margins can mean pricing power is fading.",
+    "how": "Good when at or above its own average; 5 points below scores zero. A loss can never score fully.",
+    "limits": "Cyclical companies swing a lot through the cycle."
+  },
+  "dilution": {
+    "title": "Share count (dilution)",
+    "what": "How the number of shares changed per year over 3 years.",
+    "why": "New shares shrink your slice of the company; buybacks grow it.",
+    "how": "Flat or falling is good; more than +5 % per year scores zero.",
+    "limits": "Some companies pay staff in shares, which shows up here."
+  },
+  "top_score": {
+    "title": "Top Score",
+    "what": "The mirror of the Bottom Score: signs that a stock is getting hot (far above its trend, overbought, expensive vs its history, insiders selling, market euphoria, near a major ceiling).",
+    "why": "Helps with the other half of investing: not chasing, and trimming positions that grew too big.",
+    "how": "0–1 Normal · 2–3 Getting hot · 4+ Consider trimming. Shown on your stocks only when it's 2 or more.",
+    "limits": "Never a sell signal. Strong stocks can stay 'hot' for years."
+  },
+  "far_above_trend": {
+    "title": "U1 · Far above its 4-year average",
+    "what": "Price compared with its 200-week (≈ 4-year) moving average.",
+    "why": "Prices far above their long-term trend tend to fall back toward it eventually.",
+    "how": "Fires when the price is 1,8× its 200-week average or more.",
+    "limits": "Fast-growing companies can stay far above their average for a long time."
+  },
+  "weekly_rsi_high": {
+    "title": "U2 · Weekly RSI overbought",
+    "what": "The weekly Relative Strength Index (0–100) measures how strong recent gains were.",
+    "why": "Very high readings show buyers may have run ahead of the business.",
+    "how": "Fires above 70; above 80 is very overbought.",
+    "limits": "In strong uptrends RSI can stay high for months."
+  },
+  "expensive": {
+    "title": "U3 · Expensive vs its own history",
+    "what": "Today's P/E (or P/S) compared with the stock's own range of the last 5–10 years.",
+    "why": "Buying at the top of its own valuation range leaves little room for disappointment.",
+    "how": "Fires when today's valuation is higher than 90 % of its own history.",
+    "limits": "A business that genuinely improved deserves a higher valuation."
+  },
+  "insider_selling": {
+    "title": "U4 · Insider selling",
+    "what": "Net open-market selling by directors and managers over the last 90 days, as a share of the company's market value.",
+    "why": "Insiders sell for many reasons, but heavy net selling can mean they think the price is rich.",
+    "how": "Fires when net selling is at least 0,05 % of the company's value in 90 days. A percentage is used because large companies' insiders sell every quarter.",
+    "limits": "US stocks only on free data. Planned (10b5-1) sales can't be separated."
+  },
+  "euphoria": {
+    "title": "U5 · Market euphoria",
+    "what": "CNN's Fear & Greed index for the whole US market.",
+    "why": "When everyone is greedy, prices tend to be high and risk is underestimated.",
+    "how": "Fires at 75 or more (extreme greed).",
+    "limits": "Measures the whole market, not this stock. The per-stock hype meter comes later."
+  },
+  "near_resistance": {
+    "title": "U6 · Near a major ceiling",
+    "what": "Whether the price is just below a major previous ceiling seen on monthly or yearly charts.",
+    "why": "Old ceilings often stop rallies, at least for a while.",
+    "how": "Fires within 3 % below a monthly/yearly ceiling zone.",
+    "limits": "Ceilings do break; a breakout can turn it into support."
   }
 }

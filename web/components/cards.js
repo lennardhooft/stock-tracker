@@ -3,7 +3,7 @@ import { html, raw } from "../lib/dom.js";
 import { t } from "../lib/i18n.js";
 import * as fmt from "../lib/format.js";
 import { icon } from "./icons.js";
-import { changeTag, scoreBadge, topBadge } from "./badges.js";
+import { changeTag, scoreBadge, topBadge, verdictBadge } from "./badges.js";
 
 /** Small inline sparkline. Direction is also given as text for screen readers. */
 export function sparkline(values, { w = 88, h = 28, neutral = false } = {}) {
@@ -39,9 +39,10 @@ export function stockCard(s, { href = "" } = {}) {
   return html`<${raw(Tag)} class="stock" ${href ? raw(`href="${href}"`) : ""}>
     <div class="stock__head">
       <div class="stock__id"><span class="stock__ticker">${s.symbol}</span><span class="stock__name truncate">${s.name || ""}</span></div>
-      <div class="stock__score">${s.top ? topBadge(s.top) : ""}${scoreBadge(s)}</div>
+      <div class="stock__score">${s.top?.score >= 2 ? topBadge(s.top, { short: true }) : ""}${scoreBadge(s)}</div>
     </div>
     ${body}
+    ${scored && ["sale", "check", "trap"].includes(s.verdict) ? html`<div class="stock__verdict">${verdictBadge(s.verdict)}</div>` : ""}
   </${raw(Tag)}>`;
 }
 
@@ -54,6 +55,18 @@ export function signalRow(sig, { glossaryKey = "" } = {}) {
     <span class="signal__name">${sig.name}</span>
     ${glossaryKey ? html`<button type="button" class="icon-btn info-btn signal__info" data-glossary="${glossaryKey}" aria-label="${t("common.info")} ${sig.name}">${icon("info")}</button>` : ""}
     <span class="signal__detail">${sig.detail}</span>
+  </li>`;
+}
+
+const QUALITY_ICON = { good: "check", ok: "dash", weak: "warning", na: "dash" };
+
+/** Quality part row (Phase 2E): good / ok / weak / n/a icon + word, name, numbers, ⓘ. */
+export function qualityRow({ name, detail, state, tag = "", glossaryKey = "" }) {
+  return html`<li class="signal" data-state="${state}">
+    <span class="signal__icon">${icon(QUALITY_ICON[state], { label: t(`quality.state.${state}`) })}</span>
+    <span class="signal__name">${name} <span class="signal__tag">${t(`quality.state.${state}`)}${tag ? ` · ${tag}` : ""}</span></span>
+    ${glossaryKey ? html`<button type="button" class="icon-btn info-btn signal__info" data-glossary="${glossaryKey}" aria-label="${t("common.info")} ${name}">${icon("info")}</button>` : ""}
+    <span class="signal__detail">${detail}</span>
   </li>`;
 }
 

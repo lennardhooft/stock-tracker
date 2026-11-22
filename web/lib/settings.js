@@ -9,7 +9,8 @@ export const DEFAULTS = {
   explain: true,        // show ⓘ glossary buttons
   sort: "score",        // score | change | high | name
   minScore: 0,
-  market: "all",        // all | US | EU
+  market: "all",
+  verdict: "all",       // all | sale | check | trap        // all | US | EU
   onboarded: false,
   chartShow: { zones: true, ma: true, markers: true },
 };

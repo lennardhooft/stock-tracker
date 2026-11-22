@@ -120,6 +120,25 @@ function demoSignals(s, market) {
   ];
 }
 
+/** Top Score in the shape src/top_score.py stores; `top_fired` lists the signals that fire. */
+function demoTop(s, market) {
+  const f = s.top_fired || [];
+  const sma = s.price / (1 + (s.vs_sma ?? 20) / 100);
+  const v = s.valuation;
+  const signals = [
+    { code: "U1", key: "far_above_trend", passed: f.includes("U1"), value: { ratio: f.includes("U1") ? 1.92 : +(s.price / sma).toFixed(2) }, threshold: 1.8, weight: 1 },
+    { code: "U2", key: "weekly_rsi_high", passed: f.includes("U2"), value: { rsi: f.includes("U2") ? 74.5 : s.rsi ?? 48, extreme: false }, threshold: 70, weight: 1 },
+    { code: "U3", key: "expensive", passed: v ? f.includes("U3") : null, value: v ? { ...v, pct: f.includes("U3") ? 94 : v.pct } : null, threshold: 90, weight: 1 },
+    { code: "U4", key: "insider_selling", passed: s.insiders ? false : null,
+      value: s.insiders ? { net_sell: Math.max(0, -s.insiders.net_value), pct_of_mcap: 0.004, days: 90 } : { na: s.insiders_na || null }, threshold: 0.05, weight: 1 },
+    { code: "U5", key: "euphoria", passed: (market.fear_greed?.value ?? 0) >= 75, value: market.fear_greed ? { fear_greed: market.fear_greed.value } : null, threshold: 75, weight: 1 },
+    { code: "U6", key: "near_resistance", passed: f.includes("U6"),
+      value: f.includes("U6") ? { low: s.price * 1.01, high: s.price * 1.04, distance_pct: 1.0, touches: 3 } : null, threshold: 3, weight: 1 },
+  ];
+  const score = signals.filter((x) => x.passed === true).length;
+  return { score, max_score: 6, n_na: signals.filter((x) => x.passed === null).length, label: score >= 4 ? "trim" : score >= 2 ? "hot" : "normal", signals };
+}
+
 function demoApi(fixture) {
   const UID = "demo";
   let demoLoggedIn = false;
@@ -153,7 +172,8 @@ function demoApi(fixture) {
           score: s.score, max_score: 6, n_na: (s.na || []).length + (s.valuation ? 0 : 1) + (s.insiders ? 0 : 1),
           label: s.label, suspect: !!s.suspect,
           next_earnings: s.next_earnings || null,
-          signals: demoSignals(s, market), sparkline: weeklySeries(s.symbol, s.price, s.pct_from_52w_high).c.slice(-52),
+          signals: demoSignals(s, market), top: demoTop(s, market), quality: s.quality || null, verdict: s.verdict || null,
+          sparkline: weeklySeries(s.symbol, s.price, s.pct_from_52w_high).c.slice(-52),
           checks: s.suspect ? { status: "red", issues: [{ code: "suspect_move", level: "red", detail: "unexplained move > 40%" }], suspect_dates: [] } : { status: "green", issues: [] },
           updated_at: updated,
         });

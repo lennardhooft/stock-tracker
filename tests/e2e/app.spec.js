@@ -27,7 +27,7 @@ async function quality(page, label) {
   const rawKeys = await page.evaluate(() => {
     const txt = document.body.innerText;
     return (txt.match(/\b[a-z]+\.[a-zA-Z]+(\.[a-zA-Z0-9]+)*\b/g) || [])
-      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness)\./.test(k));
+      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels)\./.test(k));
   });
   expect(rawKeys, `${label}: untranslated i18n keys`).toEqual([]);
 
@@ -65,6 +65,8 @@ const SCREENS = [
   ["today", "#/"],
   ["watchlist", "#/watchlist"],
   ["ticker", "#/ticker/NRDX"],
+  ["ticker-trap", "#/ticker/HALD"],
+  ["ticker-hot", "#/ticker/ORCA"],
   ["more", "#/more"],
   ["settings", "#/more/settings"],
   ["health", "#/more/health"],
@@ -350,4 +352,87 @@ test("adding a stock offers to score it now", async ({ page }) => {
   await page.locator('input[name="q"]').fill("SAP.DE");
   await page.getByRole("button", { name: "Add to watchlist" }).click();
   await expect(page.locator(".toast").getByRole("button", { name: "Score now" })).toBeVisible();
+});
+
+/* ------------------------------------------------------------ Phase 2E: quality, verdict, Top Score */
+test("verdict: quality on sale leads the score card and the Today card", async ({ page }) => {
+  await open(page, "#/");
+  await expect(page.locator(".list").first()).toContainText("Quality on sale: 6 of 6 bottom signals and a quality score of 96 / 100.");
+  await open(page, "#/ticker/NRDX");
+  await expect(page.locator("#verdict-line .verdict--sale")).toHaveText("Quality on sale");
+});
+
+test("verdict: value trap names the weakest parts", async ({ page }) => {
+  await open(page, "#/ticker/HALD");
+  await expect(page.locator("#verdict-line .verdict--trap")).toBeVisible();
+  await expect(page.locator("#main")).toContainText("Possible value trap: cheap, but quality is weak (14 / 100): bankruptcy risk and high debt.");
+  await page.getByRole("tab", { name: "Fundamentals" }).click();
+  await expect(page.locator("#quality-card")).toContainText("Low");
+  await expect(page.locator('#quality-card .signal[data-state="weak"]').first()).toBeVisible();
+  await quality(page, "quality trap");
+  await shot(page, "ticker-quality-trap-dark-375");
+});
+
+test("quality card: score, moat, parts with ⓘ, ROIC by year", async ({ page }) => {
+  await open(page, "#/ticker/NRDX");
+  await page.getByRole("tab", { name: "Fundamentals" }).click();
+  const card = page.locator("#quality-card");
+  await expect(card).toContainText("96 / 100");
+  await expect(card).toContainText("Wide");
+  await expect(card.locator(".signal")).toHaveCount(8);
+  await expect(card).toContainText("counts 1.5×");
+  await expect(card.locator(".dtable tbody tr")).toHaveCount(5);
+  await card.locator("[data-glossary=moat]").first().click();
+  await expect(page.locator(".sheet")).toContainText("Moat (ROIC)");
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".sheet[open]")).toHaveCount(0);
+  for (const theme of ["dark", "light"]) {
+    for (const width of [375, 768, 1280]) {
+      await open(page, "#/ticker/NRDX", { theme, width });
+      await page.getByRole("tab", { name: "Fundamentals" }).click();
+      await expect(page.locator("#quality-card .signal").first()).toBeVisible();
+      await quality(page, `quality ${theme} ${width}`);
+      await shot(page, `ticker-quality-${theme}-${width}`);
+    }
+  }
+});
+
+test("quality: ETF says why there is no score", async ({ page }) => {
+  await open(page, "#/ticker/WORLD.AS");
+  await page.getByRole("tab", { name: "Fundamentals" }).click();
+  await expect(page.locator("#quality-card")).toContainText("an ETF holds many companies");
+  await quality(page, "quality etf");
+});
+
+test("top score: hot stock shows the badge and the overheating signs, calm stock doesn't", async ({ page }) => {
+  await open(page, "#/ticker/ORCA");
+  await expect(page.locator("#verdict-line .badge--top-trim")).toBeVisible();
+  await expect(page.locator("#top-card")).toContainText("4 of 6 overheating signs");
+  await expect(page.locator("#top-card")).toContainText("Never a sell signal");
+  await expect(page.locator("#top-card .signal")).toHaveCount(6);
+  await shot(page, "ticker-top-dark-375");
+  await open(page, "#/ticker/NRDX");
+  await expect(page.locator("#top-card")).toContainText("No signs of overheating.");
+  await expect(page.locator("#verdict-line .badge--top-trim, #verdict-line .badge--top-hot")).toHaveCount(0);
+});
+
+test("watchlist: verdict badges only on bottoms, verdict filter", async ({ page }) => {
+  await open(page, "#/watchlist");
+  await expect(page.locator(".stock__verdict")).toHaveCount(2);
+  await page.getByRole("button", { name: "Filter" }).click();
+  await page.locator('[data-verdict="trap"]').click();
+  await page.locator("[data-done]").click();
+  await expect(page.locator(".stock__ticker")).toHaveText(["HALD"]);
+  await expect(page.locator('[data-clear="verdict"]')).toContainText("Possible value trap");
+  await quality(page, "watchlist verdict filter");
+  await page.locator('[data-clear="verdict"]').click();
+  await expect(page.locator(".stock__ticker").first()).toBeVisible();
+});
+
+test("quality texts in Dutch", async ({ page }) => {
+  await open(page, "#/ticker/HALD", { lang: "nl" });
+  await expect(page.locator("#main")).toContainText("Mogelijke waardeval");
+  await page.getByRole("tab", { name: "Cijfers" }).click();
+  await expect(page.locator("#quality-card")).toContainText("Kwaliteit van het bedrijf");
+  await quality(page, "quality nl");
 });

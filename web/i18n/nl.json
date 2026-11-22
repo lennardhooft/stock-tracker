@@ -68,7 +68,12 @@
     "suspect": "Sommige gegevens lijken fout en worden weggelaten",
     "tapForBreakdown": "Toon welke signalen afgingen",
     "pending": "In afwachting",
-    "error": "Geen score"
+    "error": "Geen score",
+    "topShort": {
+      "normal": "Normaal",
+      "hot": "Heet",
+      "trim": "Afbouwen"
+    }
   },
   "verdict": {
     "sale": "Kwaliteit in de solden",
@@ -558,5 +563,159 @@
     "notLoggedIn": "Update kon niet starten: je login is verlopen. Log uit en opnieuw in.",
     "github": "Update kon niet starten: GitHub weigerde de sleutel (code {code}). Controleer dat de token voor de stock-tracker-repository is met Actions: lezen en schrijven.",
     "failedReason": "Update kon niet starten ({reason}). Probeer het over een minuut opnieuw."
+  },
+  "quality": {
+    "title": "Kwaliteit van het bedrijf",
+    "score": "Kwaliteit",
+    "outOf": "{score} / 100",
+    "label": {
+      "high": "Hoog",
+      "medium": "Middel",
+      "low": "Laag"
+    },
+    "basedOn": "Op basis van {years} jaarverslagen · {n} van 8 onderdelen",
+    "moatTitle": "Slotgracht",
+    "moat": {
+      "wide": "Breed",
+      "narrow": "Smal",
+      "none": "Geen"
+    },
+    "moatNa": "n.v.t.",
+    "heavier": "telt 1,5×",
+    "state": {
+      "good": "Goed",
+      "ok": "OK",
+      "weak": "Zwak",
+      "na": "Geen data"
+    },
+    "na": {
+      "etf": "n.v.t.: een ETF bevat veel bedrijven, dus er is geen enkele kwaliteitsscore.",
+      "no_reports": "n.v.t.: geen jaarverslagen gevonden voor dit aandeel.",
+      "too_few_parts": "n.v.t.: te weinig cijfers voor een betrouwbare score.",
+      "failed": "n.v.t.: de jaarverslagen konden niet geladen worden. Vannacht wordt het opnieuw geprobeerd.",
+      "pending": "De kwaliteitsscore verschijnt na de update van vannacht."
+    },
+    "financialNote": "Banken en verzekeraars: faillissementsrisico, schuld, vrije kasstroom en ROIC gelden niet voor hen, dus de score gebruikt de andere onderdelen (en rendement op eigen vermogen).",
+    "yearsTitle": "Rendement op kapitaal en brutomarge per jaar",
+    "colYear": "Jaar",
+    "colRoic": "ROIC",
+    "colRoe": "ROE",
+    "colGm": "Brutomarge",
+    "part": {
+      "piotroski": {
+        "name": "Financiële gezondheid (Piotroski)",
+        "detail": "{f} van {n} gezondheidstests geslaagd (winst, kasstroom, schuld, efficiëntie)."
+      },
+      "altman": {
+        "name": "Faillissementsrisico (Altman Z)",
+        "safe": "Z-score {z}: veilige zone (boven 3).",
+        "grey": "Z-score {z}: grijze zone (1,8–3).",
+        "distress": "Z-score {z}: gevarenzone (onder 1,8)."
+      },
+      "debt": {
+        "name": "Schuld",
+        "detail": "Nettoschuld is {x}× een jaar EBITDA (waarschuwing boven 3×){cover}.",
+        "netCash": "Meer cash dan schuld{cover}.",
+        "cover": ", rente {c}× gedekt door bedrijfswinst",
+        "noEbitda": "Schuld, maar geen bedrijfswinst om ze af te betalen."
+      },
+      "fcf": {
+        "name": "Vrije kasstroom",
+        "detail": "Positief in {pos} van de laatste {n} jaar."
+      },
+      "growth": {
+        "name": "Omzetgroei",
+        "grew": "Omzet groeide {pct} per jaar over {years} jaar.",
+        "shrank": "Omzet kromp {pct} per jaar over {years} jaar."
+      },
+      "margins": {
+        "name": "Winstmarges",
+        "detail": "Bedrijfsmarge {now}, tegenover {avg} gemiddeld in de jaren ervoor ({diff} ptn)."
+      },
+      "dilution": {
+        "name": "Aantal aandelen",
+        "up": "{pct} meer aandelen per jaar: aandeelhouders worden verwaterd.",
+        "down": "{pct} minder aandelen per jaar (inkoop).",
+        "flat": "Aantal aandelen ongeveer gelijk."
+      },
+      "roic": {
+        "name": "Rendement op kapitaal (ROIC)",
+        "detail": "ROIC gemiddeld {avg}, boven de kapitaalkost van {wacc} in {above} van {n} jaar.",
+        "roe": "Rendement op eigen vermogen gemiddeld {avg} over {n} jaar."
+      }
+    },
+    "partNa": {
+      "financial": "n.v.t.: niet zinvol voor banken en verzekeraars.",
+      "need_2_years": "n.v.t.: heeft 2 jaarverslagen nodig.",
+      "need_3_years": "n.v.t.: heeft 3 jaarverslagen nodig.",
+      "missing_figures": "n.v.t.: cijfers ontbreken in de jaarverslagen."
+    },
+    "weak": {
+      "piotroski": "zwakke financiële gezondheid",
+      "altman": "faillissementsrisico",
+      "debt": "hoge schuld",
+      "fcf": "weinig vrije kasstroom",
+      "growth": "krimpende omzet",
+      "margins": "dalende marges",
+      "dilution": "veel nieuwe aandelen",
+      "roic": "laag rendement op kapitaal"
+    }
+  },
+  "verdictLine": {
+    "sale": "Kwaliteit in de solden: {score} van {max} bodemsignalen en een kwaliteitsscore van {q} / 100.",
+    "check": "Controleer de fundamenten: sterke bodemsignalen, maar de kwaliteit is maar {q} / 100.",
+    "checkNoData": "Controleer de fundamenten: sterke bodemsignalen, maar er is geen kwaliteitsdata voor dit aandeel.",
+    "trap": "Mogelijke waardeval: goedkoop, maar de kwaliteit is zwak ({q} / 100){weak}.",
+    "weakList": ": {list}"
+  },
+  "top": {
+    "title": "Wordt het heet? (Top Score)",
+    "none": "Geen tekenen van oververhitting.",
+    "some": "{n} van {max} tekenen van oververhitting: {list}.",
+    "note": "Nooit een verkoopsignaal: het helpt je beslissen om niet bij te kopen, of af te bouwen tot je doelgewicht.",
+    "U1": {
+      "name": "Ver boven zijn 4-jaarsgemiddelde",
+      "short": "ver boven zijn 4-jaarsgemiddelde",
+      "detail": "Koers is {ratio}× het 200-weekse gemiddelde (gaat af vanaf {limit}×).",
+      "na": "n.v.t.: heeft 4 jaar koershistoriek nodig."
+    },
+    "U2": {
+      "name": "Wekelijkse RSI overkocht",
+      "short": "de RSI is overkocht",
+      "detail": "Wekelijkse RSI is {rsi} (gaat af boven {limit}).",
+      "extreme": "Wekelijkse RSI is {rsi}: sterk overkocht (boven 80).",
+      "na": "n.v.t.: nog niet genoeg weekkoersen."
+    },
+    "U3": {
+      "name": "Duur tegenover zijn eigen historiek",
+      "short": "hij is duur tegenover zijn eigen historiek",
+      "detail": "{metric} {now} is duurder dan {pct} van de laatste {years} jaar (gaat af boven {limit}).",
+      "na": "n.v.t.: geen bruikbare waarderingshistoriek."
+    },
+    "U4": {
+      "name": "Verkoop door insiders",
+      "short": "insiders verkopen",
+      "detail": "Insiders verkochten netto {value} in {days} dagen: {pct} van de bedrijfswaarde (gaat af vanaf {limit}).",
+      "na": "n.v.t.: insiderdata niet beschikbaar.",
+      "naEu": "n.v.t.: geen gratis insiderdata voor Europese aandelen.",
+      "noSell": "Geen netto verkoop door insiders in {days} dagen."
+    },
+    "U5": {
+      "name": "Euforie op de markt",
+      "short": "de hele markt is hebzuchtig",
+      "detail": "Fear & Greed is {fg} (gaat af vanaf {limit}).",
+      "na": "n.v.t.: Fear & Greed niet beschikbaar."
+    },
+    "U6": {
+      "name": "Dicht bij een groot plafond",
+      "short": "de koers zit dicht bij een groot plafond",
+      "detail": "Plafond {range} ligt {dist} boven de koers (gaat af binnen {limit}).",
+      "none": "Geen groot plafond boven de koers.",
+      "na": "n.v.t.: geen eerdere plafonds gevonden."
+    }
+  },
+  "verdictFilter": {
+    "title": "Oordeel",
+    "all": "Alle"
   }
 }

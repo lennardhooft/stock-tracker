@@ -289,6 +289,8 @@ a.stock[aria-current="page"] { border-color: var(--color-accent); box-shadow: in
 .stock__price strong { font-size: var(--text-md); font-weight: var(--weight-semibold); }
 .stock__spark { grid-area: spark; justify-self: end; color: var(--color-muted); }
 .stock__note { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); }
+.stock__verdict { grid-column: 1 / -1; margin-top: var(--space-2); }
+.stock__verdict .verdict { padding: 2px var(--space-2); font-size: var(--text-xs); }
 
 /* change indicator */
 .chg { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: var(--weight-medium); }
@@ -350,6 +352,18 @@ button.badge::after { content: ""; position: absolute; inset: -8px -4px; }
 .signal__name { font-weight: var(--weight-semibold); }
 .signal__detail { grid-column: 2; font-size: var(--text-sm); color: var(--color-text-2); font-variant-numeric: tabular-nums; }
 .signal__info { grid-row: 1 / span 2; grid-column: 3; margin: -10px -10px 0 0; }
+/* quality part rows (Phase 2E): good / ok / weak, always icon + word, never colour alone */
+.signal[data-state="good"] .signal__icon { color: var(--color-positive); }
+.signal[data-state="ok"] .signal__icon { color: var(--color-text-2); }
+.signal[data-state="weak"] .signal__icon { color: var(--color-warning); }
+.signal__tag { display: inline-block; margin-left: var(--space-1); padding: 0 var(--space-2); border: 1px solid var(--color-border-strong); border-radius: var(--radius-full); font-size: var(--text-xs); color: var(--color-text-2); font-weight: var(--weight-regular); white-space: nowrap; vertical-align: 1px; }
+
+/* small data table (e.g. ROIC by year) */
+.dtable { width: 100%; border-collapse: collapse; font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.dtable th, .dtable td { padding: var(--space-2) var(--space-2); text-align: right; border-top: 1px solid var(--color-border); }
+.dtable th:first-child, .dtable td:first-child { text-align: left; padding-left: 0; }
+.dtable td:last-child, .dtable th:last-child { padding-right: 0; }
+.dtable thead th { border-top: 0; color: var(--color-muted); font-weight: var(--weight-medium); }
 
 /* ==========================================================================
    Stat tile & range bar

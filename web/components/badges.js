@@ -44,11 +44,12 @@ export function scoreBadge(row, { tapId = "", long = false } = {}) {
 }
 
 /** Top Score badge — violet family, ▲ icon, distinct from the Bottom Score. */
-export function topBadge(row) {
+export function topBadge(row, { short = false } = {}) {
   if (!row || row.score == null) return "";
   const key = topLabel(row.score);
   const words = t(`score.topLabel.${key}`);
-  return html`<span class="badge badge--top-${key}" aria-label="${t("score.top")} ${row.score}/${row.max_score}, ${words}">▲ ${fmt.num(row.score, 0)}/${fmt.num(row.max_score, 0)} · ${words}</span>`;
+  const shown = short ? t(`score.topShort.${key}`) : words;
+  return html`<span class="badge badge--top-${key}" aria-label="${t("score.top")} ${row.score}/${row.max_score}, ${words}">▲ ${fmt.num(row.score, 0)}/${fmt.num(row.max_score, 0)} · ${shown}</span>`;
 }
 
 /** Verdict badge: sale | check | trap | none. */

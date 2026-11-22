@@ -3,7 +3,7 @@
 import { html, mount, $$ } from "../lib/dom.js";
 import { t } from "../lib/i18n.js";
 import * as fmt from "../lib/format.js";
-import { ALERT_THRESHOLD, marketMood, explainScore } from "../lib/signals.js";
+import { ALERT_THRESHOLD, marketMood, explainScore, verdictSentence } from "../lib/signals.js";
 import { bottomLabel } from "../components/badges.js";
 import { icon } from "../components/icons.js";
 import { stockCard } from "../components/cards.js";
@@ -20,7 +20,7 @@ export function attentionItems(ctx) {
   for (const r of scored.filter((x) => x.score >= ALERT_THRESHOLD).sort((a, b) => b.score - a.score)) {
     items.push({ kind: "strong", icon: "trendDown", symbol: r.symbol,
       title: t("attention.strongTitle", { symbol: r.symbol, score: r.score, max: r.max_score }),
-      body: explainScore(r), action: t("attention.research", { symbol: r.symbol }), href: `#/ticker/${encodeURIComponent(r.symbol)}` });
+      body: verdictSentence(r) || explainScore(r), action: t("attention.research", { symbol: r.symbol }), href: `#/ticker/${encodeURIComponent(r.symbol)}` });
   }
   for (const r of scored) {
     if (r.prev_score == null || r.score >= ALERT_THRESHOLD) continue;

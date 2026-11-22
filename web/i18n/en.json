@@ -68,7 +68,12 @@
     "suspect": "Some data looks wrong and is left out",
     "tapForBreakdown": "Show which signals fired",
     "pending": "Pending",
-    "error": "No score"
+    "error": "No score",
+    "topShort": {
+      "normal": "Normal",
+      "hot": "Hot",
+      "trim": "Trim"
+    }
   },
   "verdict": {
     "sale": "Quality on sale",
@@ -558,5 +563,159 @@
     "notLoggedIn": "Couldn't start the update: your login has expired. Log out and in again.",
     "github": "Couldn't start the update: GitHub refused the key (code {code}). Check that the token is for the stock-tracker repository with Actions: read and write.",
     "failedReason": "Couldn't start the update ({reason}). Try again in a minute."
+  },
+  "quality": {
+    "title": "Quality of the business",
+    "score": "Quality",
+    "outOf": "{score} / 100",
+    "label": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "basedOn": "Based on {years} years of annual reports · {n} of 8 parts",
+    "moatTitle": "Moat",
+    "moat": {
+      "wide": "Wide",
+      "narrow": "Narrow",
+      "none": "None"
+    },
+    "moatNa": "n/a",
+    "heavier": "counts 1.5×",
+    "state": {
+      "good": "Good",
+      "ok": "OK",
+      "weak": "Weak",
+      "na": "No data"
+    },
+    "na": {
+      "etf": "n/a: an ETF holds many companies, so there's no single quality score.",
+      "no_reports": "n/a: no annual reports found for this stock.",
+      "too_few_parts": "n/a: not enough figures for a reliable score.",
+      "failed": "n/a: the annual reports couldn't be loaded. It's tried again tonight.",
+      "pending": "The quality score appears after tonight's update."
+    },
+    "financialNote": "Banks and insurers: bankruptcy risk, debt, free cash flow and ROIC don't apply to them, so the score uses the other parts (and return on equity).",
+    "yearsTitle": "Return on capital and gross margin by year",
+    "colYear": "Year",
+    "colRoic": "ROIC",
+    "colRoe": "ROE",
+    "colGm": "Gross margin",
+    "part": {
+      "piotroski": {
+        "name": "Financial health (Piotroski)",
+        "detail": "{f} of {n} health checks pass (profit, cash flow, debt, efficiency)."
+      },
+      "altman": {
+        "name": "Bankruptcy risk (Altman Z)",
+        "safe": "Z-score {z}: safe zone (above 3).",
+        "grey": "Z-score {z}: grey zone (1,8–3).",
+        "distress": "Z-score {z}: distress zone (below 1,8)."
+      },
+      "debt": {
+        "name": "Debt",
+        "detail": "Net debt is {x}× a year of EBITDA (warning above 3×){cover}.",
+        "netCash": "More cash than debt{cover}.",
+        "cover": ", interest covered {c}× by operating profit",
+        "noEbitda": "Debt but no operating profit to pay it from."
+      },
+      "fcf": {
+        "name": "Free cash flow",
+        "detail": "Positive in {pos} of the last {n} years."
+      },
+      "growth": {
+        "name": "Sales growth",
+        "grew": "Sales grew {pct} per year over {years} years.",
+        "shrank": "Sales shrank {pct} per year over {years} years."
+      },
+      "margins": {
+        "name": "Profit margins",
+        "detail": "Operating margin {now}, vs {avg} on average in the years before ({diff} pts)."
+      },
+      "dilution": {
+        "name": "Share count",
+        "up": "{pct} more shares per year: owners get diluted.",
+        "down": "{pct} fewer shares per year (buybacks).",
+        "flat": "Share count about the same."
+      },
+      "roic": {
+        "name": "Return on capital (ROIC)",
+        "detail": "ROIC {avg} on average, above the {wacc} cost of capital in {above} of {n} years.",
+        "roe": "Return on equity {avg} on average over {n} years."
+      }
+    },
+    "partNa": {
+      "financial": "n/a: not meaningful for banks and insurers.",
+      "need_2_years": "n/a: needs 2 annual reports.",
+      "need_3_years": "n/a: needs 3 annual reports.",
+      "missing_figures": "n/a: figures missing in the annual reports."
+    },
+    "weak": {
+      "piotroski": "weak financial health",
+      "altman": "bankruptcy risk",
+      "debt": "high debt",
+      "fcf": "little free cash flow",
+      "growth": "shrinking sales",
+      "margins": "falling margins",
+      "dilution": "many new shares",
+      "roic": "low return on capital"
+    }
+  },
+  "verdictLine": {
+    "sale": "Quality on sale: {score} of {max} bottom signals and a quality score of {q} / 100.",
+    "check": "Check fundamentals: strong bottom signals, but quality is only {q} / 100.",
+    "checkNoData": "Check fundamentals: strong bottom signals, but there's no quality data for this stock.",
+    "trap": "Possible value trap: cheap, but quality is weak ({q} / 100){weak}.",
+    "weakList": ": {list}"
+  },
+  "top": {
+    "title": "Getting hot? (Top Score)",
+    "none": "No signs of overheating.",
+    "some": "{n} of {max} overheating signs: {list}.",
+    "note": "Never a sell signal: it helps you decide not to add more, or to trim back to your target weight.",
+    "U1": {
+      "name": "Far above its 4-year average",
+      "short": "far above its 4-year average",
+      "detail": "Price is {ratio}× its 200-week average (fires at {limit}×).",
+      "na": "n/a: needs 4 years of price history."
+    },
+    "U2": {
+      "name": "Weekly RSI overbought",
+      "short": "RSI is overbought",
+      "detail": "Weekly RSI is {rsi} (fires above {limit}).",
+      "extreme": "Weekly RSI is {rsi}: very overbought (above 80).",
+      "na": "n/a: not enough weekly prices yet."
+    },
+    "U3": {
+      "name": "Expensive vs its own history",
+      "short": "it's expensive vs its own history",
+      "detail": "{metric} {now} is more expensive than {pct} of its last {years} years (fires above {limit}).",
+      "na": "n/a: no usable valuation history."
+    },
+    "U4": {
+      "name": "Insider selling",
+      "short": "insiders are selling",
+      "detail": "Insiders sold {value} net in {days} days: {pct} of the company's value (fires at {limit}).",
+      "na": "n/a: insider data unavailable.",
+      "naEu": "n/a: no free insider data for EU stocks.",
+      "noSell": "No net insider selling in {days} days."
+    },
+    "U5": {
+      "name": "Market euphoria",
+      "short": "the whole market is greedy",
+      "detail": "Fear & Greed is {fg} (fires at {limit} or more).",
+      "na": "n/a: Fear & Greed unavailable."
+    },
+    "U6": {
+      "name": "Near a major ceiling",
+      "short": "the price is near a major ceiling",
+      "detail": "Ceiling {range} is {dist} above the price (fires within {limit}).",
+      "none": "No major ceiling above the price.",
+      "na": "n/a: no previous ceilings found."
+    }
+  },
+  "verdictFilter": {
+    "title": "Verdict",
+    "all": "All"
   }
 }

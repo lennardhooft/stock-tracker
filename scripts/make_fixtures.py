@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src import indicators as ind  # noqa: E402
-from src import levels, score  # noqa: E402
+from src import levels, quality, score  # noqa: E402
 
 WEEKS = 520
 EMPTY = {"source": None, "valuation": None, "insiders": None, "news": [], "earnings": None}
@@ -174,14 +174,115 @@ def synthetic_daily(seed: int, last: float, from_high_pct: float) -> pd.DataFram
     return df
 
 
+def fake_years(profile: str, n: int = 5) -> list[dict]:
+    """FAKE annual figures (newest first) with a given character, run through src/quality.py."""
+    rows = []
+    for i in range(n):
+        if profile == "strong":  # growing, cash-rich, high ROIC
+            g = 1.12**-i
+            y = {
+                "revenue": 1000 * g,
+                "gross_profit": 620 * g * (1 - 0.004 * i),
+                "operating_income": 300 * g,
+                "net_income": 240 * g,
+                "ebit": 300 * g,
+                "ebitda": 350 * g,
+                "interest_expense": 4.0,
+                "ocf": 330 * g,
+                "fcf": 270 * g,
+                "shares": 100 * 1.008**i,
+                "total_debt": 150.0,
+                "cash": 500.0,
+                "equity": 900 * g,
+                "long_term_debt": 150.0 + 5 * i,
+            }
+        elif profile == "medium":  # flat sales, some debt, a bad FCF year
+            g = 1.01**-i
+            y = {
+                "revenue": 1000 * g,
+                "gross_profit": 300 * g * (1 + 0.02 * (i % 2)),
+                "operating_income": 90 * g * (1 + 0.05 * i),
+                "net_income": 55 * g,
+                "ebit": 90 * g,
+                "ebitda": 150 * g,
+                "interest_expense": 22.0,
+                "ocf": 120 * g,
+                "fcf": (-20 if i == 1 else 40) * g,
+                "shares": 100 * 0.995**i,
+                "total_debt": 520.0,
+                "cash": 100.0,
+                "equity": 800.0,
+                "long_term_debt": 480.0,
+            }
+        else:  # "weak": shrinking, indebted, burning cash, diluting
+            g = 0.93**-i
+            y = {
+                "revenue": 1000 * g,
+                "gross_profit": 280 * g * (1 + 0.03 * i),
+                "operating_income": (10 + 25 * i) * g,
+                "net_income": (-30 + 20 * i) * g,
+                "ebit": (10 + 25 * i) * g,
+                "ebitda": 90 * g,
+                "interest_expense": 45.0,
+                "ocf": (15 if i else -10) * g,
+                "fcf": (-40 if i < 3 else 10) * g,
+                "shares": 100 * 0.94**i,
+                "total_debt": 900.0,
+                "cash": 40.0,
+                "equity": 300.0,
+                "long_term_debt": 850.0 - 30 * i,
+            }
+        y.update(
+            {
+                "year": f"{2025 - i}-12-31",
+                "tax_rate": 0.24,
+                "total_assets": 2000.0,
+                "current_assets": 700.0,
+                "current_liabilities": 400.0 + 15 * i,
+                "total_liabilities": 1100.0,
+                "retained_earnings": 500.0,
+            }
+        )
+        rows.append(y)
+    return rows
+
+
+# market caps in the same (fake) units as the statements above
+QUALITY_PROFILE = {
+    "NRDX": ("strong", 6000),
+    "ORCA": ("strong", 9000),
+    "BLMT.BR": ("medium", 1500),
+    "HALD": ("weak", 250),
+    "VLTA.AS": ("medium", 1200),
+}
+QUALITY_NA = {"WORLD.AS": "etf", "NEWCO": "too_few_parts"}
+
+
+def fixture_quality(symbol: str) -> dict:
+    if symbol in QUALITY_NA:
+        return {"score": None, "label": None, "na": QUALITY_NA[symbol], "parts": []}
+    profile, mcap = QUALITY_PROFILE.get(symbol, ("medium", 1e9))
+    out = quality.build_quality(
+        fake_years(profile), market_cap=mcap, financial=False, cfg=CFG_QUALITY
+    )
+    out["source"] = "Yahoo"
+    return out
+
+
+CFG_QUALITY: dict = {}
+
+
 def main() -> None:
     cfg = yaml.safe_load((ROOT / "config" / "scoring.yaml").read_text())
-    app = json.loads((ROOT / "web" / "fixtures" / "app.json").read_text())
+    CFG_QUALITY.update(cfg.get("quality") or {})
+    app_path = ROOT / "web" / "fixtures" / "app.json"
+    app = json.loads(app_path.read_text())
     out = {}
     for i, s in enumerate(app["stocks"]):
         if s.get("price") is None:
             continue
         daily = synthetic_daily(100 + i, s["price"], s["pct_from_52w_high"])
+        q = fixture_quality(s["symbol"])
         vix = pd.Series(np.where(np.arange(len(daily)) % 900 < 60, 34.0, 17.0), index=daily.index)
         wk = levels.resample_ohlc(daily, "W-FRI").iloc[-WEEKS:]
         sma = ind.sma(ind.to_weekly(daily["Close"]), 200).reindex(wk.index)
@@ -201,8 +302,11 @@ def main() -> None:
                 "score": r(hist, 0),
                 "levels": levels.detect_levels(daily, cfg["levels"]),
             },
-            "fundamentals": FUNDAMENTALS.get(s["symbol"], EMPTY),
+            "fundamentals": {**FUNDAMENTALS.get(s["symbol"], EMPTY), "quality": q},
         }
+        s["quality"] = quality.summary(q)
+        s["verdict"] = quality.verdict(s.get("score"), q, float(cfg.get("alert_threshold", 4)))
+    app_path.write_text(json.dumps(app, indent=2, ensure_ascii=False) + "\n")
     path = ROOT / "web" / "fixtures" / "detail.json"
     data = {"_note": "FAKE synthetic data for demo/tests", **out}
     path.write_text(json.dumps(data, separators=(",", ":")))

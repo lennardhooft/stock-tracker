@@ -36,6 +36,7 @@ function filtered(ctx) {
   return ctx.rows
     .filter((r) => !p.minScore || (r.score ?? 0) >= p.minScore)
     .filter((r) => p.market === "all" || r.market === p.market)
+    .filter((r) => !p.verdict || p.verdict === "all" || r.verdict === p.verdict)
     .sort(SORTS[p.sort] || SORTS.score);
 }
 
@@ -45,6 +46,7 @@ function listHtml(ctx, selected) {
   const strong = ctx.rows.filter((r) => (r.score ?? 0) >= ALERT_THRESHOLD).length;
   const chips = [];
   if (p.minScore) chips.push(html`<button type="button" class="chip" data-clear="minScore">${t("watchlist.chipScore", { n: p.minScore })}${icon("close")}<span class="visually-hidden">${t("watchlist.removeFilter")}</span></button>`);
+  if (p.verdict && p.verdict !== "all") chips.push(html`<button type="button" class="chip" data-clear="verdict">${t(`verdict.${p.verdict}`)}${icon("close")}<span class="visually-hidden">${t("watchlist.removeFilter")}</span></button>`);
   if (p.market !== "all") chips.push(html`<button type="button" class="chip" data-clear="market">${p.market}${icon("close")}<span class="visually-hidden">${t("watchlist.removeFilter")}</span></button>`);
 
   if (!ctx.rows.length) {
@@ -96,13 +98,13 @@ function bind(ctx, main) {
     const s = e.target.closest("[data-sort]");
     if (s) { prefsSet({ sort: s.dataset.sort }); rerender(); return; }
     const c = e.target.closest("[data-clear]");
-    if (c) { prefsSet({ [c.dataset.clear]: c.dataset.clear === "market" ? "all" : 0 }); rerender(); return; }
+    if (c) { prefsSet({ [c.dataset.clear]: c.dataset.clear === "minScore" ? 0 : "all" }); rerender(); return; }
     const q = e.target.closest("[data-quick]");
     if (q) { quickActions(ctx, q.dataset.quick); return; }
     const a = e.target.closest("[data-action]")?.dataset.action;
     if (a === "add-stock") openAddSheet(ctx);
     else if (a === "filters") openFilters(ctx);
-    else if (a === "clear-filters") { prefsSet({ minScore: 0, market: "all" }); rerender(); }
+    else if (a === "clear-filters") { prefsSet({ minScore: 0, market: "all", verdict: "all" }); rerender(); }
   });
   // long-press on a card = quick actions (with the visible ⋯ button as the alternative)
   let timer = null;
@@ -127,17 +129,19 @@ function openFilters(ctx) {
       <div class="segmented" role="group" aria-label="${t("watchlist.minScore")}">${[0, 1, 2, 3, 4].map((n) => html`<button type="button" data-min="${n}" aria-pressed="${p.minScore === n}">${n === 0 ? t("watchlist.any") : `≥ ${n}`}</button>`)}</div></div>
     <div class="field"><span class="field__label">${t("watchlist.market")}</span>
       <div class="segmented" role="group" aria-label="${t("watchlist.market")}">${["all", "US", "EU"].map((m) => html`<button type="button" data-market="${m}" aria-pressed="${p.market === m}">${m === "all" ? t("watchlist.any") : m}</button>`)}</div></div>
+    <div class="field"><span class="field__label">${t("verdictFilter.title")}</span>
+      <div class="chips" role="group" aria-label="${t("verdictFilter.title")}">${["all", "sale", "check", "trap"].map((v) => html`<button type="button" class="chip chip--choice" data-verdict="${v}" aria-pressed="${(p.verdict || "all") === v}">${v === "all" ? t("verdictFilter.all") : t(`verdict.${v}`)}</button>`)}</div></div>
     <button type="button" class="btn btn--primary btn--block" data-done>${t("watchlist.showResults")}</button>
   </div>` });
   el.addEventListener("click", (e) => {
     const m = e.target.closest("[data-min]");
     const k = e.target.closest("[data-market]");
+    const v = e.target.closest("[data-verdict]");
     if (m) prefsSet({ minScore: Number(m.dataset.min) });
     if (k) prefsSet({ market: k.dataset.market });
-    if (m || k) {
-      const g = (m || k).parentElement;
-      $$("button", g).forEach((b) => b.setAttribute("aria-pressed", String(b === (m || k))));
-    }
+    if (v) prefsSet({ verdict: v.dataset.verdict });
+    const hit = m || k || v;
+    if (hit) $$("button", hit.parentElement).forEach((b) => b.setAttribute("aria-pressed", String(b === hit)));
     if (e.target.closest("[data-done]")) { close(); ctx.render(); }
   });
   el.addEventListener("close", () => ctx.render());

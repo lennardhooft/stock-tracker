@@ -64,3 +64,29 @@ levels:
   merge_pct: 3                   # swing points / zones within ±3 % merge
   major_move: 0.25               # a level is "major" if the move away from it was ≥ 25 %
   keep_per_side: 6               # zones stored above and below the price (the UI shows 3 per side)
+
+# Quality Score 0–100 (CLAUDE.md 13.1, 13.16 A). Owner decision: equal weights,
+# debt and ROIC slightly heavier (1.5×). Needs at least `min_parts` parts, else n/a.
+quality:
+  weights:
+    piotroski: 1       # Piotroski F-score (0–9), last two annual reports
+    altman: 1          # Altman Z bankruptcy risk (< 1.8 distress, > 3 safe); n/a for banks/insurers
+    debt: 1.5          # net debt / EBITDA and interest coverage
+    fcf: 1             # free cash flow positive in 3 of the last 4 years
+    growth: 1          # revenue growth per year over 3 years
+    margins: 1         # operating margin vs its own average
+    dilution: 1        # share count change per year
+    roic: 1.5          # ROIC & moat (ROE for banks/insurers)
+  min_parts: 4
+  high: 70             # ≥ 70 high · 40–70 medium · < 40 low
+  medium: 40
+  wacc: 0.085          # estimated cost of capital for "ROIC beats its cost of capital"
+
+# Top Score: when to consider trimming (13.14 A). Labels 0–1 normal, 2–3 getting hot, 4+ trim.
+top_signals:
+  far_above_trend:  { enabled: true, weight: 1, weeks: 200, multiple: 1.8 }    # U1
+  weekly_rsi_high:  { enabled: true, weight: 1, period: 14, above: 70, extreme: 80 }  # U2
+  expensive:        { enabled: true, weight: 1, above_percentile: 90, min_years: 3 }  # U3
+  insider_selling:  { enabled: true, weight: 1, min_pct_of_mcap: 0.05 }        # U4 (US only)
+  euphoria:         { enabled: true, weight: 1, fear_greed_above: 75 }         # U5
+  near_resistance:  { enabled: true, weight: 1, within_pct: 3 }                # U6

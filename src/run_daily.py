@@ -18,7 +18,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from src import alerts, data_checks, fetch, fundamentals, levels, log
+from src import alerts, data_checks, fetch, fundamentals, levels, log, quality, top_score
 from src import indicators as ind
 from src import score as sc
 from src.storage import LocalStore, Store, SupabaseStore
@@ -99,6 +99,12 @@ def process_symbol(
     total = sc.build_score(signals, cfg)
 
     last, prev = float(close.iloc[-1]), float(close.iloc[-2])
+    # Phase 2E: Quality Score + verdict (13.1) and Top Score (13.14 A)
+    qual = quality.collect(symbol, last * divisor, cfg.get("quality"))
+    top = top_score.compute_top(
+        close, market, cfg, levels=zones, fundamentals=fund, market_cap=qual.get("market_cap")
+    )
+    fund["quality"] = qual
     year = close.iloc[-252:]
     weekly = ind.to_weekly(close)
     sma200 = ind.sma(weekly, 200)
@@ -122,6 +128,9 @@ def process_symbol(
         "n_na": total["n_na"],
         "label": total["label"]["key"],
         "signals": signals,
+        "quality": quality.summary(qual),
+        "top": top,
+        "verdict": quality.verdict(total["score"], qual, float(cfg.get("alert_threshold", 4))),
         "sparkline": _clean_list(weekly.iloc[-SPARKLINE_WEEKS:]),
         "checks": checks.to_json(),
         "suspect": bool(checks.suspect_dates),
@@ -309,6 +318,9 @@ def run(store: Store) -> int:
                         "checks",
                         "suspect",
                         "next_earnings",
+                        "quality",
+                        "top",
+                        "verdict",
                     )
                 },
                 "error": None,

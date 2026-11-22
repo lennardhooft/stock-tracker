@@ -203,3 +203,11 @@ revoke all on public.alert_state from authenticated;
 -- ===========================================================================
 alter table public.ticker_detail add column if not exists fundamentals jsonb;   -- valuation, insiders, news, earnings
 alter table public.latest_scores add column if not exists next_earnings jsonb;  -- {date, hour, eps_est, source}
+
+-- ---------------------------------------------------------------------------
+-- Phase 2E: Quality Score summary, Top Score and combined verdict per ticker.
+-- (Full quality breakdown lives in ticker_detail.fundamentals → quality.)
+-- ---------------------------------------------------------------------------
+alter table public.latest_scores add column if not exists quality jsonb;   -- {score, label, moat, na, weak}
+alter table public.latest_scores add column if not exists top jsonb;       -- {score, max_score, label, signals}
+alter table public.latest_scores add column if not exists verdict text;    -- sale | check | trap | none

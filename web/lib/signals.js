@@ -148,3 +148,95 @@ export function describeZone(z, currency) {
   if (z.flipped) parts.push(t(z.role === "support" ? "levels.flippedSupport" : "levels.flippedResistance"));
   return { title, detail: parts.join(" · ") };
 }
+
+/* ---------------- Phase 2E: quality, verdict, Top Score (13.1, 13.14 A, 13.16 A) ---------------- */
+
+export const QUALITY_GLOSSARY = {
+  piotroski: "piotroski", altman: "altman_z", debt: "debt_quality", fcf: "fcf_quality",
+  growth: "growth_quality", margins: "margins_quality", dilution: "dilution", roic: "moat",
+};
+export const TOP_GLOSSARY = {
+  U1: "far_above_trend", U2: "weekly_rsi_high", U3: "expensive", U4: "insider_selling", U5: "euphoria", U6: "near_resistance",
+};
+
+/** good | ok | weak | na for a quality part's 0..1 sub-score. */
+export function partState(p) {
+  if (p?.score == null) return "na";
+  return p.score >= 0.67 ? "good" : p.score >= 0.34 ? "ok" : "weak";
+}
+
+const pct1 = (x, d = 1) => fmt.pct(x * 100, d);
+
+/** {name, detail} for one quality part (src/quality.py). */
+export function describeQualityPart(p) {
+  const name = t(`quality.part.${p.key}.name`);
+  const v = p.value || {};
+  if (p.score == null) return { name, detail: t(`quality.partNa.${p.na}`) || t("common.na") };
+  switch (p.key) {
+    case "piotroski": return { name, detail: t("quality.part.piotroski.detail", { f: v.f, n: v.n }) };
+    case "altman": return { name, detail: t(`quality.part.altman.${v.zone}`, { z: fmt.num(v.z, 1) }) };
+    case "debt": {
+      const cover = v.coverage != null ? t("quality.part.debt.cover", { c: fmt.num(v.coverage, 1) }) : "";
+      if (v.net_cash) return { name, detail: t("quality.part.debt.netCash", { cover }) };
+      if (v.nd_ebitda == null) return { name, detail: t("quality.part.debt.noEbitda") };
+      return { name, detail: t("quality.part.debt.detail", { x: fmt.num(v.nd_ebitda, 1), cover }) };
+    }
+    case "fcf": return { name, detail: t("quality.part.fcf.detail", { pos: v.positive, n: v.n }) };
+    case "growth": return { name, detail: t(`quality.part.growth.${v.cagr < 0 ? "shrank" : "grew"}`, { pct: pct1(Math.abs(v.cagr)), years: v.years }) };
+    case "margins": return { name, detail: t("quality.part.margins.detail", {
+      now: pct1(v.now), avg: pct1(v.avg), diff: `${v.diff_pts >= 0 ? "+" : "−"}${fmt.num(Math.abs(v.diff_pts), 1)}`,
+    }) };
+    case "dilution": {
+      const k = Math.abs(v.per_year) < 0.002 ? "flat" : v.per_year > 0 ? "up" : "down";
+      return { name, detail: t(`quality.part.dilution.${k}`, { pct: pct1(Math.abs(v.per_year)) }) };
+    }
+    case "roic":
+      return v.metric === "roe"
+        ? { name, detail: t("quality.part.roic.roe", { avg: pct1(v.avg), n: v.n }) }
+        : { name, detail: t("quality.part.roic.detail", { avg: pct1(v.avg, 0), wacc: pct1(v.wacc), above: v.above_wacc, n: v.n }) };
+    default: return { name: p.key, detail: "" };
+  }
+}
+
+/** One sentence for the verdict, or "" for "none" (the score sentence is enough then). */
+export function verdictSentence(row) {
+  const v = row?.verdict;
+  if (!v || v === "none") return "";
+  const q = row.quality?.score;
+  if (v === "sale") return t("verdictLine.sale", { score: fmt.num(row.score, 0), max: fmt.num(row.max_score, 0), q });
+  if (v === "check") return q == null ? t("verdictLine.checkNoData") : t("verdictLine.check", { q });
+  const weak = (row.quality?.weak || []).map((k) => t(`quality.weak.${k}`));
+  return t("verdictLine.trap", { q, weak: weak.length ? t("verdictLine.weakList", { list: joinList(weak) }) : "" });
+}
+
+/** {name, detail} for one Top signal (src/top_score.py). */
+export function describeTop(sig, currency = "EUR") {
+  const name = t(`top.${sig.code}.name`);
+  const v = sig.value;
+  if (sig.code === "U4" && sig.passed === null) return { name, detail: t(v?.na === "eu" ? "top.U4.naEu" : "top.U4.na") };
+  if (sig.code === "U6" && sig.passed === false && !v) return { name, detail: t("top.U6.none") };
+  if (sig.passed === null || v == null) return { name, detail: t(`top.${sig.code}.na`) };
+  switch (sig.code) {
+    case "U1": return { name, detail: t("top.U1.detail", { ratio: fmt.num(v.ratio, 2), limit: fmt.num(sig.threshold, 1) }) };
+    case "U2": return { name, detail: t(v.extreme ? "top.U2.extreme" : "top.U2.detail", { rsi: fmt.num(v.rsi, 1), limit: fmt.num(sig.threshold, 0) }) };
+    case "U3": return { name, detail: t("top.U3.detail", {
+      metric: v.metric === "ps" ? "P/S" : "P/E", now: fmt.num(v.now, 1), pct: fmt.pct(v.pct, 0), years: fmt.num(v.years, 0), limit: fmt.pct(sig.threshold, 0),
+    }) };
+    case "U4": if (!v.net_sell) return { name, detail: t("top.U4.noSell", { days: v.days }) };
+      return { name, detail: t("top.U4.detail", {
+      value: fmt.money(v.net_sell, "USD", { compact: true }), days: v.days, pct: fmt.pct(v.pct_of_mcap, 2), limit: fmt.pct(sig.threshold, 2),
+    }) };
+    case "U5": return { name, detail: t("top.U5.detail", { fg: fmt.num(v.fear_greed, 0), limit: fmt.num(sig.threshold, 0) }) };
+    case "U6": return { name, detail: t("top.U6.detail", {
+      range: `${fmt.money(v.low, currency)}–${fmt.money(v.high, currency)}`, dist: fmt.pct(Math.abs(v.distance_pct)), limit: fmt.pct(sig.threshold, 0),
+    }) };
+    default: return { name: sig.name || sig.code, detail: sig.detail || "" };
+  }
+}
+
+/** Lead line for the Top card: "No signs of overheating." / "2 of 6 overheating signs: …". */
+export function topSummary(top) {
+  const fired = (top?.signals || []).filter((s) => s.passed === true);
+  if (!fired.length) return t("top.none");
+  return t("top.some", { n: fired.length, max: fmt.num(top.max_score, 0), list: joinList(fired.map((s) => t(`top.${s.code}.short`))) });
+}

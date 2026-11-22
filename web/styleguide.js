@@ -7,7 +7,7 @@ import { initI18n, t, lang } from "./lib/i18n.js";
 import * as fmt from "./lib/format.js";
 import { icon, ICON_NAMES } from "./components/icons.js";
 import { scoreBadge, topBadge, verdictBadge, changeTag } from "./components/badges.js";
-import { stockCard, signalRow, statTile, rangeBar } from "./components/cards.js";
+import { stockCard, signalRow, statTile, rangeBar, qualityRow } from "./components/cards.js";
 import { emptyState, calmState, errorState, skeletonCards, banner } from "./components/states.js";
 import { toast, openSheet, confirmDialog } from "./components/overlays.js";
 
@@ -147,11 +147,23 @@ const badges = section("badges", "Score & verdict badges", "Number + word + colo
   ${label("change")}<div class="sg-row">${changeTag(2.34)}${changeTag(-1.8)}${changeTag(0)}${changeTag(null)}</div>`);
 
 const cards = section("cards", "Stock cards", "Ticker + name (truncated), price + day change + distance from high, sparkline, score badge. States: scored, partial (n/a), suspect, long name, pending, error.", html`
-  <ul class="list" style="max-width:520px">${S.map((s, i) => html`<li>${stockCard(i === 0 ? { ...s, top: { score: 1, max_score: 6 } } : s, { href: "#cards" })}</li>`)}</ul>`);
+  <ul class="list" style="max-width:520px">${S.map((s, i) => html`<li>${stockCard(i === 0 ? { ...s, top: { score: 3, max_score: 6 }, verdict: "sale" } : i === 1 ? { ...s, verdict: "trap" } : s, { href: "#cards" })}</li>`)}</ul>`);
 
 const sigs = section("signals", "Signal rows", "Plain-language name first, the numbers and threshold below, ⓘ opens the glossary.", html`
   <div class="card" style="max-width:520px"><h3 class="card__title">${t("score.bottom")} ${scoreBadge({ score: 2, max_score: 4, n_na: 1 })}</h3>
     <ul class="signals">${fixtures.signals.map((sg, i) => signalRow(sg, { glossaryKey: gl(["near_200w_ma", "weekly_rsi", "drawdown", "market_fear"][i]) }))}</ul>
+  </div>`);
+
+const quality = section("quality", "Quality rows & data table (Phase 2E)", "Good / OK / Weak always as icon + word. Heavier parts say so. Small tables use tabular figures.", html`
+  <div class="card" style="max-width:520px"><h3 class="card__title">${t("quality.title")}</h3>
+    <ul class="signals">
+      ${qualityRow({ name: t("quality.part.piotroski.name"), detail: t("quality.part.piotroski.detail", { f: 8, n: 9 }), state: "good" })}
+      ${qualityRow({ name: t("quality.part.debt.name"), detail: t("quality.part.debt.detail", { x: "2,4", cover: "" }), state: "ok", tag: t("quality.heavier") })}
+      ${qualityRow({ name: t("quality.part.growth.name"), detail: t("quality.part.growth.shrank", { pct: "6,0 %", years: 3 }), state: "weak" })}
+      ${qualityRow({ name: t("quality.part.altman.name"), detail: t("quality.partNa.financial"), state: "na" })}
+    </ul>
+    <table class="dtable" style="margin-top:var(--space-3)"><thead><tr><th scope="col">${t("quality.colYear")}</th><th scope="col">${t("quality.colRoic")}</th><th scope="col">${t("quality.colGm")}</th></tr></thead>
+      <tbody><tr><td>2025</td><td>24,1 %</td><td>61,2 %</td></tr><tr><td>2024</td><td>22,8 %</td><td>60,4 %</td></tr></tbody></table>
   </div>`);
 
 const m = fixtures.market;
@@ -198,7 +210,7 @@ const states = section("states", "Screen states", "Every screen builds all of th
 
 mount($("#sg"), html`
   <p class="text-2" style="margin-bottom:var(--space-8)">${t("styleguide.intro")} <span class="muted">(${theme} · ${lang()} · ${fmt.getNumberLocale()})</span></p>
-  ${colours}${type}${spacing}${icons}${shell}${buttons}${forms}${badges}${cards}${sigs}${tiles}${banners}${overlays}${states}`);
+  ${colours}${type}${spacing}${icons}${shell}${buttons}${forms}${badges}${cards}${sigs}${quality}${tiles}${banners}${overlays}${states}`);
 
 // ---------------------------------------------------------------- interactions
 $$("[data-toggle]").forEach((b) => b.addEventListener("click", () => b.setAttribute("aria-checked", String(b.getAttribute("aria-checked") !== "true"))));

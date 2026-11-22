@@ -4,10 +4,11 @@ import { html, raw, mount, $, $$ } from "../lib/dom.js";
 import { t } from "../lib/i18n.js";
 import * as fmt from "../lib/format.js";
 import { resolvedTheme, prefsGet, prefsSet } from "../lib/settings.js";
-import { explainScore, describeZone } from "../lib/signals.js";
+import { explainScore, describeZone, verdictSentence, describeTop, topSummary, TOP_GLOSSARY,
+  QUALITY_GLOSSARY, partState, describeQualityPart } from "../lib/signals.js";
 import { icon } from "../components/icons.js";
-import { scoreBadge, changeTag } from "../components/badges.js";
-import { statTile, rangeBar } from "../components/cards.js";
+import { scoreBadge, changeTag, topBadge, verdictBadge } from "../components/badges.js";
+import { statTile, rangeBar, signalRow, qualityRow } from "../components/cards.js";
 import { banner, emptyState } from "../components/states.js";
 import { toast } from "../components/overlays.js";
 import { priceChart, tradingView } from "../components/chart.js";
@@ -49,9 +50,12 @@ export function renderTicker(ctx, el, symbol, { embedded = false } = {}) {
   } else if (!scored) {
     lead = html`${banner({ tone: "info", title: t("ticker.pendingTitle"), body: t("ticker.pendingBody") })}`;
   } else {
+    const vs = verdictSentence(row);
+    const showVerdict = ["sale", "check", "trap"].includes(row.verdict);
     lead = html`<div class="card stack" style="gap:var(--space-2)">
       <div class="cluster" style="justify-content:space-between"><span class="cluster"><span class="small text-2">${t("score.bottom")}</span>${scoreBadge(row)}</span>${ctx.glossaryButton("bottom_score", t("score.bottom"))}</div>
-      <p>${explainScore(row)}</p>
+      ${showVerdict || row.top?.score >= 2 ? html`<div class="cluster" id="verdict-line">${showVerdict ? verdictBadge(row.verdict) : ""}${row.top?.score >= 2 ? topBadge(row.top) : ""}</div>` : ""}
+      ${vs ? html`<p>${vs}</p><p class="small text-2">${explainScore(row)}</p>` : html`<p>${explainScore(row)}</p>`}
       ${row.suspect ? html`<p class="small" style="color:var(--color-warning)">⚠️ ${t("score.suspect")}</p>` : ""}
     </div>`;
   }
@@ -136,6 +140,7 @@ function fundamentalsTab(ctx, panel, row) {
       : html`<p class="text-2">${t(f.insiders_na === "eu" ? "sig.V2.naEu" : "sig.V2.na")}</p>`;
 
     mount(panel, html`
+      ${qualityCard(ctx, f.quality, row)}
       <section class="card" style="margin-bottom:var(--space-4)">
         <h3 class="card__title">${t("fund.valuationTitle")}</h3>${valuation}
       </section>
@@ -147,6 +152,58 @@ function fundamentalsTab(ctx, panel, row) {
   }).catch(() => {
     if (panel.isConnected) mount(panel, banner({ tone: "negative", title: t("levels.failed"), body: "" }));
   });
+}
+
+/* ------------------------------------------------------------------ Quality (2E, 13.1 / 13.16 A) */
+const gk = (ctx, key) => (ctx.glossaryButton(key) ? key : "");
+
+function qualityCard(ctx, q, row) {
+  const head = html`<div class="cluster" style="justify-content:space-between;margin-bottom:var(--space-2)"><h3 class="card__title" style="margin:0">${t("quality.title")}</h3>${ctx.glossaryButton("quality_score", t("quality.title"))}</div>`;
+  if (!q || q.score == null) {
+    const reason = q?.na || (row.quality?.na) || "pending";
+    return html`<section class="card" style="margin-bottom:var(--space-4)" id="quality-card">${head}<p class="text-2">${t(`quality.na.${reason}`) || t("quality.na.too_few_parts")}</p></section>`;
+  }
+  const tone = { high: "positive", medium: "warning", low: "negative" }[q.label];
+  const roic = (q.parts || []).find((p) => p.key === "roic");
+  const roe = roic?.value?.metric === "roe";
+  const moatTile = roe || !q.moat ? "" : statTile({
+    label: t("quality.moatTitle"), value: t(`quality.moat.${q.moat}`),
+    context: describeQualityPart(roic).detail, glossaryKey: gk(ctx, "moat"),
+  });
+  const rows = (q.roic_years || []).filter((y) => (roe ? y.roe : y.roic) != null || y.gross_margin != null);
+  const pc = (x) => (x == null ? t("common.na") : fmt.pct(x * 100, 1));
+  return html`<section class="card" style="margin-bottom:var(--space-4)" id="quality-card">
+    ${head}
+    <div class="tiles" style="margin-bottom:var(--space-3)">
+      ${statTile({ label: t("quality.score"), value: t("quality.outOf", { score: q.score }), word: t(`quality.label.${q.label}`), wordTone: tone,
+        context: t("quality.basedOn", { years: q.years, n: q.n_parts }) })}
+      ${moatTile}
+    </div>
+    ${q.financial ? html`<p class="small text-2" style="margin-bottom:var(--space-2)">${t("quality.financialNote")}</p>` : ""}
+    <ul class="signals">${(q.parts || []).map((p) => {
+      const d = describeQualityPart(p);
+      return qualityRow({ ...d, state: partState(p), tag: p.weight > 1 ? t("quality.heavier") : "", glossaryKey: gk(ctx, QUALITY_GLOSSARY[p.key]) });
+    })}</ul>
+    ${rows.length >= 2 ? html`<h4 class="small text-2" style="margin:var(--space-4) 0 var(--space-1)">${t("quality.yearsTitle")}</h4>
+      <table class="dtable"><thead><tr><th scope="col">${t("quality.colYear")}</th><th scope="col">${t(roe ? "quality.colRoe" : "quality.colRoic")}</th><th scope="col">${t("quality.colGm")}</th></tr></thead>
+      <tbody>${rows.map((y) => html`<tr><td>${String(y.year).slice(0, 4)}</td><td>${pc(roe ? y.roe : y.roic)}</td><td>${pc(y.gross_margin)}</td></tr>`)}</tbody></table>` : ""}
+  </section>`;
+}
+
+/* ------------------------------------------------------------------ Top Score (2E, 13.14 A) */
+function topCard(ctx, row) {
+  const top = row.top;
+  if (!top?.signals?.length) return "";
+  return html`<section class="card" style="margin-bottom:var(--space-4)" id="top-card">
+    <div class="cluster" style="justify-content:space-between;margin-bottom:var(--space-2)">
+      <h3 class="card__title" style="margin:0">${t("top.title")}</h3>${ctx.glossaryButton("top_score", t("score.top"))}</div>
+    <p style="margin-bottom:var(--space-1)">${topSummary(top)}</p>
+    ${top.score >= 2 ? html`<p class="small text-2">${t("top.note")}</p>` : ""}
+    <ul class="signals">${top.signals.map((s) => {
+      const d = describeTop(s, row.currency);
+      return signalRow({ ...s, name: d.name, detail: d.detail }, { glossaryKey: gk(ctx, TOP_GLOSSARY[s.code]) });
+    })}</ul>
+  </section>`;
 }
 
 /* ------------------------------------------------------------------ News & events (2C) */
@@ -193,6 +250,7 @@ function overviewTab(ctx, panel, row) {
       <h3 class="card__title">${t("ticker.signalsTitle")}</h3>
       ${signalList(ctx, row)}
     </section>
+    ${topCard(ctx, row)}
     <section class="card" style="margin-bottom:var(--space-4)" id="levels-card" aria-busy="true">
       <div class="cluster" style="justify-content:space-between;margin-bottom:var(--space-2)"><h3 class="card__title" style="margin:0">${t("levels.title")}</h3>${ctx.glossaryButton("support_resistance", t("levels.title"))}</div>
       <div id="levels-body"><span class="skeleton skeleton--text" style="width:70%"></span><br><span class="skeleton skeleton--text" style="width:50%"></span></div>
