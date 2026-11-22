@@ -1,0 +1,39 @@
+# Central bank rate decisions (CLAUDE.md 13.3). Copied from the official calendars on 2026-11-22:
+#   FOMC: https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+#         (decision on the last day of each meeting; dates are tentative until confirmed
+#          at the meeting before)
+#   ECB:  https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html
+#         (monetary policy meetings: day 2, followed by the press conference)
+# `time` = the usual release time of the decision (local), not part of the official pages above.
+# Update once a year (or when a date changes). Only future dates matter.
+# CPI, jobs report: not included in v1 (no reliable free source in the plan).
+
+events:
+  fomc:
+    time: "14:00"
+    tz: America/New_York
+    tentative: true
+    dates:
+      - 2026-12-09
+      - 2027-01-27
+      - 2027-03-17
+      - 2027-04-28
+      - 2027-06-09
+      - 2027-07-28
+      - 2027-09-15
+      - 2027-10-27
+      - 2027-11-17
+  ecb:
+    time: "14:15"
+    tz: Europe/Berlin
+    tentative: false
+    dates:
+      - 2026-12-17
+      - 2027-02-04
+      - 2027-03-18
+      - 2027-04-29
+      - 2027-06-10
+      - 2027-07-22
+      - 2027-09-09
+      - 2027-10-28
+      - 2027-12-16

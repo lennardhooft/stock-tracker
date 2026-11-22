@@ -2,4 +2,5 @@ yfinance>=0.2.54
 pandas>=2.2
 numpy>=1.26
 pyyaml>=6.0
+lxml>=5.0          # yfinance earnings dates (HTML tables)
 requests>=2.32

@@ -13,6 +13,7 @@ import { skeletonCards, errorState } from "./components/states.js";
 import { renderLogin } from "./screens/login.js";
 import { renderToday } from "./screens/today.js";
 import { renderWatchlist, openAddSheet } from "./screens/watchlist.js";
+import { renderCalendar } from "./screens/calendar.js";
 import { renderMore, renderSettings, renderHealth, renderGlossary, renderAbout } from "./screens/more.js";
 import { renderOnboarding } from "./screens/onboarding.js";
 import { renderAlerts } from "./screens/alerts.js";
@@ -89,6 +90,7 @@ function setData(d, offlineAt = null) {
   ctx.offline = offlineAt;
   ctx.rows = buildRows(d);
   ctx.market = d.market?.data || null;
+  ctx.macro = d.macro?.data?.events || [];
   ctx.runs = (d.runs || []).filter((r) => r.job === "daily");
   ctx.intradayRun = (d.runs || []).find((r) => r.job === "intraday") || null;
   ctx.latestUpdate = (d.scores || []).map((s) => s.updated_at).filter(Boolean).sort().pop() || d.market?.updated_at || null;
@@ -116,6 +118,7 @@ async function reload({ quiet = false } = {}) {
 const TABS = [
   { key: "today", path: "#/", icon: "today" },
   { key: "watchlist", path: "#/watchlist", icon: "list" },
+  { key: "calendar", path: "#/calendar", icon: "calendar" },
   { key: "more", path: "#/more", icon: "more" },
 ];
 
@@ -187,6 +190,7 @@ async function route() {
   let head;
   switch (r.name) {
     case "watchlist": head = renderWatchlist(ctx, view, {}); renderNav("watchlist"); break;
+    case "calendar": head = renderCalendar(ctx, view); renderNav("calendar"); break;
     case "ticker": head = renderWatchlist(ctx, view, { selected: r.arg.toUpperCase() }); renderNav("watchlist"); break;
     case "more":
       renderNav("more");

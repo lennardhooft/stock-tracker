@@ -19,8 +19,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from src import events, levels, quality, score, top_score  # noqa: E402
 from src import indicators as ind  # noqa: E402
-from src import levels, quality, score, top_score  # noqa: E402
 
 WEEKS = 520
 EMPTY = {"source": None, "valuation": None, "insiders": None, "news": [], "earnings": None}
@@ -279,6 +279,25 @@ def fixture_quality(symbol: str) -> dict:
 CFG_QUALITY: dict = {}
 
 
+def fake_earnings(seed: int, close: pd.Series) -> dict | None:
+    """FAKE quarterly reports (after the close) over the last 2 years, through src/events.py."""
+    rng = np.random.default_rng(seed + 7)
+    days = close.index[-504::63][:8]
+    reports = []
+    for d in days:
+        est = round(float(rng.uniform(0.5, 2.0)), 2)
+        reports.append(
+            {
+                "date": d.strftime("%Y-%m-%d"),
+                "hour": "amc",
+                "eps_est": est,
+                "eps_actual": round(est * float(rng.uniform(0.9, 1.15)), 2),
+            }
+        )
+    out = events.earnings_reactions(reports, close)
+    return out if out["n"] else None
+
+
 def main() -> None:
     cfg = yaml.safe_load((ROOT / "config" / "scoring.yaml").read_text())
     CFG_QUALITY.update(cfg.get("quality") or {})
@@ -313,7 +332,13 @@ def main() -> None:
                 "v": r(vol, 0),
                 "levels": levels.detect_levels(daily, cfg["levels"]),
             },
-            "fundamentals": {**FUNDAMENTALS.get(s["symbol"], EMPTY), "quality": q},
+            "fundamentals": {
+                **FUNDAMENTALS.get(s["symbol"], EMPTY),
+                "quality": q,
+                "earnings_history": fake_earnings(i, daily["Close"])
+                if s["symbol"] not in QUALITY_NA or s["symbol"] == "NEWCO"
+                else None,
+            },
         }
         s["quality"] = quality.summary(q)
         s["verdict"] = quality.verdict(s.get("score"), q, float(cfg.get("alert_threshold", 4)))

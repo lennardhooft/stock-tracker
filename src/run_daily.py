@@ -18,7 +18,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from src import alerts, data_checks, fetch, fundamentals, levels, log, quality, top_score
+from src import alerts, data_checks, events, fetch, fundamentals, levels, log, quality, top_score
 from src import indicators as ind
 from src import score as sc
 from src.storage import LocalStore, Store, SupabaseStore
@@ -105,6 +105,12 @@ def process_symbol(
         close, market, cfg, levels=zones, fundamentals=fund, market_cap=qual.get("market_cap")
     )
     fund["quality"] = qual
+    # Phase 2G: earnings reactions, next earnings (Yahoo fallback), next dividend (13.1, 13.3)
+    ev = events.collect(symbol, close, date.today(), currency, fundamentals.is_us(symbol))
+    fund["earnings_history"] = ev["earnings_history"]
+    fund["dividend"] = ev["dividend"]
+    if fund.get("source") != "Finnhub" or not fund.get("earnings"):
+        fund["earnings"] = ev["next_earnings"] or fund.get("earnings")
     year = close.iloc[-252:]
     weekly = ind.to_weekly(close)
     sma200 = ind.sma(weekly, 200)
@@ -154,6 +160,7 @@ def process_symbol(
         },
         "fundamentals": fund,
         "next_earnings": fund.get("earnings"),
+        "next_dividend": fund.get("dividend"),
         "rows": len(raw),
     }
 
@@ -214,6 +221,9 @@ def send_alerts(
                 "prev_score": prev_scores.get((uid, sym)),
                 "zones": (r.get("weekly") or {}).get("levels", {}).get("zones", []),
                 "next_earnings": r.get("next_earnings"),
+                "earnings_result": events.earnings_result_due(
+                    (r.get("fundamentals") or {}).get("earnings_history"), r.get("as_of")
+                ),
                 "news": (r.get("fundamentals") or {}).get("news") or [],
             }
         )
@@ -329,6 +339,7 @@ def run(store: Store) -> int:
                         "quality",
                         "top",
                         "verdict",
+                        "next_dividend",
                     )
                 },
                 "error": None,
@@ -350,7 +361,16 @@ def run(store: Store) -> int:
     writes_ok = all(
         [
             store.upsert(
-                "market_snapshot", [{"id": "latest", "data": market, "updated_at": now}], "id"
+                "market_snapshot",
+                [
+                    {"id": "latest", "data": market, "updated_at": now},
+                    {
+                        "id": "macro",
+                        "data": {"events": events.macro_events(date.today())},
+                        "updated_at": now,
+                    },
+                ],
+                "id",
             ),
             store.upsert("latest_scores", score_rows, "user_id,symbol"),
             store.upsert("ticker_detail", detail_rows, "user_id,symbol"),

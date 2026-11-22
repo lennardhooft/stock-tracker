@@ -88,3 +88,11 @@ Calm by default: price + one lower panel; everything else is a toggle that's rem
   All panels share the time axis and the crosshair with the price chart.
 - **Zoom:** 1Y · 3Y · 5Y · 10Y · **Max**; log scale on 5Y+; **double-tap** resets to the chosen zoom.
 - Text summary for screen readers stays, plus the info line is `aria-live="polite"` only for marker taps (not for every crosshair move).
+
+### Earnings reaction history (Phase 2G, CLAUDE.md 13.1) — News & events tab
+- Lead line in words: "This stock typically moves ±7 % the day after earnings · beat estimates 7 of the last 8 times."
+- Table of the last 8 reports (newest first): date · EPS actual vs estimate (✅ beat / ❌ miss, surprise %) · move day +1 · move +5 days.
+  Moves with sign and ▲/▼. On a phone the table shows date, beat/miss and +1 day; +5 days wraps under it.
+- Next dividend under the earnings card: "Ex-dividend Mon 1 Dec · $ 0,53 per share (estimated)".
+- n/a: "No earnings history for this stock (ETFs have none)."
+- After a report the daily job sends a Telegram alert: "📊 NVDA reported: EPS 2,68 vs 2,47 expected (beat) · −3,1 % the next day".

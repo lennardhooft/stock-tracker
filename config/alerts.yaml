@@ -11,6 +11,7 @@ kinds:
   support_break: { enabled: true, min_touches: 2, timeframes: [Y, M] }
   earnings_7d:   { enabled: true }                   # earnings 5 trading days ahead (13.3)
   earnings_1d:   { enabled: true }                   # earnings on the next trading day
+  earnings_result: { enabled: true }                 # beat/miss + next-day move after a report
   data_problem:  { enabled: true }                   # one summary per day when something is red (13.14 E)
 
 # Owner decision: no quiet hours. The feature stays available: set enabled: true to use it.

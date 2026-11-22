@@ -219,3 +219,54 @@ alter table public.watchlist add column if not exists tags text[] not null defau
 alter table public.watchlist drop constraint if exists watchlist_tags_check;
 alter table public.watchlist add constraint watchlist_tags_check
   check (cardinality(tags) <= 8 and char_length(array_to_string(tags, ',')) <= 200);
+
+-- ---------------------------------------------------------------------------
+-- Phase 2G: calendar (CLAUDE.md 13.3)
+-- ---------------------------------------------------------------------------
+alter table public.latest_scores add column if not exists next_dividend jsonb;  -- {ex_date, pay_date, amount, currency, estimated}
+
+-- one private calendar-feed secret per owner (the .ics link); owner-only via RLS
+create table if not exists public.calendar_tokens (
+  user_id     uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+  token       text not null unique check (token ~ '^[A-Za-z0-9_-]{32,128}$'),
+  created_at  timestamptz not null default now()
+);
+alter table public.calendar_tokens enable row level security;
+drop policy if exists "owner reads own calendar token" on public.calendar_tokens;
+create policy "owner reads own calendar token" on public.calendar_tokens
+  for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists "owner creates own calendar token" on public.calendar_tokens;
+create policy "owner creates own calendar token" on public.calendar_tokens
+  for insert to authenticated with check (user_id = (select auth.uid()));
+drop policy if exists "owner renews own calendar token" on public.calendar_tokens;
+create policy "owner renews own calendar token" on public.calendar_tokens
+  for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+drop policy if exists "owner deletes own calendar token" on public.calendar_tokens;
+create policy "owner deletes own calendar token" on public.calendar_tokens
+  for delete to authenticated using (user_id = (select auth.uid()));
+grant select, insert, update, delete on public.calendar_tokens to authenticated;
+grant all on public.calendar_tokens to service_role;
+revoke all on public.calendar_tokens from anon;
+
+-- The calendar app (no login) asks the calendar-ics Edge Function; the function calls this with the
+-- secret token. Returns only dates + tickers of that owner (no notes, levels or scores); NULL if unknown.
+create or replace function public.calendar_feed(p_token text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with owner as (select user_id from public.calendar_tokens where token = p_token)
+  select jsonb_build_object(
+    'stocks', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'symbol', s.symbol, 'currency', s.currency,
+        'earnings', s.next_earnings, 'dividend', s.next_dividend))
+      from public.latest_scores s
+      where s.user_id = (select user_id from owner)), '[]'::jsonb),
+    'macro', coalesce((select data -> 'events' from public.market_snapshot where id = 'macro'), '[]'::jsonb))
+  where exists (select 1 from owner);
+$$;
+revoke all on function public.calendar_feed(text) from public;
+grant execute on function public.calendar_feed(text) to anon, authenticated, service_role;

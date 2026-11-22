@@ -52,17 +52,32 @@ function supabaseApi(cfg) {
       const [watchlist, scores, market, runs, history, alerts, intradayRuns] = await Promise.all([
         q(sb.from("watchlist").select("*").order("symbol")),
         q(sb.from("latest_scores").select("*")),
-        q(sb.from("market_snapshot").select("*").eq("id", "latest")),
+        q(sb.from("market_snapshot").select("*").in("id", ["latest", "macro"])),
         // daily and intraday runs separately: ~40 intraday runs a day must not push the daily ones out
         q(sb.from("job_runs").select("*").eq("job", "daily").order("started_at", { ascending: false }).limit(15)),
         q(sb.from("score_history").select("symbol,date,score").order("date", { ascending: false }).limit(2000)),
         q(sb.from("alerts_log").select("id,symbol,kind,title,body,url,delivered,sent_at").order("sent_at", { ascending: false }).limit(100)),
         q(sb.from("job_runs").select("*").eq("job", "intraday").order("started_at", { ascending: false }).limit(1)),
       ]);
-      return { watchlist, scores, market: market[0] || null, runs: [...runs, ...intradayRuns], history, alerts };
+      return {
+        watchlist, scores, market: market.find((m) => m.id === "latest") || null, macro: market.find((m) => m.id === "macro") || null,
+        runs: [...runs, ...intradayRuns], history, alerts,
+      };
     },
     async detail(symbol) {
       return (await q(sb.from("ticker_detail").select("weekly,fundamentals").eq("symbol", symbol)))[0] || null;
+    },
+    /** Private calendar feed URL (13.3). create:false only reads; renew:true makes a new secret. */
+    async calendarUrl({ create = true, renew = false } = {}) {
+      const rows = await q(sb.from("calendar_tokens").select("token").limit(1));
+      let token = rows[0]?.token;
+      if (!token && !create) return null;
+      if (!token || renew) {
+        const bytes = crypto.getRandomValues(new Uint8Array(32));
+        token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        await q(sb.from("calendar_tokens").upsert({ token, created_at: new Date().toISOString() }, { onConflict: "user_id" }));
+      }
+      return `${cfg.supabaseUrl}/functions/v1/calendar-ics?token=${token}`;
     },
     add: (row) => q(sb.from("watchlist").insert(row).select().single()),
     update: (id, row) => q(sb.from("watchlist").update(row).eq("id", id)),
@@ -142,6 +157,7 @@ function demoTop(s, market) {
 function demoApi(fixture) {
   const UID = "demo";
   let demoLoggedIn = false;
+  let demoToken = null;
   let state = null;
 
   async function build() {
@@ -149,6 +165,7 @@ function demoApi(fixture) {
     const now = Date.now();
     const hoursAgo = (h) => new Date(now - h * 3600e3).toISOString();
     const updated = fixture === "stale" ? hoursAgo(50) : hoursAgo(3);
+    const inDays = (n) => new Date(now + n * 864e5).toISOString().slice(0, 10);
     const market = { ...f.market, updated_at: updated };
     if (fixture === "partial") market.fear_greed = null;
 
@@ -173,6 +190,7 @@ function demoApi(fixture) {
           label: s.label, suspect: !!s.suspect,
           next_earnings: s.next_earnings || null,
           signals: demoSignals(s, market), top: demoTop(s, market), quality: s.quality || null, verdict: s.verdict || null,
+          next_dividend: s.dividend ? { ...s.dividend, ex_date: inDays(s.dividend.ex_in_days), pay_date: s.dividend.pay_in_days != null ? inDays(s.dividend.pay_in_days) : null } : null,
           sparkline: weeklySeries(s.symbol, s.price, s.pct_from_52w_high).c.slice(-52),
           checks: s.suspect ? { status: "red", issues: [{ code: "suspect_move", level: "red", detail: "unexplained move > 40%" }], suspect_dates: [] } : { status: "green", issues: [] },
           updated_at: updated,
@@ -189,7 +207,8 @@ function demoApi(fixture) {
       { job: "intraday", started_at: hoursAgo(0.2), finished_at: hoursAgo(0.2), status: "ok", counts: { tickers: stocks.length, checked: stocks.length, alerts_sent: 0 }, sources: {} },
     ];
     const alerts = fixture === "empty" || fixture === "new" ? [] : (f.alerts || []).map((a, i) => ({ id: i, ...a, sent_at: hoursAgo(a.hours_ago) }));
-    return { watchlist, scores, market: { id: "latest", data: market, updated_at: updated }, runs, history, alerts };
+    const macro = { id: "macro", data: { events: (f.macro || []).map((m) => ({ ...m, date: inDays(m.in_days) })) } };
+    return { watchlist, scores, market: { id: "latest", data: market, updated_at: updated }, macro, runs, history, alerts };
   }
 
   const delay = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -222,6 +241,7 @@ function demoApi(fixture) {
       out?.fundamentals?.news?.forEach((n, i) => { n.time = new Date(Date.now() - (6 + i * 30) * 3600e3).toISOString(); });
       return out;
     },
+    calendarUrl: async ({ create = true } = {}) => (create || demoToken ? (demoToken ||= "demo-not-a-real-token-0123456789abcdef", `https://example.supabase.co/functions/v1/calendar-ics?token=${demoToken}`) : null),
     async add(row) {
       const w = { ...row, id: `w${Date.now()}`, user_id: UID, created_at: new Date().toISOString() };
       state.watchlist.push(w);

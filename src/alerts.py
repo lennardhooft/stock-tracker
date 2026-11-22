@@ -227,6 +227,28 @@ def evaluate(
                     )
                 )
 
+        # Earnings result (13.3): beat/miss + the move on the first trading day after the report
+        er = r.get("earnings_result")
+        if er and on("earnings_result"):
+            est, act = er.get("eps_est"), er.get("eps_actual")
+            verdict = "" if er.get("beat") is None else (" (beat)" if er["beat"] else " (miss)")
+            eps = (
+                f"EPS {num(act)} vs {num(est)} expected{verdict}"
+                if est is not None
+                else f"EPS {num(act)}"
+            )
+            out.append(
+                Alert(
+                    r["user_id"],
+                    sym,
+                    "earnings_result",
+                    f"📊 {sym} reported earnings",
+                    f"{eps} · {pct(er['move_1d'], sign=True)} the next day\n{score_line(r)}",
+                    url,
+                    extreme,
+                )
+            )
+
         # Big daily drop / rise at the close (intraday version: stage 2D)
         chg = r.get("change_pct")
         if chg is not None:

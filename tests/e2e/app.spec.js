@@ -27,7 +27,7 @@ async function quality(page, label) {
   const rawKeys = await page.evaluate(() => {
     const txt = document.body.innerText;
     return (txt.match(/\b[a-z]+\.[a-zA-Z]+(\.[a-zA-Z0-9]+)*\b/g) || [])
-      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags)\./.test(k));
+      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal)\./.test(k));
   });
   expect(rawKeys, `${label}: untranslated i18n keys`).toEqual([]);
 
@@ -67,6 +67,7 @@ const SCREENS = [
   ["ticker", "#/ticker/NRDX"],
   ["ticker-trap", "#/ticker/HALD"],
   ["ticker-hot", "#/ticker/ORCA"],
+  ["calendar", "#/calendar"],
   ["more", "#/more"],
   ["settings", "#/more/settings"],
   ["health", "#/more/health"],
@@ -91,6 +92,7 @@ const STATES = [
   ["empty", "#/", "empty"],
   ["empty-watchlist", "#/watchlist", "empty"],
   ["empty-alerts", "#/more/alerts", "empty"],
+  ["empty-calendar", "#/calendar", "empty"],
   ["calm", "#/", "calm"],
   ["partial", "#/", "partial"],
   ["stale", "#/", "stale"],
@@ -514,4 +516,62 @@ test("chart math: RSI, drawdown and forward returns", async ({ page }) => {
   expect(r.fwd).toBeCloseTo(21, 5);
   expect(r.future).toBeNull();
   expect(r.starts).toEqual([1, 4]);
+});
+
+/* ------------------------------------------------------------ Phase 2G: calendar + earnings history */
+test("calendar: grouped by week, filter remembered, stock rows open the ticker", async ({ page }) => {
+  await open(page, "#/calendar");
+  await expect(page.locator(".summary")).toContainText("next 7 days");
+  await expect(page.locator("#main")).toContainText("Fed rate decision");
+  await expect(page.locator("#main")).toContainText("tentative");
+  await page.locator('[data-filter="dividends"]').click();
+  await expect(page.locator('[data-filter="dividends"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#main .menu li", { hasText: "Fed rate decision" })).toHaveCount(0);
+  await expect(page.locator("#main .menu").first()).toContainText("BLMT.BR goes ex-dividend");
+  await quality(page, "calendar filtered");
+  await shot(page, "calendar-dividends-dark-375");
+  await page.locator('[data-filter="all"]').click();
+  await page.getByRole("link", { name: /NRDX reports earnings/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-screen", "ticker/NRDX");
+});
+
+test("calendar: subscribe makes a private link (webcal + copy) and can renew it", async ({ page }) => {
+  await open(page, "#/calendar");
+  await page.getByRole("button", { name: "Subscribe in my phone calendar" }).click();
+  await page.getByRole("button", { name: "Create my calendar link" }).click();
+  await expect(page.locator("#sub-open")).toHaveAttribute("href", /^webcal:\/\/.+calendar-ics\?token=/);
+  await expect(page.locator("#sub-url")).toHaveValue(/^https:\/\/.+calendar-ics\?token=/);
+  await quality(page, "subscribe sheet");
+  await shot(page, "calendar-subscribe-dark-375");
+});
+
+test("today: coming up in the next 7 days links to the calendar", async ({ page }) => {
+  await open(page, "#/");
+  await expect(page.getByRole("heading", { name: "Coming up" })).toBeVisible();
+  await page.getByRole("link", { name: "See calendar" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-screen", "calendar");
+});
+
+test("news tab: earnings reaction history and next dividend", async ({ page }) => {
+  await open(page, "#/ticker/NRDX");
+  await page.getByRole("tab", { name: "News" }).click();
+  const h = page.locator("#history-card");
+  await expect(h).toContainText("typically moves ±");
+  await expect(h.locator("tbody tr")).toHaveCount(8);
+  await expect(h.locator(".beat").first()).toContainText("beat");
+  await quality(page, "earnings history");
+  await shot(page, "ticker-earnings-history-dark-375");
+  await open(page, "#/ticker/BLMT.BR");
+  await page.getByRole("tab", { name: "News" }).click();
+  await expect(page.locator("#dividend-card")).toContainText("Ex-dividend");
+  await expect(page.locator("#dividend-card")).toContainText("€ 0,62");
+  await open(page, "#/ticker/WORLD.AS");
+  await page.getByRole("tab", { name: "News" }).click();
+  await expect(page.locator("#history-card")).toContainText("ETFs have none");
+});
+
+test("calendar in Dutch", async ({ page }) => {
+  await open(page, "#/calendar", { lang: "nl" });
+  await expect(page.locator("#main")).toContainText("Rentebeslissing Fed");
+  await quality(page, "calendar nl");
 });

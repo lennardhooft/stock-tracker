@@ -222,5 +222,12 @@
     "why": "Old ceilings often stop rallies, at least for a while.",
     "how": "Fires within 3 % below a monthly/yearly ceiling zone.",
     "limits": "Ceilings do break; a breakout can turn it into support."
+  },
+  "earnings_reaction": {
+    "title": "Earnings reactions",
+    "what": "For the last 8 quarterly reports: the earnings per share (EPS) the company reported vs what analysts expected, and how much the stock moved the next trading day and over 5 trading days.",
+    "why": "Shows how jumpy the stock is around reports, so a big move after the next one doesn't surprise you, and whether the company tends to beat or miss.",
+    "how": "'Typically moves ±7 %' is the average size of the next-day move, up or down. Beating estimates often isn't enough: the outlook (guidance) moves the price too.",
+    "limits": "Estimates and dates come from free Yahoo data. A report after the close is measured from the next day's close."
   }
 }

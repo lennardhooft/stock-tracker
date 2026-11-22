@@ -153,7 +153,15 @@
       "tags": [
         "wait-for-dip",
         "dividend"
-      ]
+      ],
+      "dividend": {
+        "ex_in_days": 9,
+        "pay_in_days": 16,
+        "amount": 0.62,
+        "currency": "EUR",
+        "estimated": false,
+        "per_year": 2
+      }
     },
     {
       "symbol": "HALD",
@@ -258,7 +266,15 @@
       "verdict": "none",
       "tags": [
         "core"
-      ]
+      ],
+      "dividend": {
+        "ex_in_days": 23,
+        "pay_in_days": null,
+        "amount": 0.21,
+        "currency": "USD",
+        "estimated": true,
+        "per_year": 4
+      }
     },
     {
       "symbol": "VLTA.AS",
@@ -404,6 +420,29 @@
       "body": "3 previous bottoms (2020, 2022, 2025) · price € 126,73\nBottom Score: 1/4 (Normal)",
       "delivered": true,
       "hours_ago": 75
+    }
+  ],
+  "macro": [
+    {
+      "in_days": 4,
+      "kind": "fomc",
+      "time": "14:00",
+      "tz": "America/New_York",
+      "tentative": true
+    },
+    {
+      "in_days": 12,
+      "kind": "ecb",
+      "time": "14:15",
+      "tz": "Europe/Berlin",
+      "tentative": false
+    },
+    {
+      "in_days": 61,
+      "kind": "fomc",
+      "time": "14:00",
+      "tz": "America/New_York",
+      "tentative": true
     }
   ]
 }

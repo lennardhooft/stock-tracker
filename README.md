@@ -184,3 +184,15 @@ web/                   static app (index.html, app.js, style.css, glossary.json)
 - **Score snapshots are already saved** (`score_history`). The chart for them is Phase 2, but history can't be collected after the fact, so collection starts now.
 - **Login = Supabase email link + Cloudflare Access.** The authenticator-app MFA from 13.13.2 is planned together with the portfolio data in Phase 3. Cloudflare Access already blocks everyone else from the site.
 - Config files for later phases (`alerts.yaml`, `risk.yaml`, …) will be added with the phase that uses them.
+
+## Supabase Edge Functions
+
+Deployed from the Supabase dashboard (Edge Functions → Deploy a new function → paste the file).
+Both have **Verify JWT turned off**; they do their own checks.
+
+| Function | File | What it does | Secrets |
+|---|---|---|---|
+| `run-update` | `backend/functions/run-update/index.ts` | "Update now" button: checks the login, starts the daily workflow on GitHub | `GITHUB_TOKEN` (fine-grained, this repo, Actions: read and write) |
+| `calendar-ics` | `backend/functions/calendar-ics/index.ts` | Private calendar feed (`?token=…`) for the phone calendar: earnings, dividends, Fed/ECB dates | none (uses the injected anon key + `calendar_feed()` in `backend/schema.sql`) |
+
+Fed/ECB dates live in `config/macro_events.yaml`; update them once a year from the official calendars.

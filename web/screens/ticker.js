@@ -227,10 +227,19 @@ function newsTab(ctx, panel, row) {
       earnings = html`<p class="text-2">${t("news.noEarnings")}</p>`;
     }
     const news = f.news || [];
+    const div = f.dividend || row.next_dividend;
+    const dividend = div?.ex_date ? html`<section class="card" style="margin-bottom:var(--space-4)" id="dividend-card">
+        <h3 class="card__title">${t("news.dividendTitle")}</h3>
+        <p>${t("news.exLine", { date: fmt.date(`${div.ex_date}T12:00:00Z`, { weekday: "short", day: "numeric", month: "short", year: "numeric" }), amount: fmt.money(div.amount, div.currency || row.currency) })}</p>
+        ${div.pay_date ? html`<p class="small text-2">${t("news.payLine", { date: fmt.date(`${div.pay_date}T12:00:00Z`) })}</p>` : ""}
+        ${div.estimated ? html`<p class="xs muted">${t("cal.estimated")}</p>` : ""}
+      </section>` : "";
     mount(panel, html`
       <section class="card" style="margin-bottom:var(--space-4)">
         <h3 class="card__title">${t("news.earningsTitle")}</h3>${earnings}
       </section>
+      ${historyCard(ctx, f.earnings_history)}
+      ${dividend}
       <h3 class="section-title" style="margin-top:0">${t("news.headlines")}</h3>
       ${news.length ? html`<ul class="menu">${news.map((n) => html`<li><a class="menu__item" href="${n.url}" target="_blank" rel="noopener noreferrer" style="align-items:flex-start;padding-top:var(--space-3);padding-bottom:var(--space-3)">
           <span class="menu__label"><span style="display:block">${n.headline}</span><span class="menu__hint">${n.source} · ${fmt.relativeTime(n.time)}</span></span>
@@ -239,6 +248,24 @@ function newsTab(ctx, panel, row) {
   }).catch(() => {
     if (panel.isConnected) mount(panel, banner({ tone: "negative", title: t("levels.failed"), body: "" }));
   });
+}
+
+/* ------------------------------------------------------------------ earnings reactions (2G, 13.1) */
+function historyCard(ctx, h) {
+  const head = html`<div class="cluster" style="justify-content:space-between;margin-bottom:var(--space-2)"><h3 class="card__title" style="margin:0">${t("news.historyTitle")}</h3>${ctx.glossaryButton("earnings_reaction", t("news.historyTitle"))}</div>`;
+  if (!h?.reports?.length) return html`<section class="card" style="margin-bottom:var(--space-4)" id="history-card">${head}<p class="text-2">${t("news.noHistory")}</p></section>`;
+  const mv = (x) => (x == null ? html`<span class="muted">${t("common.na")}</span>` : changeTag(x, 1));
+  return html`<section class="card" style="margin-bottom:var(--space-4)" id="history-card">
+    ${head}
+    <p style="margin-bottom:var(--space-3)">${t("news.typical", { pct: fmt.pct(h.avg_abs_move, 1), beats: h.beats, n: h.n })}</p>
+    <table class="dtable">
+      <thead><tr><th scope="col">${t("news.colDate")}</th><th scope="col">${t("news.colEps")}</th><th scope="col">${t("news.col1d")}</th><th scope="col" class="hide-sm">${t("news.col5d")}</th></tr></thead>
+      <tbody>${h.reports.map((r) => html`<tr>
+        <td>${fmt.date(`${r.date}T12:00:00Z`, { day: "numeric", month: "short", year: "2-digit" })}</td>
+        <td>${r.beat == null ? fmt.num(r.eps_actual, 2) : html`<span class="${r.beat ? "beat" : "miss"}">${r.beat ? "✓" : "✗"} ${t(r.beat ? "news.beat" : "news.miss")}</span> <span class="muted">${r.surprise_pct != null ? `${r.surprise_pct >= 0 ? "+" : "−"}${fmt.pct(Math.abs(r.surprise_pct), 0)}` : ""}</span>`}</td>
+        <td>${mv(r.move_1d)}</td><td class="hide-sm">${mv(r.move_5d)}</td></tr>`)}</tbody>
+    </table>
+  </section>`;
 }
 
 /* ------------------------------------------------------------------ Overview */

@@ -72,9 +72,9 @@ export function dateTime(iso) {
   }).format(new Date(iso));
 }
 
-export function date(iso) {
+export function date(iso, opts = null) {
   if (!iso) return t("common.na");
-  return new Intl.DateTimeFormat(locale, { timeZone: TZ, dateStyle: "medium" }).format(
+  return new Intl.DateTimeFormat(locale, { timeZone: TZ, ...(opts || { dateStyle: "medium" }) }).format(
     new Date(iso),
   );
 }

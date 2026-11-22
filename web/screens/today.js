@@ -10,6 +10,7 @@ import { stockCard } from "../components/cards.js";
 import { calmState, emptyState } from "../components/states.js";
 import { statusBanners, marketStrip, openBreakdown } from "./common.js";
 import { openAddSheet } from "./watchlist.js";
+import { comingUp } from "./calendar.js";
 
 const RANK = { normal: 0, watch: 1, strong: 2, extreme: 3 };
 
@@ -105,6 +106,7 @@ export function renderToday(ctx, main) {
     ${statusBanners(ctx, { suspect: false })}
     ${summary(ctx, items)}
     ${body}
+    ${comingUp(ctx)}
     <h2 class="section-title">${t("today.market")}</h2>
     ${marketStrip(ctx)}
     ${top.length ? html`
