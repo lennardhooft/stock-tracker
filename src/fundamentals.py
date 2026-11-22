@@ -286,11 +286,15 @@ def _yahoo_bundle(symbol: str, close: pd.Series, today: date) -> dict[str, Any]:
         "insiders_na": "eu" if not is_us(symbol) else "no_key",
     }
 
-    def _stmt() -> pd.DataFrame | None:
+    def _stmt() -> pd.DataFrame:
         df = t.income_stmt
-        return df if df is not None and not df.empty else None
+        return (
+            df if df is not None else pd.DataFrame()
+        )  # empty = no figures (e.g. an ETF): no retry
 
     inc = with_retries(_stmt, "annual statements")
+    if inc is not None and inc.empty:
+        inc = None
     val = None
     if inc is not None:
         eps = inc.loc["Diluted EPS"] if "Diluted EPS" in inc.index else None
