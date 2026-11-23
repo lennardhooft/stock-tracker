@@ -1,0 +1,35 @@
+name: telegram-webhook
+
+# One-time setup (and after changing the bot token): point the Telegram bot at the Supabase function
+# "telegram-bot" and set the command menu. The webhook secret is derived from the bot token
+# (sha256("<token>:webhook")), the same way the function checks it, so no extra secret is needed.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Register webhook and commands (prints statuses only)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          set -euo pipefail
+          SECRET=$(printf '%s' "${TELEGRAM_BOT_TOKEN}:webhook" | sha256sum | cut -c1-64)
+          echo "::add-mask::$SECRET"
+          API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
+          URL="${SUPABASE_URL%/}/functions/v1/telegram-bot"
+          curl -sf -X POST "$API/setWebhook" -H 'Content-Type: application/json' \
+            -d "{\"url\":\"$URL\",\"secret_token\":\"$SECRET\",\"allowed_updates\":[\"message\"],\"drop_pending_updates\":true}" \
+            | python3 -c 'import json,sys; r=json.load(sys.stdin); print("webhook:", "ok" if r.get("ok") else "FAILED"); sys.exit(0 if r.get("ok") else 1)'
+          CMDS=$(node --input-type=module -e 'import { COMMANDS } from "./backend/functions/telegram-bot/core.js"; console.log(JSON.stringify({ commands: COMMANDS.map(([command, description]) => ({ command, description })) }))')
+          curl -sf -X POST "$API/setMyCommands" -H 'Content-Type: application/json' -d "$CMDS" \
+            | python3 -c 'import json,sys; r=json.load(sys.stdin); print("commands:", "ok" if r.get("ok") else "FAILED"); sys.exit(0 if r.get("ok") else 1)'
+          curl -sf "$API/getWebhookInfo" \
+            | python3 -c 'import json,sys; r=json.load(sys.stdin)["result"]; print("pending:", r.get("pending_update_count"), "last error:", "yes" if r.get("last_error_message") else "none")'

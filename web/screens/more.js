@@ -6,6 +6,7 @@ import { prefsGet, prefsSet, applyTheme, cacheClear } from "../lib/settings.js";
 import { icon } from "../components/icons.js";
 import { banner } from "../components/states.js";
 import { toast, openSheet } from "../components/overlays.js";
+import { encrypt, TABLES as BACKUP_TABLES } from "../lib/backup.js";
 
 export function renderMore(ctx, main) {
   const item = (href, ic, label, hint = "") => html`<li><a class="menu__item" href="${href}">${icon(ic)}<span class="menu__label">${label}${hint ? html`<span class="menu__hint">${hint}</span>` : ""}</span>${icon("chevron")}</a></li>`;
@@ -77,6 +78,11 @@ export function renderSettings(ctx, main) {
     <div class="card stack">
       <p class="text-2">${t("settings.schedule")}</p>
       <a class="btn btn--secondary" href="#/more/health">${t("more.health")}</a>
+      <hr style="border:0;border-top:1px solid var(--color-border);margin:var(--space-2) 0">
+      <h3 style="font-size:var(--text-md)">${t("backup.title")}</h3>
+      <p class="small text-2">${t("backup.intro")}</p>
+      <button type="button" class="btn btn--primary" data-export>${t("backup.export")}</button>
+      <p class="xs muted">${t("backup.weekly")}</p>
     </div>
     <h2 class="section-title">${t("settings.about")}</h2>
     <div class="card stack">
@@ -86,6 +92,7 @@ export function renderSettings(ctx, main) {
   </div>`);
 
   main.querySelector("[data-mfa-setup]")?.addEventListener("click", () => openMfaSetup(ctx));
+  main.querySelector("[data-export]").addEventListener("click", () => openExportSheet(ctx));
 
   // password (owner decision): needed to log in inside the home-screen app
   const pwForm = main.querySelector("#pw-form");
@@ -158,6 +165,12 @@ export function renderHealth(ctx, main) {
         : html`<p class="text-2">${t("health.intradayNone")}</p>`}
     </section>
     <section class="card">
+      <h2 class="card__title">${t("health.backup")}</h2>
+      ${ctx.backupRun ? html`<p><span class="badge badge--${ctx.backupRun.status === "ok" ? "normal" : "extreme"}">${t(`health.status.${ctx.backupRun.status}`)}</span> <span class="text-2">${fmt.relativeTime(ctx.backupRun.finished_at)}</span></p>
+        ${ctx.backupRun.status === "ok" ? html`<p class="small text-2 num" style="margin-top:var(--space-2)">${t("health.backupCounts", { rows: ctx.backupRun.counts?.rows ?? 0, tables: ctx.backupRun.counts?.tables ?? 0 })}</p>` : ""}`
+        : html`<p class="text-2">${t("health.backupNone")}</p>`}
+    </section>
+    <section class="card">
       <h2 class="card__title">${t("health.sources")}</h2>
       <ul class="signals">${Object.entries(last.sources || {}).map(([k, v]) => html`<li class="signal" data-state="${v.ok ? "passed" : "na"}">
         <span class="signal__icon" style="color:var(--color-${v.ok ? "positive" : "negative"})">${icon(v.ok ? "check" : "error", { label: v.ok ? t("health.ok") : t("health.failed") })}</span>
@@ -202,6 +215,57 @@ export function renderAbout(ctx, main) {
 }
 
 /** Set up two-step login: QR + secret → 6-digit code → on (CLAUDE.md 13.13.2). */
+/* ------------------------------------------------------------------ Export everything (13.14 E) */
+function openExportSheet(ctx) {
+  const ready = ctx.mfa?.enabled && ctx.mfa.level === "aal2";
+  const { el, close } = openSheet({ title: t("backup.export"), body: ready ? html`<form class="stack" id="exp-form" novalidate>
+    <p class="small text-2">${t("backup.sheetIntro")}</p>
+    <input type="text" autocomplete="username" value="bottom-tracker-backup" hidden>
+    <label class="field"><span class="field__label">${t("backup.pass1")}</span>
+      <input class="input" type="password" name="p1" autocomplete="new-password" minlength="12" aria-describedby="exp-msg"></label>
+    <label class="field"><span class="field__label">${t("backup.pass2")}</span>
+      <input class="input" type="password" name="p2" autocomplete="new-password" aria-describedby="exp-msg"></label>
+    ${banner({ tone: "warning", title: t("backup.keepTitle"), body: t("backup.keepBody") })}
+    <p id="exp-msg" class="small" role="status" aria-live="polite"></p>
+    <button class="btn btn--primary btn--block" type="submit">${t("backup.go")}</button>
+  </form>` : html`<div class="stack"><p>${t("backup.needMfa")}</p>${ctx.mfa?.enabled ? "" : html`<button type="button" class="btn btn--primary" data-mfa-setup>${t("mfa.setup")}</button>`}</div>` });
+  el.querySelector("[data-mfa-setup]")?.addEventListener("click", () => { close(); openMfaSetup(ctx); });
+  const form = el.querySelector("#exp-form");
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = el.querySelector("#exp-msg");
+    const fail = (key, field) => { msg.className = "small field__error"; msg.textContent = t(key); field?.setAttribute("aria-invalid", "true"); field?.focus(); };
+    form.p1.removeAttribute("aria-invalid");
+    form.p2.removeAttribute("aria-invalid");
+    if (form.p1.value.length < 12) return fail("backup.tooShort", form.p1);
+    if (form.p1.value !== form.p2.value) return fail("backup.mismatch", form.p2);
+    const btn = form.querySelector("[type=submit]");
+    btn.setAttribute("aria-busy", "true");
+    msg.className = "small";
+    msg.textContent = t("backup.working");
+    try {
+      const tables = await ctx.api.exportAll(BACKUP_TABLES);
+      const blob = await encrypt({ created_at: new Date().toISOString(), tables }, form.p1.value);
+      const file = new Blob([JSON.stringify(blob)], { type: "application/json" });
+      const url = URL.createObjectURL(file);
+      const a = Object.assign(document.createElement("a"), { href: url, download: `bottom-tracker-backup-${new Date().toISOString().slice(0, 10)}.json.enc` });
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const n = Object.values(tables).reduce((sum, rows) => sum + rows.length, 0);
+      close();
+      toast(t("backup.done", { n }));
+    } catch (err) {
+      fail("backup.failed");
+      msg.textContent = `${t("backup.failed")} ${err.message || ""}`;
+    } finally {
+      btn.removeAttribute("aria-busy");
+    }
+  });
+}
+
 export async function openMfaSetup(ctx) {
   const { el, close } = openSheet({ title: t("mfa.setupTitle"), body: html`<div class="stack" id="mfa-setup"><span class="skeleton skeleton--title"></span></div>` });
   const box = $("#mfa-setup", el);

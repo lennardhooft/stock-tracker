@@ -474,7 +474,10 @@
     },
     "intraday": "Intraday checks (every 15 min while markets are open)",
     "intradayCounts": "{checked} of {tickers} stocks checked · {sent} alerts sent",
-    "intradayNone": "No intraday check has run yet. They run on weekdays while the US or EU market is open."
+    "intradayNone": "No intraday check has run yet. They run on weekdays while the US or EU market is open.",
+    "backup": "Weekly backup",
+    "backupCounts": "{rows} rows from {tables} tables, encrypted and read back.",
+    "backupNone": "No backup yet. Set it up once (see README) — it runs every Sunday night."
   },
   "welcome": {
     "title": "Welcome",
@@ -1499,5 +1502,23 @@
     "needProcess": "Pick good or bad process.",
     "footer": "Your own decisions and results, for learning. Not financial advice.",
     "showAll": "Show all {n}"
+  },
+  "backup": {
+    "title": "Export everything",
+    "intro": "Download all you entered yourself (watchlist, trades, cash, risk rules, theses, decisions, reviews) as one encrypted file.",
+    "export": "Export everything",
+    "weekly": "A weekly encrypted backup also goes to your private backup repository (once it's set up).",
+    "sheetIntro": "The file is encrypted on this device with a passphrase you choose. Only that passphrase opens it again.",
+    "pass1": "Passphrase (at least 12 characters)",
+    "pass2": "Passphrase again",
+    "keepTitle": "Keep the passphrase somewhere safe",
+    "keepBody": "Without it the file can't be opened, by you or anyone else. There is no reset.",
+    "go": "Encrypt and download",
+    "working": "Encrypting…",
+    "done": "Backup downloaded ({n} rows)",
+    "failed": "Couldn't make the backup.",
+    "tooShort": "Use at least 12 characters.",
+    "mismatch": "The two passphrases aren't the same.",
+    "needMfa": "Your money data is only readable after the two-step login. Log in with your code first."
   }
 }

@@ -96,6 +96,11 @@ function supabaseApi(cfg) {
     addPending: async (row) => (await q(sb.from("pending_decisions").insert(row).select()))[0],
     updatePending: (id, patch) => q(sb.from("pending_decisions").update(patch).eq("id", id)),
     addReview: async (row) => (await q(sb.from("reviews").insert(row).select()))[0],
+    /** Every owner-entered table, for "Export everything" (money tables need the two-step login). */
+    async exportAll(tables) {
+      const rows = await Promise.all(tables.map((t) => q(sb.from(t).select("*"))));
+      return Object.fromEntries(tables.map((t, i) => [t, rows[i]]));
+    },
     savePortfolioSettings: (row) => q(sb.from("portfolio_settings").upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "user_id" })),
     async saveRisk(profile, settings) {
       await q(sb.from("risk_settings").upsert({ profile, settings, updated_at: new Date().toISOString() }, { onConflict: "user_id" }));
@@ -115,7 +120,7 @@ function supabaseApi(cfg) {
     logout: () => sb.auth.signOut(),
 
     async loadAll() {
-      const [watchlist, scores, market, runs, history, alerts, intradayRuns] = await Promise.all([
+      const [watchlist, scores, market, runs, history, alerts, intradayRuns, backupRuns] = await Promise.all([
         q(sb.from("watchlist").select("*").order("symbol")),
         q(sb.from("latest_scores").select("*")),
         q(sb.from("market_snapshot").select("*").in("id", ["latest", "macro"])),
@@ -124,12 +129,13 @@ function supabaseApi(cfg) {
         q(sb.from("score_history").select("symbol,date,score").order("date", { ascending: false }).limit(2000)),
         q(sb.from("alerts_log").select("id,symbol,kind,title,body,url,delivered,sent_at").order("sent_at", { ascending: false }).limit(100)),
         q(sb.from("job_runs").select("*").eq("job", "intraday").order("started_at", { ascending: false }).limit(1)),
+        q(sb.from("job_runs").select("*").eq("job", "backup").order("started_at", { ascending: false }).limit(1)),
         q(sb.from("risk_snapshot").select("data,updated_at")),
       ]).then((r) => { riskSnap = r.pop()[0] || null; return r; });
       return {
         riskSnapshot: riskSnap,
         watchlist, scores, market: market.find((m) => m.id === "latest") || null, macro: market.find((m) => m.id === "macro") || null,
-        runs: [...runs, ...intradayRuns], history, alerts,
+        runs: [...runs, ...intradayRuns, ...backupRuns], history, alerts,
       };
     },
     async detail(symbol) {
@@ -343,6 +349,12 @@ function demoApi(fixture) {
     async addPending(row) { const r = { id: `p${Date.now()}`, status: "waiting", created_at: new Date().toISOString(), ...row }; demoPf.pending.push(r); return r; },
     async updatePending(id, patch) { Object.assign(demoPf.pending.find((x) => x.id === id) || {}, patch); },
     async addReview(row) { const r = { id: `r${Date.now()}`, created_at: new Date().toISOString(), ...row }; demoPf.reviews.push(r); return r; },
+    async exportAll(tables) {
+      if (demoMfa.level !== "aal2") throw new Error("two-step login needed");
+      const src = { watchlist: state?.watchlist || [], transactions: demoPf?.transactions || [], portfolio_settings: demoPf?.settings ? [demoPf.settings] : [],
+        risk_settings: demoPf?.risk ? [demoPf.risk] : [], risk_settings_log: [], thesis: demoPf?.thesis || [], pending_decisions: demoPf?.pending || [], reviews: demoPf?.reviews || [] };
+      return Object.fromEntries(tables.map((t) => [t, structuredClone(src[t] || [])]));
+    },
     async savePortfolioSettings(row) { demoPf.settings = { ...(demoPf.settings || {}), ...row }; },
     async saveRisk(profile, settings) { demoPf.risk = { profile, settings }; },
     runUpdate: async () => { await delay(300); return "started"; },

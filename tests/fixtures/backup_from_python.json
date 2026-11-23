@@ -1,0 +1,9 @@
+{
+ "format": "bottom-tracker-backup",
+ "v": 1,
+ "kdf": "pbkdf2-sha256",
+ "iter": 1000,
+ "salt": "x1kqqiB4SuQEA6RiS75G5w==",
+ "iv": "c+bG+Jr4qUzuSwyE",
+ "ct": "iLKEebbil+ZqMvhfyC2gDCgaRv7oW/uWDBtFJ0drfjHhfvRZRSz+pjzJu0zCZRB88zOYWbD8WXtNKsE0kOq/VNf/tXxBy/stQdgp6i/FeRNIKZE8Xu5pvibWQiZ4m9TBLXHJbTYo3QzZJ+KTaJ1YFZnoZQgNWC8uDMipPsP9hSZKelVSNu2tFZd4"
+}

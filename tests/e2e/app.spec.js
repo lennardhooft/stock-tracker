@@ -27,7 +27,7 @@ async function quality(page, label) {
   const rawKeys = await page.evaluate(() => {
     const txt = document.body.innerText;
     return (txt.match(/\b[a-z]+\.[a-zA-Z]+(\.[a-zA-Z0-9]+)*\b/g) || [])
-      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal|pf|cib|risk|trade|mfa|imp|risk3|ret|div|txl|tax|guard|thesis|dec)\./.test(k));
+      .filter((k) => /^(common|nav|score|sig|today|attention|watchlist|add|ticker|chart|more|settings|health|welcome|login|banner|state|mood|market|explain|checks|search|glossary|errors|about|time|toast|stock|freshness|quality|top|verdict|verdictLine|verdictFilter|fund|news|levels|tags|cal|pf|cib|risk|trade|mfa|imp|risk3|ret|div|txl|tax|guard|thesis|dec|backup)\./.test(k));
   });
   expect(rawKeys, `${label}: untranslated i18n keys`).toEqual([]);
 
@@ -988,4 +988,38 @@ test("Dutch: 3D screens fully translated", async ({ page }) => {
     await open(page, path, { lang: "nl" });
     await quality(page, `nl ${path}`);
   }
+});
+
+/* ------------------------------------------------------------ Phase 3E: export everything */
+test("settings: export everything encrypts and downloads; passphrase rules", async ({ page }) => {
+  await open(page, "#/more/settings");
+  await page.getByRole("button", { name: "Export everything" }).click();
+  const form = page.locator("#exp-form");
+  await form.locator("[name=p1]").fill("short");
+  await form.getByRole("button", { name: "Encrypt and download" }).click();
+  await expect(page.locator("#exp-msg")).toContainText("at least 12 characters");
+  await form.locator("[name=p1]").fill("fake passphrase for tests");
+  await form.locator("[name=p2]").fill("fake passphrase for test");
+  await form.getByRole("button", { name: "Encrypt and download" }).click();
+  await expect(page.locator("#exp-msg")).toContainText("aren't the same");
+  await form.locator("[name=p2]").fill("fake passphrase for tests");
+  await quality(page, "export sheet");
+  const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), form.getByRole("button", { name: "Encrypt and download" }).click()]);
+  expect(dl.suggestedFilename()).toMatch(/^bottom-tracker-backup-\d{4}-\d{2}-\d{2}\.json\.enc$/);
+  const text = await (await dl.createReadStream()).toArray().then((c) => Buffer.concat(c).toString());
+  const blob = JSON.parse(text);
+  expect(blob.format).toBe("bottom-tracker-backup");
+  expect(text).not.toContain("NRDX"); // nothing readable
+  await expect(page.locator(".toast").first()).toContainText("Backup downloaded");
+});
+
+test("settings: export needs the two-step login", async ({ page }) => {
+  await open(page, "#/more/settings", { fixture: "nomfa" });
+  await page.getByRole("button", { name: "Export everything" }).click();
+  await expect(page.locator(".sheet, [role=dialog]").first()).toContainText("two-step login");
+});
+
+test("health page shows the weekly backup state", async ({ page }) => {
+  await open(page, "#/more/health");
+  await expect(page.locator("main")).toContainText("Weekly backup");
 });

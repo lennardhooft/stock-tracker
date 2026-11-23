@@ -196,5 +196,23 @@ All have **Verify JWT turned off**; they do their own checks.
 | `calendar-ics` | `backend/functions/calendar-ics/index.ts` | Private calendar feed (`?token=…`) for the phone calendar: earnings, dividends, Fed/ECB dates | none (uses the injected anon key + `calendar_feed()` in `backend/schema.sql`) |
 | `quotes` | `backend/functions/quotes/index.ts` | Live prices for the Portfolio page (login required) | none |
 | `lookup-symbols` | `backend/functions/lookup-symbols/index.ts` | Bolero importer: ISIN / name / market → Yahoo ticker (login required) | none |
+| `telegram-bot` | `backend/functions/telegram-bot/index.ts` (generated: `python scripts/build_bot.py`) | Read-only Telegram commands (`/score`, `/portfolio`, `/canibuy`, …) for the owner's chat only | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (same values as the GitHub secrets) |
+
+After deploying `telegram-bot`, run the **telegram-webhook** workflow once (Actions → telegram-webhook → Run).
+
+## Backups (CLAUDE.md 13.14 E)
+
+- **Weekly**: the `backup` workflow (Sunday 03:00 UTC) encrypts everything you entered and commits it to a
+  **private** repo. Set three GitHub secrets: `BACKUP_REPO` (e.g. `you/stock-tracker-backups`), `BACKUP_REPO_TOKEN`
+  (fine-grained token: only that repo, Contents read and write) and `BACKUP_PASSPHRASE` (≥ 12 characters; keep a
+  copy somewhere safe — without it the backups can't be opened).
+- **By hand**: Settings → Data & backups → Export everything (encrypted on your device with a passphrase you type).
+- **Restore** (same format for both):
+
+  ```bash
+  pip install -r requirements.txt
+  python -m src.backup restore backups/2026-11-29.json.enc          # shows the counts per table
+  SUPABASE_URL=… SUPABASE_SERVICE_KEY=… python -m src.backup restore FILE --apply   # writes it back (upsert)
+  ```
 
 Fed/ECB dates live in `config/macro_events.yaml`; update them once a year from the official calendars.

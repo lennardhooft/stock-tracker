@@ -474,7 +474,10 @@
     },
     "intraday": "Controles tijdens de dag (elke 15 min als de beurs open is)",
     "intradayCounts": "{checked} van {tickers} aandelen gecontroleerd · {sent} meldingen verstuurd",
-    "intradayNone": "Er liep nog geen controle tijdens de dag. Ze lopen op weekdagen wanneer de Amerikaanse of Europese beurs open is."
+    "intradayNone": "Er liep nog geen controle tijdens de dag. Ze lopen op weekdagen wanneer de Amerikaanse of Europese beurs open is.",
+    "backup": "Wekelijkse back-up",
+    "backupCounts": "{rows} rijen uit {tables} tabellen, versleuteld en teruggelezen.",
+    "backupNone": "Nog geen back-up. Stel ze één keer in (zie README) — ze loopt elke zondagnacht."
   },
   "welcome": {
     "title": "Welkom",
@@ -1499,5 +1502,23 @@
     "needProcess": "Kies goed of slecht proces.",
     "footer": "Je eigen beslissingen en resultaten, om van te leren. Geen financieel advies.",
     "showAll": "Toon alle {n}"
+  },
+  "backup": {
+    "title": "Alles exporteren",
+    "intro": "Download alles wat je zelf invoerde (volglijst, transacties, cash, risicoregels, theses, beslissingen, evaluaties) als één versleuteld bestand.",
+    "export": "Alles exporteren",
+    "weekly": "Een wekelijkse versleutelde back-up gaat ook naar je privé back-uprepository (zodra die ingesteld is).",
+    "sheetIntro": "Het bestand wordt op dit toestel versleuteld met een wachtzin die jij kiest. Enkel die wachtzin opent het weer.",
+    "pass1": "Wachtzin (minstens 12 tekens)",
+    "pass2": "Wachtzin nogmaals",
+    "keepTitle": "Bewaar de wachtzin op een veilige plek",
+    "keepBody": "Zonder wachtzin kan niemand het bestand openen, ook jij niet. Er is geen reset.",
+    "go": "Versleutelen en downloaden",
+    "working": "Bezig met versleutelen…",
+    "done": "Back-up gedownload ({n} rijen)",
+    "failed": "De back-up kon niet gemaakt worden.",
+    "tooShort": "Gebruik minstens 12 tekens.",
+    "mismatch": "De twee wachtzinnen zijn niet gelijk.",
+    "needMfa": "Je geldgegevens zijn pas leesbaar na de tweestapslogin. Log eerst in met je code."
   }
 }

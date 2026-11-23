@@ -625,7 +625,7 @@
       "title": "🟠 NRDX: 4/4 bottom signals",
       "body": "Price is near its 4-year average, RSI is oversold, the price is far below its high and the whole market is fearful.\nPrice $ 118,40 · −6,2 % today\nWorth researching, not a buy signal.",
       "delivered": true,
-      "hours_ago": 3
+      "hours_ago": 0.08
     },
     {
       "symbol": "NRDX",
@@ -633,7 +633,7 @@
       "title": "🔻 NRDX −6,2 % today ($ 118,40)",
       "body": "Bottom Score: 4/4 (Strong)",
       "delivered": true,
-      "hours_ago": 3
+      "hours_ago": 0.08
     },
     {
       "symbol": "BLMT.BR",
@@ -641,7 +641,7 @@
       "title": "🔔 BLMT.BR reached your buy level",
       "body": "Price € 42,15 ≤ your level € 43,00\nBottom Score: 2/4 (Watch)",
       "delivered": true,
-      "hours_ago": 3
+      "hours_ago": 0.08
     },
     {
       "symbol": "_data",

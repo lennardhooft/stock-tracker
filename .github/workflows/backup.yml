@@ -1,0 +1,48 @@
+name: backup
+
+# Weekly encrypted backup of the owner's own data to a PRIVATE repo (CLAUDE.md 13.14 E).
+# Needs secrets BACKUP_PASSPHRASE, BACKUP_REPO (owner/name of the private repo) and BACKUP_REPO_TOKEN
+# (fine-grained token: only that repo, Contents read/write). Without them it does nothing.
+on:
+  schedule:
+    - cron: "0 3 * * 0"   # Sunday 03:00 UTC
+  workflow_dispatch: {}
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # Logs are PUBLIC: the script prints counts only. The file is encrypted before it leaves the runner.
+      - name: Encrypted backup
+        run: python -m src.backup run
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          BACKUP_REPO: ${{ secrets.BACKUP_REPO }}
+          BACKUP_REPO_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+      - name: Notify on failure (Telegram, optional)
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+            curl -s -o /dev/null -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+              --data-urlencode "text=⚠️ Bottom Tracker: weekly backup failed. Check the Health page."
+          fi
